@@ -12,13 +12,13 @@
 //!
 //! Create your first AI agent in minutes:
 //!
-//! ```no_run
+//! ```ignore
 //! use adk_rust::prelude::*;
 //! use adk_rust::Launcher;
 //! use std::sync::Arc;
 //!
 //! #[tokio::main]
-//! async fn main() -> Result<()> {
+//! async fn main() -> Result<(), Box<dyn std::error::Error>> {
 //!     let api_key = std::env::var("GOOGLE_API_KEY")?;
 //!     let model = GeminiModel::new(&api_key, "gemini-2.0-flash-exp")?;
 //!
@@ -73,7 +73,7 @@
 //! use std::sync::Arc;
 //!
 //! # async fn example() -> Result<()> {
-//! let api_key = std::env::var("GOOGLE_API_KEY")?;
+//! let api_key = std::env::var("GOOGLE_API_KEY").map_err(|e| AdkError::Config(e.to_string()))?;
 //! let model = GeminiModel::new(&api_key, "gemini-2.0-flash-exp")?;
 //!
 //! let agent = LlmAgentBuilder::new("researcher")
@@ -114,7 +114,8 @@
 //!
 //! // Loop: Iterate until condition met
 //! # let refiner: Arc<dyn Agent> = todo!();
-//! let loop_agent = LoopAgent::new("iterative_refiner", refiner, 5);
+//! let loop_agent = LoopAgent::new("iterative_refiner", vec![refiner])
+//!     .with_max_iterations(5);
 //! # Ok(())
 //! # }
 //! ```
@@ -152,27 +153,17 @@
 //!
 //! ```no_run
 //! use adk_rust::prelude::*;
-//! use schemars::JsonSchema;
-//! use serde::{Deserialize, Serialize};
+//! use adk_rust::serde_json::{json, Value};
+//! use std::sync::Arc;
 //!
-//! #[derive(Debug, Deserialize, JsonSchema)]
-//! struct WeatherInput {
-//!     /// City name to get weather for
-//!     city: String,
-//! }
-//!
-//! #[derive(Debug, Serialize)]
-//! struct WeatherOutput {
-//!     temperature: f64,
-//!     conditions: String,
-//! }
-//!
-//! async fn get_weather(_ctx: ToolContext, input: WeatherInput) -> Result<WeatherOutput> {
+//! async fn get_weather(_ctx: Arc<dyn ToolContext>, args: Value) -> Result<Value> {
+//!     let city = args["city"].as_str().unwrap_or("Unknown");
 //!     // Your weather API call here
-//!     Ok(WeatherOutput {
-//!         temperature: 72.0,
-//!         conditions: "Sunny".to_string(),
-//!     })
+//!     Ok(json!({
+//!         "temperature": 72.0,
+//!         "conditions": "Sunny",
+//!         "city": city
+//!     }))
 //! }
 //!
 //! # fn example() -> Result<()> {
@@ -195,16 +186,24 @@
 //!
 //! ### MCP Tools - External Integrations
 //!
-//! Connect to Model Context Protocol servers:
+//! Connect to Model Context Protocol servers using the `rmcp` crate:
 //!
-//! ```no_run
+//! ```ignore
 //! use adk_rust::prelude::*;
+//! use adk_rust::tool::McpToolset;
+//! use rmcp::{ServiceExt, transport::TokioChildProcess};
+//! use tokio::process::Command;
 //!
-//! # async fn example() -> Result<()> {
+//! # async fn example() -> Result<(), Box<dyn std::error::Error>> {
 //! // Connect to an MCP server (e.g., filesystem, database)
-//! let mcp_tools = McpToolset::from_command("npx", &[
-//!     "-y", "@anthropic/mcp-server-filesystem", "/path/to/dir"
-//! ]).await?;
+//! let client = ().serve(TokioChildProcess::new(
+//!     Command::new("npx")
+//!         .arg("-y")
+//!         .arg("@anthropic/mcp-server-filesystem")
+//!         .arg("/path/to/dir")
+//! )?).await?;
+//!
+//! let mcp_tools = McpToolset::new(client);
 //!
 //! // Add all MCP tools to your agent
 //! # let builder: LlmAgentBuilder = todo!();
@@ -219,20 +218,24 @@
 //!
 //! ```no_run
 //! use adk_rust::prelude::*;
+//! use adk_rust::session::{SessionService, CreateRequest};
+//! use adk_rust::serde_json::json;
+//! use std::collections::HashMap;
 //!
 //! # async fn example() -> Result<()> {
-//! # let session_service: InMemorySessionService = todo!();
+//! let session_service = InMemorySessionService::new();
+//!
 //! // Create a session
-//! let session = session_service.create("user_123", None).await?;
+//! let session = session_service.create(CreateRequest {
+//!     app_name: "my_app".to_string(),
+//!     user_id: "user_123".to_string(),
+//!     session_id: None,
+//!     state: HashMap::new(),
+//! }).await?;
 //!
-//! // Store state with scoped prefixes
+//! // Read state (State trait provides read access)
 //! let state = session.state();
-//! state.set("app:config", "production");      // App-level config
-//! state.set("user:preference", "dark_mode");  // User preferences
-//! state.set("temp:cache", "computed_value");  // Temporary data
-//!
-//! // State persists across conversation turns
-//! let config = state.get::<String>("app:config")?;
+//! let config = state.get("app:config");  // Returns Option<Value>
 //! # Ok(())
 //! # }
 //! ```
@@ -249,27 +252,20 @@
 //! # let model: Arc<dyn Llm> = todo!();
 //! let agent = LlmAgentBuilder::new("monitored_agent")
 //!     .model(model)
-//!     // Log all agent invocations
-//!     .before_agent(|ctx| {
+//!     // Modify or inspect model responses
+//!     .after_model_callback(Box::new(|_ctx, response| {
 //!         Box::pin(async move {
-//!             println!("Agent starting: {}", ctx.agent_name);
+//!             println!("Model responded");
+//!             Ok(Some(response)) // Return modified response or None to keep original
+//!         })
+//!     }))
+//!     // Track tool usage
+//!     .before_tool_callback(Box::new(|_ctx| {
+//!         Box::pin(async move {
+//!             println!("Tool about to be called");
 //!             Ok(None) // Continue execution
 //!         })
-//!     })
-//!     // Modify or cache model responses
-//!     .after_model(|ctx, response| {
-//!         Box::pin(async move {
-//!             println!("Model responded with {} tokens", response.usage.output_tokens);
-//!             Ok(response)
-//!         })
-//!     })
-//!     // Track tool usage
-//!     .before_tool(|ctx, name, args| {
-//!         Box::pin(async move {
-//!             println!("Calling tool: {} with {:?}", name, args);
-//!             Ok(None)
-//!         })
-//!     })
+//!     }))
 //!     .build()?;
 //! # Ok(())
 //! # }
@@ -281,20 +277,29 @@
 //!
 //! ```no_run
 //! use adk_rust::prelude::*;
+//! use adk_rust::artifact::{ArtifactService, SaveRequest, LoadRequest};
 //!
 //! # async fn example() -> Result<()> {
-//! # let artifact_service: InMemoryArtifactService = todo!();
+//! let artifact_service = InMemoryArtifactService::new();
+//!
 //! // Save an artifact
-//! let image_data = std::fs::read("chart.png")?;
-//! artifact_service.save(
-//!     "reports",           // namespace
-//!     "sales_chart.png",   // filename
-//!     &image_data,
-//!     "image/png",         // MIME type
-//! ).await?;
+//! let response = artifact_service.save(SaveRequest {
+//!     app_name: "my_app".to_string(),
+//!     user_id: "user_123".to_string(),
+//!     session_id: "session_456".to_string(),
+//!     file_name: "sales_chart.png".to_string(),
+//!     part: Part::Text { text: "chart data".to_string() },
+//!     version: None,
+//! }).await?;
 //!
 //! // Load an artifact
-//! let artifact = artifact_service.load("reports", "sales_chart.png", None).await?;
+//! let loaded = artifact_service.load(LoadRequest {
+//!     app_name: "my_app".to_string(),
+//!     user_id: "user_123".to_string(),
+//!     session_id: "session_456".to_string(),
+//!     file_name: "sales_chart.png".to_string(),
+//!     version: None,
+//! }).await?;
 //! # Ok(())
 //! # }
 //! ```
@@ -333,18 +338,19 @@
 //! Expose your agent for inter-agent communication:
 //!
 //! ```no_run
-//! use adk_rust::server::{A2AServer, AgentCard};
+//! use adk_rust::server::{create_app_with_a2a, ServerConfig};
+//! use adk_rust::AgentLoader;
 //!
-//! # async fn example() -> Result<(), Box<dyn std::error::Error>> {
-//! # let agent: std::sync::Arc<dyn adk_rust::Agent> = todo!();
-//! # let session_service: std::sync::Arc<adk_rust::session::InMemorySessionService> = todo!();
-//! # let artifact_service: std::sync::Arc<adk_rust::artifact::InMemoryArtifactService> = todo!();
-//! let card = AgentCard::new("my_agent", "https://my-agent.example.com")
-//!     .with_description("A helpful assistant")
-//!     .with_skill("research", "Can search and summarize information");
+//! # async fn example() -> adk_rust::Result<()> {
+//! # let agent_loader: std::sync::Arc<dyn AgentLoader> = todo!();
+//! # let session_service: std::sync::Arc<dyn adk_rust::session::SessionService> = todo!();
+//! // Create server with A2A protocol support
+//! let config = ServerConfig::new(agent_loader, session_service);
+//! let app = create_app_with_a2a(config, Some("http://localhost:8080"));
 //!
-//! let server = A2AServer::new(agent, card, session_service, artifact_service);
-//! server.serve(8080).await?;
+//! // Run the server (requires axum dependency)
+//! // let listener = tokio::net::TcpListener::bind("0.0.0.0:8080").await?;
+//! // axum::serve(listener, app).await?;
 //! # Ok(())
 //! # }
 //! ```
@@ -354,13 +360,15 @@
 //! Built-in OpenTelemetry support for production monitoring:
 //!
 //! ```no_run
-//! use adk_rust::telemetry::{TelemetryConfig, init_telemetry};
+//! use adk_rust::telemetry::{init_telemetry, init_with_otlp};
 //!
 //! # fn example() -> Result<(), Box<dyn std::error::Error>> {
-//! let config = TelemetryConfig::new("my-agent-service")
-//!     .with_otlp_endpoint("http://localhost:4317");
+//! // Basic telemetry with console logging
+//! init_telemetry("my-agent-service")?;
 //!
-//! init_telemetry(config)?;
+//! // Or with OTLP export for distributed tracing
+//! // init_with_otlp("my-agent-service", "http://localhost:4317")?;
+//!
 //! // All agent operations now emit traces and metrics
 //! # Ok(())
 //! # }

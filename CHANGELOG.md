@@ -7,55 +7,64 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Added
+## [0.1.1] - 2025-11-30
+
+### Fixed
+- Clippy `redundant_pattern_matching` warning in test files
+- Doc test for `ScopedArtifacts` using incorrect `Part` constructor
+- Code formatting issues caught by `cargo fmt`
+- Multiple doc tests in `adk-rust/src/lib.rs` with incorrect API usage:
+  - `LoopAgent::new` signature (takes `Vec<Arc<dyn Agent>>`, use `.with_max_iterations()`)
+  - `FunctionTool::new` handler signature (takes `Arc<dyn ToolContext>, Value`)
+  - `McpToolset` API (uses `rmcp` crate, `McpToolset::new(client)`)
+  - `SessionService::create` takes `CreateRequest` struct
+  - Callback methods renamed to `after_model_callback`, `before_tool_callback`
+  - `ArtifactService` trait and request/response structs
+  - Server API uses `create_app_with_a2a`, `ServerConfig`, `AgentLoader`
+  - Telemetry uses `init_telemetry` and `init_with_otlp` functions
+
+### Changed
+- Integration tests requiring `GEMINI_API_KEY` now marked with `#[ignore]` for CI compatibility
+
+## [0.1.0] - 2025-11-30
+
+Initial release - Published to crates.io.
+
+### Features
 - Complete Rust implementation of Google's ADK
 - Core traits: Agent, Llm, Tool, Toolset, SessionService
-- Agent types: LlmAgent, CustomAgent, SequentialAgent, ParallelAgent, LoopAgent
-- Gemini 2.0 Flash model integration with streaming
-- MCP (Model Context Protocol) integration with rmcp SDK
-- Session management (in-memory and SQLite)
-- Artifact storage (in-memory and SQLite)
+- Agent types: LlmAgent, CustomAgent, SequentialAgent, ParallelAgent, LoopAgent, ConditionalAgent
+- Gemini model integration with streaming support
+- MCP (Model Context Protocol) integration via rmcp SDK
+- Session management (in-memory and database backends)
+- Artifact storage (in-memory and database backends)
 - Memory system with semantic search
 - Runner for agent execution with context management
 - REST API server with Axum
 - A2A (Agent-to-Agent) protocol support
-- CLI with console mode (rustyline) and server mode
-- 8 working examples demonstrating all features
-
-### Documentation
-- Comprehensive README with quick start
-- Architecture guide
-- Implementation plan with 10 phases
-- MCP implementation guide
-- 8 example READMEs
-
-## [0.1.0] - TBD
-
-Initial release with complete ADK implementation.
-
-### Features
-- ✅ All core ADK features from Go implementation
-- ✅ MCP integration (gold standard for 2025)
-- ✅ Production-ready architecture
-- ✅ 8 working examples
-- ✅ REST and A2A server support
+- CLI with console mode and server mode
+- Security configuration (CORS, timeouts, request limits)
+- OpenTelemetry integration for observability
 
 ### Crates
 - `adk-core` - Core traits and types
 - `adk-agent` - Agent implementations
-- `adk-model` - Model integrations (Gemini)
-- `adk-tool` - Tool system with MCP
+- `adk-model` - LLM integrations (Gemini)
+- `adk-tool` - Tool system (FunctionTool, MCP, Google Search)
 - `adk-session` - Session management
-- `adk-artifact` - Artifact storage
-- `adk-memory` - Memory system
-- `adk-runner` - Execution runtime
-- `adk-server` - REST + A2A servers
-- `adk-cli` - CLI application
+- `adk-artifact` - Binary artifact storage
+- `adk-memory` - Semantic memory
+- `adk-runner` - Agent execution runtime
+- `adk-server` - HTTP server and A2A protocol
+- `adk-cli` - Command-line launcher
+- `adk-telemetry` - OpenTelemetry integration
+- `adk-rust` - Umbrella crate
 
 ### Requirements
 - Rust 1.75+
 - Tokio async runtime
 - Google API key for Gemini
 
-[Unreleased]: https://github.com/yourusername/adk-rust/compare/v0.1.0...HEAD
-[0.1.0]: https://github.com/yourusername/adk-rust/releases/tag/v0.1.0
+[Unreleased]: https://github.com/zavora-ai/adk-rust/compare/v0.1.1...HEAD
+[0.1.1]: https://github.com/zavora-ai/adk-rust/compare/v0.1.0...v0.1.1
+[0.1.0]: https://github.com/zavora-ai/adk-rust/releases/tag/v0.1.0

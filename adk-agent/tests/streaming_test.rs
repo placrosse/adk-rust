@@ -1,7 +1,7 @@
 use adk_agent::LlmAgentBuilder;
 use adk_core::{
     Agent, Content, FinishReason, InvocationContext, Llm, LlmRequest, LlmResponse,
-    LlmResponseStream, Part, Result, RunConfig, Session, State, UsageMetadata,
+    LlmResponseStream, Part, Result, RunConfig, Session, State,
 };
 use async_stream::stream;
 use async_trait::async_trait;
@@ -157,7 +157,7 @@ async fn test_streaming_chunks() {
     let model = Arc::new(MockModel::new(vec!["Hello", " ", "World", "!"]));
     let agent = LlmAgentBuilder::new("test-agent").model(model).build().unwrap();
 
-    let ctx = Arc::new(MockContext::new());
+    let _ctx = Arc::new(MockContext::new());
 
     // We need to provide user content in the context, but MockContext panics on user_content()
     // Let's fix MockContext to return dummy content
