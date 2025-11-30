@@ -27,7 +27,8 @@ use std::sync::Arc;
 /// );
 ///
 /// // Simple API - scoping is automatic
-/// let version = artifacts.save("report.pdf", &Part::text("data")).await?;
+/// let part = Part::Text { text: "data".to_string() };
+/// let version = artifacts.save("report.pdf", &part).await?;
 /// let loaded = artifacts.load("report.pdf").await?;
 /// let files = artifacts.list().await?;
 /// # Ok(())
