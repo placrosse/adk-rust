@@ -19,12 +19,15 @@ pub fn adk_parts_to_a2a(
                     uri: None,
                 }))
             }
-            Part::FunctionCall { name, args } => {
+            Part::FunctionCall { name, args, id } => {
                 let is_long_running = long_running_ids.contains(name);
                 let mut data = Map::new();
                 let mut call_data = Map::new();
                 call_data.insert("name".to_string(), Value::String(name.clone()));
                 call_data.insert("args".to_string(), args.clone());
+                if let Some(call_id) = id {
+                    call_data.insert("id".to_string(), Value::String(call_id.clone()));
+                }
                 data.insert("function_call".to_string(), Value::Object(call_data));
 
                 let mut metadata = Map::new();
@@ -32,11 +35,14 @@ pub fn adk_parts_to_a2a(
 
                 Ok(crate::a2a::Part::Data { data, metadata: Some(metadata) })
             }
-            Part::FunctionResponse { name, response } => {
+            Part::FunctionResponse { name, response, id } => {
                 let mut data = Map::new();
                 let mut resp_data = Map::new();
                 resp_data.insert("name".to_string(), Value::String(name.clone()));
                 resp_data.insert("response".to_string(), response.clone());
+                if let Some(resp_id) = id {
+                    resp_data.insert("id".to_string(), Value::String(resp_id.clone()));
+                }
                 data.insert("function_response".to_string(), Value::Object(resp_data));
 
                 Ok(crate::a2a::Part::Data { data, metadata: None })
@@ -73,7 +79,8 @@ pub fn a2a_parts_to_adk(parts: &[crate::a2a::Part]) -> Result<Vec<Part>> {
                         })?
                         .to_string();
                     let args = call.get("args").cloned().unwrap_or(Value::Object(Map::new()));
-                    Ok(Part::FunctionCall { name, args })
+                    let id = call.get("id").and_then(|v| v.as_str()).map(String::from);
+                    Ok(Part::FunctionCall { name, args, id })
                 } else if let Some(resp) = data.get("function_response") {
                     let name = resp
                         .get("name")
@@ -84,7 +91,8 @@ pub fn a2a_parts_to_adk(parts: &[crate::a2a::Part]) -> Result<Vec<Part>> {
                         .to_string();
                     let response =
                         resp.get("response").cloned().unwrap_or(Value::Object(Map::new()));
-                    Ok(Part::FunctionResponse { name, response })
+                    let id = resp.get("id").and_then(|v| v.as_str()).map(String::from);
+                    Ok(Part::FunctionResponse { name, response, id })
                 } else {
                     Err(adk_core::AdkError::Agent("Unknown data part format".to_string()))
                 }
@@ -110,8 +118,11 @@ mod tests {
 
     #[test]
     fn test_function_call_conversion() {
-        let adk_parts =
-            vec![Part::FunctionCall { name: "test".to_string(), args: json!({"key": "value"}) }];
+        let adk_parts = vec![Part::FunctionCall {
+            name: "test".to_string(),
+            args: json!({"key": "value"}),
+            id: Some("call_123".to_string()),
+        }];
         let a2a_parts = adk_parts_to_a2a(&adk_parts, &[]).unwrap();
         assert_eq!(a2a_parts.len(), 1);
 

@@ -759,7 +759,7 @@ impl Agent for LlmAgent {
                 // Execute function calls and add responses to history
                 if let Some(content) = &accumulated_content {
                     for part in &content.parts {
-                        if let Part::FunctionCall { name, args } = part {
+                        if let Part::FunctionCall { name, args, id } = part {
                             // Handle transfer_to_agent specially
                             if name == "transfer_to_agent" {
                                 let target_agent = args.get("agent_name")
@@ -800,6 +800,7 @@ impl Agent for LlmAgent {
                                 parts: vec![Part::FunctionResponse {
                                     name: name.clone(),
                                     response: tool_result.clone(),
+                                    id: id.clone(),
                                 }],
                             });
                             yield Ok(tool_event);
@@ -810,6 +811,7 @@ impl Agent for LlmAgent {
                                 parts: vec![Part::FunctionResponse {
                                     name: name.clone(),
                                     response: tool_result,
+                                    id: id.clone(),
                                 }],
                             });
                         }

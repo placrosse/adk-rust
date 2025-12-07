@@ -27,6 +27,7 @@ impl GeminiModel {
                     gemini::Part::FunctionCall { function_call, .. } => Some(Part::FunctionCall {
                         name: function_call.name.clone(),
                         args: function_call.args.clone(),
+                        id: None, // Gemini doesn't use tool call IDs
                     }),
                     gemini::Part::FunctionResponse { function_response } => {
                         Some(Part::FunctionResponse {
@@ -35,6 +36,7 @@ impl GeminiModel {
                                 .response
                                 .clone()
                                 .unwrap_or(serde_json::Value::Null),
+                            id: None, // Gemini doesn't use tool call IDs
                         })
                     }
                     _ => None,
@@ -143,7 +145,7 @@ impl Llm for GeminiModel {
                                     thought_signature: None,
                                 });
                             }
-                            Part::FunctionCall { name, args } => {
+                            Part::FunctionCall { name, args, .. } => {
                                 gemini_parts.push(gemini::Part::FunctionCall {
                                     function_call: gemini::FunctionCall {
                                         name: name.clone(),
@@ -170,7 +172,7 @@ impl Llm for GeminiModel {
                 "function" => {
                     // For function responses
                     for part in &content.parts {
-                        if let Part::FunctionResponse { name, response } = part {
+                        if let Part::FunctionResponse { name, response, .. } = part {
                             builder = builder
                                 .with_function_response(name, response.clone())
                                 .map_err(|e| adk_core::AdkError::Model(e.to_string()))?;

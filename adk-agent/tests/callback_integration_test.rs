@@ -19,7 +19,11 @@ impl MockModel {
     fn new_function_call(name: &str, args: Value) -> Self {
         let content = Content {
             role: "model".to_string(),
-            parts: vec![Part::FunctionCall { name: name.to_string(), args }],
+            parts: vec![Part::FunctionCall {
+                name: name.to_string(),
+                args,
+                id: Some(format!("call_{}", name)),
+            }],
         };
 
         Self {

@@ -9,10 +9,27 @@ pub struct Content {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum Part {
-    Text { text: String },
-    InlineData { mime_type: String, data: Vec<u8> },
-    FunctionCall { name: String, args: serde_json::Value },
-    FunctionResponse { name: String, response: serde_json::Value },
+    Text {
+        text: String,
+    },
+    InlineData {
+        mime_type: String,
+        data: Vec<u8>,
+    },
+    FunctionCall {
+        name: String,
+        args: serde_json::Value,
+        /// Tool call ID for OpenAI-style providers. None for Gemini.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        id: Option<String>,
+    },
+    FunctionResponse {
+        name: String,
+        response: serde_json::Value,
+        /// Tool call ID for OpenAI-style providers. None for Gemini.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        id: Option<String>,
+    },
 }
 
 impl Content {

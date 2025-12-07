@@ -20,7 +20,15 @@ tokio.workspace = true
 futures.workspace = true
 async-stream.workspace = true
 serde_json.workspace = true
-gemini = { workspace = true }
+serde = { workspace = true }
+gemini = { workspace = true, optional = true }
+async-openai = { version = "0.27", optional = true }
 anyhow.workspace = true
 tracing.workspace = true
 base64 = "0.21"
+
+[features]
+default = ["gemini"]
+gemini = ["dep:gemini"]
+openai = ["dep:async-openai"]
+all-providers = ["gemini", "openai"]

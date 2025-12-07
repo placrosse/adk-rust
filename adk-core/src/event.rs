@@ -193,6 +193,7 @@ mod tests {
             parts: vec![Part::FunctionCall {
                 name: "get_weather".to_string(),
                 args: serde_json::json!({"city": "NYC"}),
+                id: Some("call_123".to_string()),
             }],
         });
         // Has function call -> NOT final (need to execute it)
@@ -207,6 +208,7 @@ mod tests {
             parts: vec![Part::FunctionResponse {
                 name: "get_weather".to_string(),
                 response: serde_json::json!({"temp": 72}),
+                id: Some("call_123".to_string()),
             }],
         });
         // Has function response -> NOT final (model needs to respond)
@@ -234,6 +236,7 @@ mod tests {
             parts: vec![Part::FunctionResponse {
                 name: "tool".to_string(),
                 response: serde_json::json!({"result": "done"}),
+                id: Some("call_tool".to_string()),
             }],
         });
         // Even with function response, skip_summarization makes it final
@@ -249,6 +252,7 @@ mod tests {
             parts: vec![Part::FunctionCall {
                 name: "process_video".to_string(),
                 args: serde_json::json!({"file": "video.mp4"}),
+                id: Some("call_process".to_string()),
             }],
         });
         // Has long_running_tool_ids -> final (async operation started)
@@ -261,9 +265,17 @@ mod tests {
         event.llm_response.content = Some(Content {
             role: "model".to_string(),
             parts: vec![
-                Part::FunctionCall { name: "get_weather".to_string(), args: serde_json::json!({}) },
+                Part::FunctionCall {
+                    name: "get_weather".to_string(),
+                    args: serde_json::json!({}),
+                    id: Some("call_1".to_string()),
+                },
                 Part::Text { text: "I'll check the weather".to_string() },
-                Part::FunctionCall { name: "get_time".to_string(), args: serde_json::json!({}) },
+                Part::FunctionCall {
+                    name: "get_time".to_string(),
+                    args: serde_json::json!({}),
+                    id: Some("call_2".to_string()),
+                },
             ],
         });
 
