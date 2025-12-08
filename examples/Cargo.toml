@@ -182,6 +182,43 @@ name = "realtime_handoff"
 path = "realtime_handoff/main.rs"
 required-features = ["realtime-openai"]
 
+[[example]]
+name = "graph_workflow"
+path = "graph_workflow/main.rs"
+
+[[example]]
+name = "graph_conditional"
+path = "graph_conditional/main.rs"
+
+[[example]]
+name = "graph_llm"
+path = "graph_llm/main.rs"
+
+[[example]]
+name = "graph_openai"
+path = "graph_openai/main.rs"
+required-features = ["openai"]
+
+[[example]]
+name = "graph_agent"
+path = "graph_agent/main.rs"
+
+[[example]]
+name = "graph_react"
+path = "graph_react/main.rs"
+
+[[example]]
+name = "graph_hitl"
+path = "graph_hitl/main.rs"
+
+[[example]]
+name = "graph_supervisor"
+path = "graph_supervisor/main.rs"
+
+[[example]]
+name = "graph_checkpoint"
+path = "graph_checkpoint/main.rs"
+
 [features]
 default = []
 openai = ["adk-model/openai"]
@@ -201,6 +238,7 @@ adk-session = { path = "../adk-session" }
 adk-server = { path = "../adk-server" }
 adk-memory = { path = "../adk-memory" }
 adk-realtime = { path = "../adk-realtime" }
+adk-graph = { path = "../adk-graph" }
 tokio = { version = "1.40", features = ["full"] }
 base64 = "0.22"
 anyhow = "1.0"

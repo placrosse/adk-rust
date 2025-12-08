@@ -594,6 +594,23 @@ pub mod telemetry {
     pub use adk_telemetry::*;
 }
 
+/// Graph-based workflow engine (LangGraph-inspired).
+///
+/// Build complex agent workflows with:
+/// - [`StateGraph`](graph::StateGraph) - Graph builder with nodes and edges
+/// - [`GraphAgent`](graph::GraphAgent) - ADK Agent integration
+/// - [`Checkpointer`](graph::Checkpointer) - Persistent state for human-in-the-loop
+/// - [`Router`](graph::Router) - Conditional edge routing helpers
+/// - Cycle support with recursion limits
+/// - Streaming execution modes
+///
+/// Available with feature: `graph`
+#[cfg(feature = "graph")]
+#[cfg_attr(docsrs, doc(cfg(feature = "graph")))]
+pub mod graph {
+    pub use adk_graph::*;
+}
+
 /// CLI launcher for running agents.
 ///
 /// Quick way to run agents in console or server mode:
@@ -666,6 +683,10 @@ pub mod prelude {
     // Runner
     #[cfg(feature = "runner")]
     pub use crate::runner::{Runner, RunnerConfig};
+
+    // Graph workflows
+    #[cfg(feature = "graph")]
+    pub use crate::graph::{GraphAgent, StateGraph, NodeOutput, Router, END, START};
 
     // Common re-exports
     pub use crate::anyhow::Result as AnyhowResult;

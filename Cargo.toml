@@ -14,6 +14,7 @@ members = [
     "adk-server",
     "adk-cli",
     "adk-realtime",
+    "adk-graph",
     "adk-rust",
 
     # Development packages (not published)
