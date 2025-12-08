@@ -13,7 +13,7 @@
 //! async fn main() -> Result<(), Box<dyn std::error::Error>> {
 //!     let model = OpenAIRealtimeModel::new(
 //!         std::env::var("OPENAI_API_KEY")?,
-//!         "gpt-4o-realtime-preview",
+//!         "gpt-4o-realtime-preview-2024-12-17",
 //!     );
 //!
 //!     let config = RealtimeConfig::default()
@@ -42,4 +42,4 @@ pub const OPENAI_VOICES: &[&str] =
     &["alloy", "ash", "ballad", "coral", "echo", "sage", "shimmer", "verse"];
 
 /// Default model for OpenAI Realtime.
-pub const DEFAULT_MODEL: &str = "gpt-4o-realtime-preview";
+pub const DEFAULT_MODEL: &str = "gpt-4o-realtime-preview-2024-12-17";

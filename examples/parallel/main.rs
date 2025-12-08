@@ -13,21 +13,21 @@ async fn main() -> Result<()> {
     let technical = LlmAgentBuilder::new("technical_analyst")
         .description("Provides technical analysis")
         .instruction("Analyze the topic from a technical perspective.")
-        .model(Arc::new(GeminiModel::new(&api_key, "gemini-2.0-flash-exp")?))
+        .model(Arc::new(GeminiModel::new(&api_key, "gemini-2.5-flash")?))
         .build()?;
 
     // Agent 2: Business perspective
     let business = LlmAgentBuilder::new("business_analyst")
         .description("Provides business analysis")
         .instruction("Analyze the topic from a business perspective.")
-        .model(Arc::new(GeminiModel::new(&api_key, "gemini-2.0-flash-exp")?))
+        .model(Arc::new(GeminiModel::new(&api_key, "gemini-2.5-flash")?))
         .build()?;
 
     // Agent 3: User perspective
     let user = LlmAgentBuilder::new("user_analyst")
         .description("Provides user analysis")
         .instruction("Analyze the topic from a user experience perspective.")
-        .model(Arc::new(GeminiModel::new(&api_key, "gemini-2.0-flash-exp")?))
+        .model(Arc::new(GeminiModel::new(&api_key, "gemini-2.5-flash")?))
         .build()?;
 
     let parallel = ParallelAgent::new(

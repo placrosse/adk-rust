@@ -128,7 +128,7 @@ async fn main() -> Result<()> {
         .expect("GOOGLE_API_KEY or GEMINI_API_KEY environment variable not set");
 
     // Create model
-    let model = Arc::new(GeminiModel::new(&api_key, "gemini-2.0-flash-exp")?);
+    let model = Arc::new(GeminiModel::new(&api_key, "gemini-2.5-flash")?);
 
     // Create research tool
     let research_tool = FunctionTool::new(

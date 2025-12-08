@@ -18,7 +18,7 @@ This document outlines the architecture for adding real-time bidirectional audio
 - **Protocol**: WebSocket
 - **Audio Format**: PCM16, 24kHz sample rate
 - **Features**: VAD (server_vad mode), interruptions, function calling
-- **Model**: `gpt-4o-realtime-preview`
+- **Model**: `gpt-4o-realtime-preview-2024-12-17`
 - **Auth**: API key (relay server recommended for browser)
 
 ### ADK Python Reference

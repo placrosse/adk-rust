@@ -17,7 +17,7 @@ async fn main() -> Result<()> {
 
     // Test 2: Create model
     println!("✅ Creating Gemini model...");
-    let model_result = GeminiModel::new(&api_key, "gemini-2.0-flash-exp");
+    let model_result = GeminiModel::new(&api_key, "gemini-2.5-flash");
 
     if model_result.is_ok() {
         let model = model_result.unwrap();

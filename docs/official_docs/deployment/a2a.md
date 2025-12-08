@@ -45,7 +45,7 @@ use std::sync::Arc;
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Create your agent
-    let model = GeminiModel::new(&api_key, "gemini-2.0-flash-exp")?;
+    let model = GeminiModel::new(&api_key, "gemini-2.5-flash")?;
     let agent = LlmAgentBuilder::new("weather_agent")
         .description("Answers weather questions")
         .model(Arc::new(model))

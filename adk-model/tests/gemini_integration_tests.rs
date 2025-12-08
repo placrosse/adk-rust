@@ -17,10 +17,10 @@ async fn test_gemini_generate_content() {
         }
     };
 
-    let model = GeminiModel::new(api_key, "gemini-2.0-flash-exp").unwrap();
+    let model = GeminiModel::new(api_key, "gemini-2.5-flash").unwrap();
 
     let content = Content::new("user").with_text("Say 'Hello' in one word");
-    let request = LlmRequest::new("gemini-2.0-flash-exp", vec![content]);
+    let request = LlmRequest::new("gemini-2.5-flash", vec![content]);
 
     let mut stream = model.generate_content(request, false).await.unwrap();
 
@@ -48,10 +48,10 @@ async fn test_gemini_streaming() {
         }
     };
 
-    let model = GeminiModel::new(api_key, "gemini-2.0-flash-exp").unwrap();
+    let model = GeminiModel::new(api_key, "gemini-2.5-flash").unwrap();
 
     let content = Content::new("user").with_text("Count from 1 to 3");
-    let request = LlmRequest::new("gemini-2.0-flash-exp", vec![content]);
+    let request = LlmRequest::new("gemini-2.5-flash", vec![content]);
 
     let mut stream = model.generate_content(request, true).await.unwrap();
 
@@ -78,10 +78,10 @@ async fn test_gemini_with_config() {
         }
     };
 
-    let model = GeminiModel::new(api_key, "gemini-2.0-flash-exp").unwrap();
+    let model = GeminiModel::new(api_key, "gemini-2.5-flash").unwrap();
 
     let content = Content::new("user").with_text("Say hello");
-    let mut request = LlmRequest::new("gemini-2.0-flash-exp", vec![content]);
+    let mut request = LlmRequest::new("gemini-2.5-flash", vec![content]);
     request.config = Some(adk_core::GenerateContentConfig {
         temperature: Some(0.7),
         top_p: Some(0.95),
@@ -112,7 +112,7 @@ async fn test_gemini_conversation() {
         }
     };
 
-    let model = GeminiModel::new(api_key, "gemini-2.0-flash-exp").unwrap();
+    let model = GeminiModel::new(api_key, "gemini-2.5-flash").unwrap();
 
     let contents = vec![
         Content::new("user").with_text("My name is Alice"),
@@ -120,7 +120,7 @@ async fn test_gemini_conversation() {
         Content::new("user").with_text("What is my name?"),
     ];
 
-    let request = LlmRequest::new("gemini-2.0-flash-exp", contents);
+    let request = LlmRequest::new("gemini-2.5-flash", contents);
     let mut stream = model.generate_content(request, false).await.unwrap();
     let response = stream.next().await.unwrap().unwrap();
 

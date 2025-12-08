@@ -16,7 +16,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("1. Testing IncludeContents::Default (normal agent with memory)");
     let _agent_with_memory = LlmAgentBuilder::new("memory_agent")
         .description("Agent that remembers conversation history")
-        .model(Arc::new(GeminiModel::new(&api_key, "gemini-2.0-flash-exp")?))
+        .model(Arc::new(GeminiModel::new(&api_key, "gemini-2.5-flash")?))
         .instruction("You are a helpful assistant. Remember what the user tells you.")
         .include_contents(IncludeContents::Default) // Full history
         .build()?;
@@ -27,7 +27,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("2. Testing IncludeContents::None (stateless agent)");
     let _stateless_agent = LlmAgentBuilder::new("stateless_agent")
         .description("Agent that only sees current message")
-        .model(Arc::new(GeminiModel::new(&api_key, "gemini-2.0-flash-exp")?))
+        .model(Arc::new(GeminiModel::new(&api_key, "gemini-2.5-flash")?))
         .instruction("You are a helpful assistant. Answer only based on the current question.")
         .include_contents(IncludeContents::None) // No history - only current turn!
         .build()?;
@@ -39,7 +39,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("3. Testing DisallowTransfer flags");
     let _restricted_agent = LlmAgentBuilder::new("restricted_agent")
         .description("Agent that cannot delegate to others")
-        .model(Arc::new(GeminiModel::new(&api_key, "gemini-2.0-flash-exp")?))
+        .model(Arc::new(GeminiModel::new(&api_key, "gemini-2.5-flash")?))
         .instruction("You must handle all requests yourself.")
         .disallow_transfer_to_parent(true) // Cannot go back to parent agent
         .disallow_transfer_to_peers(true) // Cannot transfer to sibling agents
@@ -61,7 +61,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let _structured_agent = LlmAgentBuilder::new("sentiment_analyzer")
         .description("Analyzes sentiment and returns structured JSON")
-        .model(Arc::new(GeminiModel::new(&api_key, "gemini-2.0-flash-exp")?))
+        .model(Arc::new(GeminiModel::new(&api_key, "gemini-2.5-flash")?))
         .instruction(
             "Analyze the sentiment of the text and return JSON with sentiment and confidence.",
         )

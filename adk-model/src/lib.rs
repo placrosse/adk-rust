@@ -21,7 +21,7 @@
 //! use std::sync::Arc;
 //!
 //! let api_key = std::env::var("GOOGLE_API_KEY").unwrap();
-//! let model = GeminiModel::new(&api_key, "gemini-2.0-flash-exp").unwrap();
+//! let model = GeminiModel::new(&api_key, "gemini-2.5-flash").unwrap();
 //! ```
 //!
 //! ### OpenAI
@@ -51,7 +51,7 @@
 //! ### Gemini
 //! | Model | Description |
 //! |-------|-------------|
-//! | `gemini-2.0-flash-exp` | Fast, efficient model (recommended) |
+//! | `gemini-2.5-flash` | Fast, efficient model (recommended) |
 //! | `gemini-1.5-pro` | Most capable model |
 //! | `gemini-1.5-flash` | Balanced speed/capability |
 //!

@@ -241,7 +241,7 @@ pub struct FinalResponseMatchV2 {
 // Usage
 let criteria = EvaluationCriteria {
     final_response_match_v2: Some(FinalResponseMatchV2 {
-        judge_model: "gemini-2.0-flash-exp".to_string(),
+        judge_model: "gemini-2.5-flash".to_string(),
         threshold: 0.9,
     }),
     ..Default::default()
@@ -493,7 +493,7 @@ let simulation = UserSimulation {
         user_goal: "Book round-trip NYC to LAX".to_string(),
         max_turns: 10,
     },
-    simulator_model: "gemini-2.0-flash-exp".to_string(),
+    simulator_model: "gemini-2.5-flash".to_string(),
 };
 ```
 

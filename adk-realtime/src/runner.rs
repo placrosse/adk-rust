@@ -249,7 +249,7 @@ impl RealtimeRunnerBuilder {
 ///
 /// #[tokio::main]
 /// async fn main() -> Result<()> {
-///     let model = OpenAIRealtimeModel::new(api_key, "gpt-4o-realtime-preview");
+///     let model = OpenAIRealtimeModel::new(api_key, "gpt-4o-realtime-preview-2024-12-17");
 ///
 ///     let runner = RealtimeRunner::builder()
 ///         .model(Box::new(model))

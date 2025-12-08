@@ -41,7 +41,7 @@
 //!
 //! #[tokio::main]
 //! async fn main() -> Result<(), Box<dyn std::error::Error>> {
-//!     let model = OpenAIRealtimeModel::new(api_key, "gpt-4o-realtime-preview");
+//!     let model = OpenAIRealtimeModel::new(api_key, "gpt-4o-realtime-preview-2024-12-17");
 //!
 //!     let agent = RealtimeAgent::builder("voice_assistant")
 //!         .model(Box::new(model))
@@ -65,7 +65,7 @@
 //! use adk_realtime::{RealtimeModel, RealtimeConfig, ServerEvent};
 //! use adk_realtime::openai::OpenAIRealtimeModel;
 //!
-//! let model = OpenAIRealtimeModel::new(api_key, "gpt-4o-realtime-preview");
+//! let model = OpenAIRealtimeModel::new(api_key, "gpt-4o-realtime-preview-2024-12-17");
 //! let session = model.connect(config).await?;
 //!
 //! while let Some(event) = session.next_event().await {

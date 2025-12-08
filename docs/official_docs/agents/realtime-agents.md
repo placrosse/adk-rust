@@ -62,7 +62,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Create the realtime model
     let model: Arc<dyn RealtimeModel> = Arc::new(
-        OpenAIRealtimeModel::new(&api_key, "gpt-4o-realtime-preview")
+        OpenAIRealtimeModel::new(&api_key, "gpt-4o-realtime-preview-2024-12-17")
     );
 
     // Build the realtime agent
@@ -105,8 +105,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 | Provider | Model | Feature Flag | Audio Format |
 |----------|-------|--------------|--------------|
-| OpenAI | `gpt-4o-realtime-preview` | `openai` | PCM16 24kHz |
-| Google | `gemini-2.0-flash-exp` | `gemini` | PCM16 16kHz/24kHz |
+| OpenAI | `gpt-4o-realtime-preview-2024-12-17` | `openai` | PCM16 24kHz |
+| OpenAI | `gpt-realtime` | `openai` | PCM16 24kHz |
+| Google | `gemini-2.0-flash-live-preview-04-09` | `gemini` | PCM16 16kHz/24kHz |
+
+> **Note**: `gpt-realtime` is OpenAI's latest realtime model with improved speech quality, emotion, and function calling capabilities.
 
 ## RealtimeAgent Builder
 

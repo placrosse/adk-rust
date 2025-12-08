@@ -61,7 +61,7 @@ async fn main() -> Result<()> {
         .or_else(|_| std::env::var("GEMINI_API_KEY"))
         .expect("GOOGLE_API_KEY or GEMINI_API_KEY must be set");
 
-    let model = Arc::new(GeminiModel::new(&api_key, "gemini-2.0-flash-exp")?);
+    let model = Arc::new(GeminiModel::new(&api_key, "gemini-2.5-flash")?);
 
     // Create the calculator tool
     let calc_tool = FunctionTool::new(

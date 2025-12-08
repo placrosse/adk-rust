@@ -45,7 +45,7 @@ let mcp_toolset = McpToolset::new(peer);
 
 // Add to agent
 let agent = LlmAgentBuilder::new("assistant")
-    .model("gemini-2.0-flash-exp")
+    .model("gemini-2.5-flash")
     .instruction("Help the user with various tasks using available tools")
     .toolset(Arc::new(mcp_toolset))
     .build()?;

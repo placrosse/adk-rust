@@ -39,10 +39,11 @@ Real-time bidirectional audio streaming for Rust Agent Development Kit (ADK-Rust
 
 ## Supported Providers
 
-| Provider | Model | Feature Flag | Status |
-|----------|-------|--------------|--------|
-| OpenAI | `gpt-4o-realtime-preview` | `openai` | Supported |
-| Google | `gemini-2.0-flash-exp` | `gemini` | Supported |
+| Provider | Model | Feature Flag | Description |
+|----------|-------|--------------|-------------|
+| OpenAI | `gpt-4o-realtime-preview-2024-12-17` | `openai` | Stable realtime model |
+| OpenAI | `gpt-realtime` | `openai` | Latest model with improved speech & function calling |
+| Google | `gemini-2.0-flash-live-preview-04-09` | `gemini` | Gemini Live API |
 
 ## Quick Start
 
@@ -63,7 +64,7 @@ use std::sync::Arc;
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let api_key = std::env::var("OPENAI_API_KEY")?;
-    let model = Arc::new(OpenAIRealtimeModel::new(&api_key, "gpt-4o-realtime-preview"));
+    let model = Arc::new(OpenAIRealtimeModel::new(&api_key, "gpt-4o-realtime-preview-2024-12-17"));
 
     let agent = RealtimeAgent::builder("voice_assistant")
         .model(model)
@@ -91,7 +92,7 @@ use adk_realtime::openai::OpenAIRealtimeModel;
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let model = OpenAIRealtimeModel::new(
         std::env::var("OPENAI_API_KEY")?,
-        "gpt-4o-realtime-preview",
+        "gpt-4o-realtime-preview-2024-12-17",
     );
 
     let config = RealtimeConfig::default()
@@ -240,6 +241,33 @@ let agent = RealtimeAgent::builder("receptionist")
 // Agent can now call transfer_to_agent("booking_agent") during conversation
 ```
 
+## Examples
+
+Run the included examples to see realtime agents in action:
+
+```bash
+# Basic text-only realtime session
+cargo run --example realtime_basic --features realtime-openai
+
+# Voice assistant with server-side VAD
+cargo run --example realtime_vad --features realtime-openai
+
+# Tool calling during voice conversations
+cargo run --example realtime_tools --features realtime-openai
+
+# Multi-agent handoffs (receptionist routing to specialists)
+cargo run --example realtime_handoff --features realtime-openai
+```
+
+### Example Descriptions
+
+| Example | Description |
+|---------|-------------|
+| `realtime_basic` | Simple text-based realtime session demonstrating connection and streaming |
+| `realtime_vad` | Voice assistant with Voice Activity Detection for natural conversations |
+| `realtime_tools` | Real-time tool calling (weather lookup) during conversations |
+| `realtime_handoff` | Multi-agent system with receptionist routing to booking, support, and sales agents |
+
 ## Feature Flags
 
 | Flag | Description |
@@ -250,4 +278,4 @@ let agent = RealtimeAgent::builder("receptionist")
 
 ## License
 
-MIT OR Apache-2.0
+Apache-2.0

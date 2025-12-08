@@ -194,6 +194,6 @@ Each example is a standalone Rust file that:
 
 - Use Ctrl+C to exit console mode
 - Server mode runs on port 8080 by default (override with PORT env var)
-- All examples use `gemini-2.0-flash-exp` model
+- All examples use `gemini-2.5-flash` model
 - Console mode includes readline history and editing
 - MCP and A2A examples show integration patterns (placeholders)

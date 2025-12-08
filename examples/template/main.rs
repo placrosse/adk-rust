@@ -11,7 +11,7 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     // Ensure API key is set
     let api_key =
         std::env::var("GOOGLE_API_KEY").expect("GOOGLE_API_KEY must be set in .env or environment");
-    let model = GeminiModel::new(&api_key, "gemini-2.0-flash-exp")?;
+    let model = GeminiModel::new(&api_key, "gemini-2.5-flash")?;
 
     // Define the agent with dynamic instructions
     // The placeholders {user:name}, {user:language}, etc. will be replaced

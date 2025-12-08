@@ -26,7 +26,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("=== ADK-Rust Voice Assistant with VAD ===\n");
 
     // Create the OpenAI Realtime model
-    let model = Arc::new(OpenAIRealtimeModel::new(&api_key, "gpt-4o-realtime-preview"));
+    let model = Arc::new(OpenAIRealtimeModel::new(&api_key, "gpt-4o-realtime-preview-2024-12-17"));
 
     // Configure with server-side VAD
     let vad_config = VadConfig {

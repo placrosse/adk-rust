@@ -40,7 +40,7 @@ use adk_agent::LlmAgentBuilder;
 use adk_model::GeminiModel;
 use std::sync::Arc;
 
-let model = GeminiModel::new(&api_key, "gemini-2.0-flash-exp")?;
+let model = GeminiModel::new(&api_key, "gemini-2.5-flash")?;
 
 let agent = LlmAgentBuilder::new("assistant")
     .description("Helpful AI assistant")

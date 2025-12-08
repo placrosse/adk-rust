@@ -11,7 +11,7 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     dotenvy::dotenv().ok();
 
     let api_key = std::env::var("GOOGLE_API_KEY").expect("GOOGLE_API_KEY must be set");
-    let model = GeminiModel::new(&api_key, "gemini-2.0-flash-exp")?;
+    let model = GeminiModel::new(&api_key, "gemini-2.5-flash")?;
 
     // Create an agent with a defined output schema
     // This forces the model to respond with JSON matching this structure

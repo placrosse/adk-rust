@@ -307,7 +307,7 @@ use adk_rust::prelude::*;
 use std::sync::Arc;
 
 let api_key = std::env::var("GOOGLE_API_KEY")?;
-let model = GeminiModel::new(&api_key, "gemini-2.0-flash-exp")?;
+let model = GeminiModel::new(&api_key, "gemini-2.5-flash")?;
 
 let agent = LlmAgentBuilder::new("assistant")
     .model(Arc::new(model))

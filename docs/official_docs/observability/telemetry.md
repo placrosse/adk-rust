@@ -311,7 +311,7 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     init_telemetry("my-agent-app")?;
     
     let api_key = std::env::var("GOOGLE_API_KEY")?;
-    let model = Arc::new(GeminiModel::new(&api_key, "gemini-2.0-flash-exp")?);
+    let model = Arc::new(GeminiModel::new(&api_key, "gemini-2.5-flash")?);
     
     let agent = LlmAgentBuilder::new("support_agent")
         .model(model)

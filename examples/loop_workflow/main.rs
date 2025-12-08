@@ -10,7 +10,7 @@ async fn main() -> Result<()> {
         .or_else(|_| std::env::var("GEMINI_API_KEY"))
         .expect("GOOGLE_API_KEY or GEMINI_API_KEY must be set");
 
-    let model = GeminiModel::new(&api_key, "gemini-2.0-flash-exp")?;
+    let model = GeminiModel::new(&api_key, "gemini-2.5-flash")?;
 
     let refiner = LlmAgentBuilder::new("refiner")
         .description("Refines and improves content iteratively")

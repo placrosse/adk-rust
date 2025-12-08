@@ -20,7 +20,7 @@
 //! #[tokio::main]
 //! async fn main() -> Result<(), Box<dyn std::error::Error>> {
 //!     let api_key = std::env::var("GOOGLE_API_KEY")?;
-//!     let model = GeminiModel::new(&api_key, "gemini-2.0-flash-exp")?;
+//!     let model = GeminiModel::new(&api_key, "gemini-2.5-flash")?;
 //!
 //!     let agent = LlmAgentBuilder::new("assistant")
 //!         .description("A helpful AI assistant")
@@ -74,7 +74,7 @@
 //!
 //! # async fn example() -> Result<()> {
 //! let api_key = std::env::var("GOOGLE_API_KEY").map_err(|e| AdkError::Config(e.to_string()))?;
-//! let model = GeminiModel::new(&api_key, "gemini-2.0-flash-exp")?;
+//! let model = GeminiModel::new(&api_key, "gemini-2.5-flash")?;
 //!
 //! let agent = LlmAgentBuilder::new("researcher")
 //!     .description("Research assistant with web search")

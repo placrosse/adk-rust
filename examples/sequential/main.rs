@@ -9,20 +9,20 @@ async fn main() -> Result<()> {
         .or_else(|_| std::env::var("GEMINI_API_KEY"))
         .expect("GOOGLE_API_KEY or GEMINI_API_KEY must be set");
 
-    let model = GeminiModel::new(&api_key, "gemini-2.0-flash-exp")?;
+    let model = GeminiModel::new(&api_key, "gemini-2.5-flash")?;
 
     // Step 1: Analyze the topic
     let analyzer = LlmAgentBuilder::new("analyzer")
         .description("Analyzes topics")
         .instruction("Analyze the given topic and identify key points.")
-        .model(Arc::new(GeminiModel::new(&api_key, "gemini-2.0-flash-exp")?))
+        .model(Arc::new(GeminiModel::new(&api_key, "gemini-2.5-flash")?))
         .build()?;
 
     // Step 2: Expand on the analysis
     let expander = LlmAgentBuilder::new("expander")
         .description("Expands on analysis")
         .instruction("Take the analysis and expand on each key point with details.")
-        .model(Arc::new(GeminiModel::new(&api_key, "gemini-2.0-flash-exp")?))
+        .model(Arc::new(GeminiModel::new(&api_key, "gemini-2.5-flash")?))
         .build()?;
 
     // Step 3: Summarize

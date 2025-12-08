@@ -18,11 +18,11 @@ async fn test_google_search_zavora() {
         }
     };
 
-    let model = GeminiModel::new(api_key, "gemini-2.0-flash-exp").unwrap();
+    let model = GeminiModel::new(api_key, "gemini-2.5-flash").unwrap();
 
     let content =
         Content::new("user").with_text("Search for information about Zavora Technologies");
-    let mut request = LlmRequest::new("gemini-2.0-flash-exp", vec![content]);
+    let mut request = LlmRequest::new("gemini-2.5-flash", vec![content]);
 
     // Add Google Search tool
     let google_search_tool = json!({

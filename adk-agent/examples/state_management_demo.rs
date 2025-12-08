@@ -119,7 +119,7 @@ async fn main() -> Result<()> {
     println!("=== State Management Demo ===\n");
 
     let api_key = std::env::var("GEMINI_API_KEY").expect("GEMINI_API_KEY not set");
-    let model1 = GeminiModel::new(&api_key, "gemini-2.0-flash-exp")?;
+    let model1 = GeminiModel::new(&api_key, "gemini-2.5-flash")?;
 
     // Demo 1: Single agent with output_key
     println!("Demo 1: Single Agent with OutputKey");
@@ -160,8 +160,8 @@ async fn main() -> Result<()> {
     println!("\n\nDemo 2: Sequential Agents with State Coordination");
     println!("--------------------------------------------------");
 
-    let model2 = GeminiModel::new(&api_key, "gemini-2.0-flash-exp")?;
-    let model3 = GeminiModel::new(&api_key, "gemini-2.0-flash-exp")?;
+    let model2 = GeminiModel::new(&api_key, "gemini-2.5-flash")?;
+    let model3 = GeminiModel::new(&api_key, "gemini-2.5-flash")?;
 
     let analyzer = LlmAgentBuilder::new("analyzer")
         .description("Analyzes sentiment")

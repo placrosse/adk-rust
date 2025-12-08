@@ -108,7 +108,7 @@ async fn test_callback_execution() {
 #[test]
 fn test_llm_agent_stores_callbacks() {
     let api_key = std::env::var("GEMINI_API_KEY").unwrap_or_else(|_| "test".to_string());
-    let model = GeminiModel::new(&api_key, "gemini-2.0-flash-exp").expect("Failed to create model");
+    let model = GeminiModel::new(&api_key, "gemini-2.5-flash").expect("Failed to create model");
 
     let agent = LlmAgentBuilder::new("test_agent")
         .model(Arc::new(model))

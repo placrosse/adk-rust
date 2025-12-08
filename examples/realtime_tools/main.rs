@@ -150,7 +150,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     println!("=== ADK-Rust Realtime Tool Calling Example ===\n");
 
-    let model = Arc::new(OpenAIRealtimeModel::new(&api_key, "gpt-4o-realtime-preview"));
+    let model = Arc::new(OpenAIRealtimeModel::new(&api_key, "gpt-4o-realtime-preview-2024-12-17"));
 
     // Define the tools available to the assistant
     let tools = vec![

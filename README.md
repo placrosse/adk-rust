@@ -61,7 +61,7 @@ use std::sync::Arc;
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    let model = GeminiModel::new(&api_key, "gemini-2.0-flash-exp")?;
+    let model = GeminiModel::new(&api_key, "gemini-2.5-flash")?;
 
     let agent = LlmAgentBuilder::new("assistant")
         .description("Helpful AI assistant")
@@ -83,7 +83,7 @@ use std::sync::Arc;
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    let model = OpenAIModel::from_env("gpt-4o")?;
+    let model = OpenAIModel::from_env("gpt-4.1")?;
 
     let agent = LlmAgentBuilder::new("assistant")
         .instruction("You are a helpful assistant.")
@@ -103,7 +103,7 @@ use std::sync::Arc;
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    let model = AnthropicModel::from_env("claude-sonnet-4-20250514")?;
+    let model = AnthropicModel::from_env("claude-sonnet-4")?;
 
     let agent = LlmAgentBuilder::new("assistant")
         .instruction("You are a helpful assistant.")
@@ -183,7 +183,7 @@ use std::sync::Arc;
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let model: Arc<dyn RealtimeModel> = Arc::new(
-        OpenAIRealtimeModel::new(&api_key, "gpt-4o-realtime-preview")
+        OpenAIRealtimeModel::new(&api_key, "gpt-4o-realtime-preview-2024-12-17")
     );
 
     let agent = RealtimeAgent::builder("voice_assistant")
@@ -196,6 +196,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 ```
+
+**Supported Realtime Models**:
+| Provider | Model | Description |
+|----------|-------|-------------|
+| OpenAI | `gpt-4o-realtime-preview-2024-12-17` | Stable realtime model |
+| OpenAI | `gpt-realtime` | Latest model with improved speech quality and function calling |
+| Google | `gemini-2.0-flash-live-preview-04-09` | Gemini Live API |
 
 **Features**:
 - OpenAI Realtime API and Gemini Live API support
@@ -236,9 +243,9 @@ ADK supports multiple LLM providers with a unified API:
 
 | Provider | Model Examples | Feature Flag |
 |----------|---------------|--------------|
-| Gemini | `gemini-2.0-flash-exp`, `gemini-1.5-pro` | (default) |
-| OpenAI | `gpt-4o`, `gpt-4-turbo`, `gpt-3.5-turbo` | `openai` |
-| Anthropic | `claude-sonnet-4-20250514`, `claude-3-opus` | `anthropic` |
+| Gemini | `gemini-2.5-flash`, `gemini-2.5-pro`, `gemini-2.0-flash` | (default) |
+| OpenAI | `gpt-4.1`, `gpt-4.1-mini`, `o3-mini`, `gpt-4o` | `openai` |
+| Anthropic | `claude-sonnet-4`, `claude-opus-4`, `claude-haiku-4` | `anthropic` |
 
 All providers support streaming, function calling, and multimodal inputs (where available).
 

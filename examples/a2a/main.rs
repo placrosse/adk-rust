@@ -32,7 +32,7 @@ async fn main() -> Result<()> {
         .expect("GOOGLE_API_KEY or GEMINI_API_KEY must be set");
 
     // Create a weather agent that will be exposed via A2A
-    let model = GeminiModel::new(&api_key, "gemini-2.0-flash-exp")?;
+    let model = GeminiModel::new(&api_key, "gemini-2.5-flash")?;
 
     let weather_agent = LlmAgentBuilder::new("weather_agent")
         .description("Agent to answer questions about weather")

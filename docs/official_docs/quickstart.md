@@ -89,7 +89,7 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
         .expect("GOOGLE_API_KEY environment variable not set");
 
     // Create the Gemini model
-    let model = GeminiModel::new(&api_key, "gemini-2.0-flash-exp")?;
+    let model = GeminiModel::new(&api_key, "gemini-2.5-flash")?;
 
     // Build your agent
     let agent = LlmAgentBuilder::new("my_assistant")
@@ -147,7 +147,7 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     let api_key = std::env::var("GOOGLE_API_KEY")
         .expect("GOOGLE_API_KEY environment variable not set");
 
-    let model = GeminiModel::new(&api_key, "gemini-2.0-flash-exp")?;
+    let model = GeminiModel::new(&api_key, "gemini-2.5-flash")?;
 
     // Build agent with Google Search tool
     let agent = LlmAgentBuilder::new("search_assistant")
@@ -195,7 +195,7 @@ Let's break down what each part does:
 ### Model Creation
 
 ```rust
-let model = GeminiModel::new(&api_key, "gemini-2.0-flash-exp")?;
+let model = GeminiModel::new(&api_key, "gemini-2.5-flash")?;
 ```
 
 Creates a Gemini model instance. The model handles all LLM interactions.

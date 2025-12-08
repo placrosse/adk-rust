@@ -14,21 +14,21 @@ async fn main() -> Result<()> {
     let weather_agent = LlmAgentBuilder::new("weather_agent")
         .description("Weather information agent")
         .instruction("Provide weather information for cities")
-        .model(Arc::new(GeminiModel::new(&api_key, "gemini-2.0-flash-exp")?))
+        .model(Arc::new(GeminiModel::new(&api_key, "gemini-2.5-flash")?))
         .tool(Arc::new(GoogleSearchTool::new()))
         .build()?;
 
     let research_agent = LlmAgentBuilder::new("research_agent")
         .description("Research and analysis agent")
         .instruction("Research topics and provide detailed analysis")
-        .model(Arc::new(GeminiModel::new(&api_key, "gemini-2.0-flash-exp")?))
+        .model(Arc::new(GeminiModel::new(&api_key, "gemini-2.5-flash")?))
         .tool(Arc::new(GoogleSearchTool::new()))
         .build()?;
 
     let summary_agent = LlmAgentBuilder::new("summary_agent")
         .description("Summarization agent")
         .instruction("Create concise summaries of information")
-        .model(Arc::new(GeminiModel::new(&api_key, "gemini-2.0-flash-exp")?))
+        .model(Arc::new(GeminiModel::new(&api_key, "gemini-2.5-flash")?))
         .build()?;
 
     let agent_loader = Arc::new(MultiAgentLoader::new(vec![

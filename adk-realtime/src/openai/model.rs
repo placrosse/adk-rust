@@ -18,7 +18,7 @@ use super::{DEFAULT_MODEL, OPENAI_REALTIME_URL, OPENAI_VOICES};
 /// use adk_realtime::openai::OpenAIRealtimeModel;
 /// use adk_realtime::RealtimeModel;
 ///
-/// let model = OpenAIRealtimeModel::new("sk-...", "gpt-4o-realtime-preview");
+/// let model = OpenAIRealtimeModel::new("sk-...", "gpt-4o-realtime-preview-2024-12-17");
 /// let session = model.connect(config).await?;
 /// ```
 #[derive(Debug, Clone)]
@@ -34,7 +34,7 @@ impl OpenAIRealtimeModel {
     /// # Arguments
     ///
     /// * `api_key` - Your OpenAI API key
-    /// * `model_id` - The model ID (e.g., "gpt-4o-realtime-preview")
+    /// * `model_id` - The model ID (e.g., "gpt-4o-realtime-preview-2024-12-17")
     pub fn new(api_key: impl Into<String>, model_id: impl Into<String>) -> Self {
         Self { api_key: api_key.into(), model_id: model_id.into(), base_url: None }
     }

@@ -42,7 +42,7 @@ use std::sync::Arc;
 async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     dotenv::dotenv().ok();
     let api_key = std::env::var("GOOGLE_API_KEY")?;
-    let model = GeminiModel::new(&api_key, "gemini-2.0-flash-exp")?;
+    let model = GeminiModel::new(&api_key, "gemini-2.5-flash")?;
 
     let agent = LlmAgentBuilder::new("assistant")
         .instruction("You are a helpful assistant.")
@@ -102,7 +102,7 @@ Build voice-enabled AI assistants with bidirectional audio streaming:
 use adk_realtime::{RealtimeAgent, openai::OpenAIRealtimeModel, RealtimeModel};
 
 let model: Arc<dyn RealtimeModel> = Arc::new(
-    OpenAIRealtimeModel::new(&api_key, "gpt-4o-realtime-preview")
+    OpenAIRealtimeModel::new(&api_key, "gpt-4o-realtime-preview-2024-12-17")
 );
 
 let agent = RealtimeAgent::builder("voice_assistant")

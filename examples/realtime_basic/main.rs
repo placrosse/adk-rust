@@ -24,7 +24,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("=== ADK-Rust Realtime Basic Example ===\n");
 
     // Create the OpenAI Realtime model
-    let model = Arc::new(OpenAIRealtimeModel::new(&api_key, "gpt-4o-realtime-preview"));
+    let model = Arc::new(OpenAIRealtimeModel::new(&api_key, "gpt-4o-realtime-preview-2024-12-17"));
 
     // Configure for text-only output (no audio)
     let config = RealtimeConfig::default()

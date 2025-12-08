@@ -17,19 +17,19 @@ async fn main() -> Result<()> {
     let designer = LlmAgentBuilder::new("designer")
         .description("Code design agent")
         .instruction("Design the code structure and architecture. Output a detailed design plan.")
-        .model(Arc::new(GeminiModel::new(&api_key, "gemini-2.0-flash-exp")?))
+        .model(Arc::new(GeminiModel::new(&api_key, "gemini-2.5-flash")?))
         .build()?;
 
     let implementer = LlmAgentBuilder::new("implementer")
         .description("Code implementation agent")
         .instruction("Implement the code based on the design. Write clean, working code.")
-        .model(Arc::new(GeminiModel::new(&api_key, "gemini-2.0-flash-exp")?))
+        .model(Arc::new(GeminiModel::new(&api_key, "gemini-2.5-flash")?))
         .build()?;
 
     let reviewer = LlmAgentBuilder::new("reviewer")
         .description("Code review agent")
         .instruction("Review the code for bugs, improvements, and best practices. Provide final polished code.")
-        .model(Arc::new(GeminiModel::new(&api_key, "gemini-2.0-flash-exp")?))
+        .model(Arc::new(GeminiModel::new(&api_key, "gemini-2.5-flash")?))
         .build()?;
 
     let _workflow = SequentialAgent::new(

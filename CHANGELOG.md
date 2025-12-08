@@ -7,6 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.3] - 2025-12-08
+
+### Added
+- **adk-realtime crate**: New crate for real-time voice-enabled AI agents
+  - `RealtimeAgent` implementing `adk_core::Agent` trait with full callback/tool/instruction support
+  - OpenAI Realtime API support (`gpt-4o-realtime-preview-2024-12-17`, `gpt-realtime`)
+  - Gemini Live API support (`gemini-2.0-flash-live-preview-04-09`)
+  - Bidirectional audio streaming (PCM16, G711 formats)
+  - Server-side Voice Activity Detection (VAD)
+  - Real-time tool calling during voice conversations
+  - Multi-agent handoffs via `transfer_to_agent`
+- 4 new realtime examples:
+  - `realtime_basic` - Simple text-based realtime session
+  - `realtime_vad` - Voice assistant with VAD
+  - `realtime_tools` - Tool calling during voice conversations
+  - `realtime_handoff` - Multi-agent routing system
+
+### Changed
+- Updated default Gemini model from `gemini-2.0-flash-exp` to `gemini-2.5-flash`
+- Updated OpenAI model references to use `gpt-4.1` (latest)
+- Updated Anthropic model references to use `claude-sonnet-4` (latest)
+- Updated all documentation and examples with current model names
+
 ## [0.1.2] - 2025-12-07
 
 ### Added
@@ -110,7 +133,8 @@ Initial release - Published to crates.io.
 - Tokio async runtime
 - Google API key for Gemini
 
-[Unreleased]: https://github.com/zavora-ai/adk-rust/compare/v0.1.2...HEAD
+[Unreleased]: https://github.com/zavora-ai/adk-rust/compare/v0.1.3...HEAD
+[0.1.3]: https://github.com/zavora-ai/adk-rust/compare/v0.1.2...v0.1.3
 [0.1.2]: https://github.com/zavora-ai/adk-rust/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/zavora-ai/adk-rust/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/zavora-ai/adk-rust/releases/tag/v0.1.0

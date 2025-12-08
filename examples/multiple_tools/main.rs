@@ -21,13 +21,13 @@ async fn main() -> Result<()> {
         .or_else(|_| std::env::var("GEMINI_API_KEY"))
         .expect("GOOGLE_API_KEY or GEMINI_API_KEY must be set");
 
-    let model = GeminiModel::new(&api_key, "gemini-2.0-flash-exp")?;
+    let model = GeminiModel::new(&api_key, "gemini-2.5-flash")?;
 
     // Search agent with GoogleSearch tool
     let search_agent = LlmAgentBuilder::new("search_agent")
         .description("Does google search")
         .instruction("You're a specialist in Google Search.")
-        .model(Arc::new(GeminiModel::new(&api_key, "gemini-2.0-flash-exp")?))
+        .model(Arc::new(GeminiModel::new(&api_key, "gemini-2.5-flash")?))
         .tool(Arc::new(GoogleSearchTool::new()))
         .build()?;
 
@@ -38,7 +38,7 @@ async fn main() -> Result<()> {
     let poem_agent = LlmAgentBuilder::new("poem_agent")
         .description("Returns poems")
         .instruction("You return poems using the poem tool.")
-        .model(Arc::new(GeminiModel::new(&api_key, "gemini-2.0-flash-exp")?))
+        .model(Arc::new(GeminiModel::new(&api_key, "gemini-2.5-flash")?))
         .tool(Arc::new(poem_tool))
         .build()?;
 

@@ -18,7 +18,7 @@ use super::{DEFAULT_MODEL, GEMINI_LIVE_URL, GEMINI_VOICES};
 /// use adk_realtime::gemini::GeminiRealtimeModel;
 /// use adk_realtime::RealtimeModel;
 ///
-/// let model = GeminiRealtimeModel::new("your-api-key", "models/gemini-2.0-flash-exp");
+/// let model = GeminiRealtimeModel::new("your-api-key", "models/gemini-2.0-flash-live-preview-04-09");
 /// let session = model.connect(config).await?;
 /// ```
 #[derive(Debug, Clone)]
@@ -34,7 +34,7 @@ impl GeminiRealtimeModel {
     /// # Arguments
     ///
     /// * `api_key` - Your Google API key
-    /// * `model_id` - The model ID (e.g., "models/gemini-2.0-flash-exp")
+    /// * `model_id` - The model ID (e.g., "models/gemini-2.0-flash-live-preview-04-09")
     pub fn new(api_key: impl Into<String>, model_id: impl Into<String>) -> Self {
         Self { api_key: api_key.into(), model_id: model_id.into(), base_url: None }
     }

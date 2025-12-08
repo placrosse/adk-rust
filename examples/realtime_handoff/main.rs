@@ -96,7 +96,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Create the shared model as a trait object
     let model: Arc<dyn RealtimeModel> =
-        Arc::new(OpenAIRealtimeModel::new(&api_key, "gpt-4o-realtime-preview"));
+        Arc::new(OpenAIRealtimeModel::new(&api_key, "gpt-4o-realtime-preview-2024-12-17"));
 
     // Create sub-agents
     let booking_agent = Arc::new(create_booking_agent(Arc::clone(&model)));
