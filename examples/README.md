@@ -1,6 +1,6 @@
 # ADK Rust Examples
 
-This directory contains example applications demonstrating how to use the ADK Rust framework.
+This directory contains 50+ example applications demonstrating how to use the ADK Rust framework.
 
 ## Structure
 
@@ -8,19 +8,46 @@ Each example is in its own directory with a `main.rs` file:
 
 ```
 examples/
-├── quickstart/          # Simple weather agent
-├── function_tool/       # Custom function tool
-├── multiple_tools/      # Agent composition
-├── server/              # REST API server
-├── a2a/                 # A2A protocol
-├── web/                 # Multi-agent server
-├── sequential/          # Sequential workflow
-├── sequential_code/     # Code generation workflow
-├── parallel/            # Parallel workflow
-├── loop_workflow/       # Iterative loop
-├── load_artifacts/      # Artifact loading
-├── mcp/                 # MCP integration
-└── research_paper/      # Full-stack research paper generator
+├── quickstart/              # Simple weather agent
+├── function_tool/           # Custom function tool
+├── multiple_tools/          # Agent composition
+├── server/                  # REST API server
+├── a2a/                     # A2A protocol
+├── web/                     # Multi-agent server
+├── sequential/              # Sequential workflow
+├── sequential_code/         # Code generation workflow
+├── parallel/                # Parallel workflow
+├── loop_workflow/           # Iterative loop
+├── load_artifacts/          # Artifact loading
+├── mcp/                     # MCP integration
+├── research_paper/          # Full-stack research paper generator
+│
+├── openai_*/                # OpenAI integration examples
+├── realtime_*/              # Realtime voice agent examples
+│
+├── graph_*/                 # Graph workflow examples
+│   ├── graph_workflow/      # Basic graph workflow
+│   ├── graph_react/         # ReAct pattern with tool loop
+│   ├── graph_supervisor/    # Multi-agent supervisor
+│   ├── graph_hitl/          # Human-in-the-loop
+│   ├── graph_checkpoint/    # State persistence
+│   ├── graph_conditional/   # Conditional routing
+│   └── graph_llm/           # LLM-powered graph nodes
+│
+├── browser_*/               # Browser automation examples
+│   ├── browser_basic/       # Basic session and tools
+│   ├── browser_agent/       # AI agent with browser
+│   ├── browser_interactive/ # Full 46-tool example
+│   ├── browser_openai/      # OpenAI browser agent
+│   └── browser_test/        # Integration tests
+│
+└── eval_*/                  # Agent evaluation examples
+    ├── eval_basic/          # Basic evaluation setup
+    ├── eval_trajectory/     # Tool trajectory validation
+    ├── eval_semantic/       # LLM-judged matching
+    ├── eval_rubric/         # Rubric-based scoring
+    ├── eval_similarity/     # Response similarity
+    └── eval_report/         # Report generation
 ```
 
 ## Prerequisites
@@ -154,6 +181,107 @@ Demonstrates:
 
 See [research_paper/README.md](research_paper/README.md) for detailed documentation.
 
+### Graph Workflow Examples
+
+Graph-based workflows using LangGraph-style orchestration:
+
+#### graph_workflow
+Basic linear graph workflow:
+```bash
+cargo run --example graph_workflow
+```
+Demonstrates: Graph builder, nodes, edges, state management.
+
+#### graph_react
+ReAct pattern with tool loop:
+```bash
+cargo run --example graph_react
+```
+Demonstrates: Cyclic graphs, conditional routing, tool execution.
+
+#### graph_supervisor
+Multi-agent supervisor pattern:
+```bash
+cargo run --example graph_supervisor
+```
+Demonstrates: Supervisor routing, specialist agents, dynamic delegation.
+
+#### graph_hitl
+Human-in-the-loop approval workflow:
+```bash
+cargo run --example graph_hitl
+```
+Demonstrates: Checkpointing, interrupts, state resumption.
+
+#### graph_checkpoint
+State persistence and recovery:
+```bash
+cargo run --example graph_checkpoint
+```
+Demonstrates: SQLite checkpointer, state persistence.
+
+### Browser Automation Examples
+
+Web browser automation using WebDriver:
+
+**Prerequisites**: Start WebDriver server
+```bash
+docker run -d -p 4444:4444 selenium/standalone-chrome
+```
+
+#### browser_basic
+Basic browser session and tools:
+```bash
+cargo run --example browser_basic
+```
+Demonstrates: BrowserSession, BrowserToolset, 46 browser tools.
+
+#### browser_agent
+AI agent with browser tools:
+```bash
+cargo run --example browser_agent
+```
+Demonstrates: LlmAgent with browser tools, web research.
+
+#### browser_interactive
+Full 46-tool interactive example:
+```bash
+cargo run --example browser_interactive
+```
+Demonstrates: All browser tools, navigation, extraction, forms, screenshots.
+
+### Agent Evaluation Examples
+
+Test and validate agent behavior:
+
+#### eval_basic
+Basic evaluation setup:
+```bash
+cargo run --example eval_basic
+```
+Demonstrates: Evaluator, EvaluationConfig, test files.
+
+#### eval_trajectory
+Tool call trajectory validation:
+```bash
+cargo run --example eval_trajectory
+```
+Demonstrates: Trajectory matching, tool sequence validation.
+
+#### eval_semantic
+LLM-judged semantic matching:
+```bash
+cargo run --example eval_semantic
+```
+Demonstrates: LLM judge, semantic similarity scoring.
+
+#### eval_rubric
+Rubric-based scoring:
+```bash
+cargo run --example eval_rubric
+```
+Demonstrates: Custom rubrics, weighted criteria.
+
 ## Example Categories
 
 | Category | Count | Examples |
@@ -163,7 +291,12 @@ See [research_paper/README.md](research_paper/README.md) for detailed documentat
 | **Workflows** | 4 | sequential, sequential_code, parallel, loop_workflow |
 | **Tools** | 2 | load_artifacts, mcp |
 | **Full-Stack** | 1 | research_paper |
-| **Total** | **13** | |
+| **OpenAI** | 4+ | openai_basic, openai_tools, openai_multimodal, etc. |
+| **Realtime** | 4+ | realtime_basic, realtime_vad, realtime_tools, etc. |
+| **Graph** | 9 | graph_workflow, graph_react, graph_supervisor, etc. |
+| **Browser** | 5 | browser_basic, browser_agent, browser_interactive, etc. |
+| **Evaluation** | 11 | eval_basic, eval_trajectory, eval_semantic, etc. |
+| **Total** | **50+** | |
 
 ## Parity with Go ADK
 
@@ -180,7 +313,18 @@ See [research_paper/README.md](research_paper/README.md) for detailed documentat
 | workflowagents/sequentialCode | sequential_code | ✅ Complete |
 | workflowagents/parallel | parallel | ✅ Complete |
 | workflowagents/loop | loop_workflow | ✅ Complete |
-| vertexai/imagegenerator | - | ⏸️ Deferred (requires Vertex AI) |
+
+## Beyond Go ADK
+
+ADK-Rust includes additional features not in the Go implementation:
+
+| Feature | Examples |
+|---------|----------|
+| **OpenAI Integration** | openai_basic, openai_tools, openai_multimodal |
+| **Realtime Voice** | realtime_basic, realtime_vad, realtime_tools |
+| **Graph Workflows** | graph_react, graph_supervisor, graph_hitl |
+| **Browser Automation** | browser_agent, browser_interactive |
+| **Agent Evaluation** | eval_trajectory, eval_semantic, eval_rubric |
 
 ## Example Structure
 

@@ -156,6 +156,9 @@ ADK-Rust follows a clean layered architecture from application interface down to
 | `adk-server` | Production API servers | REST API, A2A protocol, middleware, health checks |
 | `adk-cli` | Command-line interface | Interactive REPL, session management, MCP server integration |
 | `adk-realtime` | Real-time voice agents | OpenAI Realtime API, Gemini Live API, bidirectional audio, VAD |
+| `adk-graph` | Graph-based workflows | LangGraph-style orchestration, state management, checkpointing, human-in-the-loop |
+| `adk-browser` | Browser automation | 46 WebDriver tools, navigation, forms, screenshots, PDF generation |
+| `adk-eval` | Agent evaluation | Test definitions, trajectory validation, LLM-judged scoring, rubrics |
 
 ## Key Features
 
@@ -171,6 +174,8 @@ ADK-Rust follows a clean layered architecture from application interface down to
 **Custom Agents**: Implement the `Agent` trait for specialized behavior.
 
 **Realtime Voice Agents**: Build voice-enabled AI assistants with bidirectional audio streaming.
+
+**Graph Agents**: LangGraph-style workflow orchestration with state management and checkpointing.
 
 ### Realtime Voice Agents
 
@@ -217,6 +222,112 @@ cargo run --example realtime_basic --features realtime-openai
 cargo run --example realtime_tools --features realtime-openai
 cargo run --example realtime_handoff --features realtime-openai
 ```
+
+### Graph-Based Workflows
+
+Build complex, stateful workflows using the `adk-graph` crate (LangGraph-style):
+
+```rust
+use adk_graph::prelude::*;
+
+let react_agent = GraphAgent::builder("react")
+    .description("ReAct agent with tool use")
+    .node(AgentNode::new(llm_agent))
+    .node_fn("tools", |ctx| async move {
+        let results = execute_tools(&ctx.state).await?;
+        Ok(NodeOutput::new().with_update("messages", results))
+    })
+    .edge(START, "reasoner")
+    .conditional_edge("reasoner", |state| {
+        if has_tool_calls(state) { "tools" } else { END }
+    }, [("tools", "tools"), (END, END)])
+    .edge("tools", "reasoner")  // Cycle back for iterative reasoning
+    .checkpointer(SqliteCheckpointer::new("state.db").await?)
+    .interrupt_after(&["plan"])  // Human-in-the-loop approval
+    .build()?;
+```
+
+**Features**:
+- Cyclic graphs for ReAct and iterative reasoning patterns
+- Conditional routing based on state
+- State management with reducers (overwrite, append, sum, custom)
+- Checkpointing (memory, SQLite) for fault tolerance
+- Human-in-the-loop interrupts for approval workflows
+- Streaming execution with multiple modes
+
+**Run graph examples**:
+```bash
+cargo run --example graph_workflow
+cargo run --example graph_react
+cargo run --example graph_supervisor
+cargo run --example graph_hitl  # Human-in-the-loop
+```
+
+### Browser Automation
+
+Give agents web browsing capabilities using the `adk-browser` crate:
+
+```rust
+use adk_browser::{BrowserSession, BrowserToolset, BrowserConfig};
+
+// Create browser session
+let config = BrowserConfig::new("http://localhost:4444");
+let session = BrowserSession::new(config).await?;
+
+// Get all 46 browser tools
+let toolset = BrowserToolset::new(session);
+let tools = toolset.all_tools();
+
+// Add to agent
+let agent = LlmAgentBuilder::new("web_agent")
+    .model(model)
+    .instruction("Browse the web and extract information.")
+    .tools(tools)
+    .build()?;
+```
+
+**46 Browser Tools**:
+- Navigation: `browser_navigate`, `browser_back`, `browser_forward`, `browser_refresh`
+- Extraction: `browser_extract_text`, `browser_extract_links`, `browser_extract_html`
+- Interaction: `browser_click`, `browser_type`, `browser_select`, `browser_submit`
+- Forms: `browser_fill_form`, `browser_get_form_fields`, `browser_clear_field`
+- Screenshots: `browser_screenshot`, `browser_screenshot_element`
+- JavaScript: `browser_evaluate`, `browser_evaluate_async`
+- Cookies, frames, windows, and more
+
+**Requirements**: WebDriver (Selenium, ChromeDriver, etc.)
+```bash
+docker run -d -p 4444:4444 selenium/standalone-chrome
+cargo run --example browser_agent
+```
+
+### Agent Evaluation
+
+Test and validate agent behavior using the `adk-eval` crate:
+
+```rust
+use adk_eval::{Evaluator, EvaluationConfig, EvaluationCriteria};
+
+let config = EvaluationConfig::with_criteria(
+    EvaluationCriteria::exact_tools()
+        .with_response_similarity(0.8)
+);
+
+let evaluator = Evaluator::new(config);
+let report = evaluator
+    .evaluate_file(agent, "tests/my_agent.test.json")
+    .await?;
+
+assert!(report.all_passed());
+```
+
+**Evaluation Capabilities**:
+- Trajectory validation (tool call sequences)
+- Response similarity (Jaccard, Levenshtein, ROUGE)
+- LLM-judged semantic matching
+- Rubric-based scoring with custom criteria
+- Safety and hallucination detection
+- Detailed reporting with failure analysis
 
 ### Tool System
 
@@ -270,7 +381,7 @@ All providers support streaming, function calling, and multimodal inputs (where 
 
 - **API Reference**: [docs.rs/adk-rust](https://docs.rs/adk-rust) - Full API documentation
 - **Official Docs**: [docs/official_docs/](docs/official_docs/) - ADK framework documentation
-- **Examples**: [examples/README.md](examples/README.md) - 13 working examples with detailed explanations
+- **Examples**: [examples/README.md](examples/README.md) - 50+ working examples with detailed explanations
 
 ## Development
 
@@ -332,6 +443,10 @@ adk-artifact = { version = "0.1", optional = true }
 adk-memory = { version = "0.1", optional = true }
 adk-server = { version = "0.1", optional = true }
 adk-cli = { version = "0.1", optional = true }
+adk-realtime = { version = "0.1", features = ["openai"], optional = true }
+adk-graph = { version = "0.1", features = ["sqlite"], optional = true }
+adk-browser = { version = "0.1", optional = true }
+adk-eval = { version = "0.1", optional = true }
 ```
 
 ## Examples
@@ -361,6 +476,24 @@ See [examples/](examples/) directory for complete, runnable examples:
 - `realtime_vad/` - Voice assistant with VAD
 - `realtime_tools/` - Tool calling in realtime sessions
 - `realtime_handoff/` - Multi-agent handoffs
+
+**Graph Workflows**
+- `graph_workflow/` - Basic graph workflow
+- `graph_react/` - ReAct pattern with tool loop
+- `graph_supervisor/` - Multi-agent supervisor routing
+- `graph_hitl/` - Human-in-the-loop approval
+- `graph_checkpoint/` - State persistence with checkpointing
+
+**Browser Automation**
+- `browser_basic/` - Basic browser session and tools
+- `browser_agent/` - AI agent with browser tools
+- `browser_interactive/` - Full 46-tool interactive example
+
+**Agent Evaluation**
+- `eval_basic/` - Basic evaluation setup
+- `eval_trajectory/` - Tool call trajectory validation
+- `eval_semantic/` - LLM-judged semantic matching
+- `eval_rubric/` - Rubric-based scoring
 
 **Production Features**
 - `load_artifacts/` - Working with images and PDFs
@@ -405,8 +538,10 @@ Contributions welcome! Please open an issue or pull request on GitHub.
 - REST and A2A servers
 - CLI with interactive mode
 - Realtime voice agents (OpenAI Realtime API, Gemini Live API)
+- Graph-based workflows (LangGraph-style) with checkpointing and human-in-the-loop
+- Browser automation (46 WebDriver tools)
+- Agent evaluation framework with trajectory validation and LLM-judged scoring
 
 **Planned** (see [docs/roadmap/](docs/roadmap/)):
 - [VertexAI Sessions](docs/roadmap/vertex-ai-session.md) - Cloud-based session persistence
 - [GCS Artifacts](docs/roadmap/gcs-artifacts.md) - Google Cloud Storage backend
-- [Evaluation Framework](docs/roadmap/evaluation.md) - Testing and benchmarking

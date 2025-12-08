@@ -120,6 +120,64 @@ Features:
 - Real-time tool calling
 - Multi-agent handoffs
 
+## Graph-Based Workflows
+
+Build complex workflows using LangGraph-style graph agents:
+
+```rust
+use adk_graph::prelude::*;
+
+let agent = GraphAgent::builder("processor")
+    .node_fn("fetch", |ctx| async move { /* ... */ })
+    .node_fn("transform", |ctx| async move { /* ... */ })
+    .edge(START, "fetch")
+    .edge("fetch", "transform")
+    .edge("transform", END)
+    .checkpointer(SqliteCheckpointer::new("state.db").await?)
+    .build()?;
+```
+
+Features:
+- Cyclic graphs for ReAct patterns
+- Conditional routing
+- State management with reducers
+- Checkpointing (memory, SQLite)
+- Human-in-the-loop interrupts
+
+## Browser Automation
+
+Give agents web browsing capabilities with 46 tools:
+
+```rust
+use adk_browser::{BrowserSession, BrowserToolset, BrowserConfig};
+
+let session = BrowserSession::new(BrowserConfig::new("http://localhost:4444")).await?;
+let toolset = BrowserToolset::new(session);
+let tools = toolset.all_tools();  // 46 browser tools
+
+let agent = LlmAgentBuilder::new("web_agent")
+    .model(model)
+    .tools(tools)
+    .build()?;
+```
+
+Tools include navigation, extraction, forms, screenshots, JavaScript execution, and more.
+
+## Agent Evaluation
+
+Test and validate agent behavior:
+
+```rust
+use adk_eval::{Evaluator, EvaluationConfig, EvaluationCriteria};
+
+let evaluator = Evaluator::new(EvaluationConfig::with_criteria(
+    EvaluationCriteria::exact_tools().with_response_similarity(0.8)
+));
+
+let report = evaluator.evaluate_file(agent, "tests/agent.test.json").await?;
+assert!(report.all_passed());
+```
+
 ## Deployment
 
 ```bash
