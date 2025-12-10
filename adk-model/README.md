@@ -1,6 +1,6 @@
 # adk-model
 
-LLM model integrations for Rust Agent Development Kit (ADK-Rust) with model Gemini, OpenAI, Anthropic.
+LLM model integrations for Rust Agent Development Kit (ADK-Rust) with Gemini, OpenAI, Anthropic, and DeepSeek.
 
 [![Crates.io](https://img.shields.io/crates/v/adk-model.svg)](https://crates.io/crates/adk-model)
 [![Documentation](https://docs.rs/adk-model/badge.svg)](https://docs.rs/adk-model)
@@ -13,6 +13,7 @@ LLM model integrations for Rust Agent Development Kit (ADK-Rust) with model Gemi
 - **Gemini** - Google's Gemini models (2.0 Flash, Pro, etc.)
 - **OpenAI** - GPT-4o, GPT-4o-mini, Azure OpenAI
 - **Anthropic** - Claude Opus 4.5, Claude Sonnet 4.5, Claude Sonnet 4, Claude 3.5
+- **DeepSeek** - DeepSeek-Chat, DeepSeek-Reasoner with thinking mode
 - **Streaming** - Real-time response streaming for all providers
 - **Multimodal** - Text, images, audio, video, and PDF input
 
@@ -94,6 +95,31 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 ```
 
+### DeepSeek
+
+```rust
+use adk_model::deepseek::{DeepSeekClient, DeepSeekConfig};
+use adk_agent::LlmAgentBuilder;
+use std::sync::Arc;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let api_key = std::env::var("DEEPSEEK_API_KEY")?;
+
+    // Standard chat model
+    let model = DeepSeekClient::new(DeepSeekConfig::chat(api_key))?;
+
+    // Or use the reasoner model with chain-of-thought
+    // let model = DeepSeekClient::new(DeepSeekConfig::reasoner(api_key))?;
+
+    let agent = LlmAgentBuilder::new("assistant")
+        .model(Arc::new(model))
+        .build()?;
+
+    Ok(())
+}
+```
+
 ## Supported Models
 
 ### Google Gemini
@@ -130,6 +156,20 @@ See [OpenAI models documentation](https://platform.openai.com/docs/models) for t
 
 See [Anthropic models documentation](https://docs.anthropic.com/claude/docs/models-overview) for the full list.
 
+### DeepSeek
+
+| Model | Description |
+|-------|-------------|
+| `deepseek-chat` | General-purpose chat model |
+| `deepseek-reasoner` | Reasoning model with chain-of-thought |
+
+**Features:**
+- **Thinking Mode** - Chain-of-thought reasoning with `<thinking>` tags
+- **Context Caching** - Automatic KV cache for repeated prefixes (10x cost reduction)
+- **Tool Calling** - Full function calling support
+
+See [DeepSeek API documentation](https://api-docs.deepseek.com/) for the full list.
+
 ## Features
 
 - **Streaming** - Real-time response streaming for all providers
@@ -149,6 +189,9 @@ OPENAI_API_KEY=your-openai-api-key
 
 # Anthropic
 ANTHROPIC_API_KEY=your-anthropic-api-key
+
+# DeepSeek
+DEEPSEEK_API_KEY=your-deepseek-api-key
 ```
 
 ## Feature Flags
@@ -164,6 +207,7 @@ adk-model = { version = "0.1", features = ["all-providers"] }
 adk-model = { version = "0.1", features = ["gemini"] }
 adk-model = { version = "0.1", features = ["openai"] }
 adk-model = { version = "0.1", features = ["anthropic"] }
+adk-model = { version = "0.1", features = ["deepseek"] }
 ```
 
 ## Related Crates

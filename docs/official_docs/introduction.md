@@ -127,7 +127,14 @@ Events form the conversation history and enable replay and debugging.
 
 ### Models
 
-The underlying LLM that powers LlmAgents. ADK-Rust is optimized for Gemini but supports other providers through the `Llm` trait:
+The underlying LLM that powers LlmAgents. ADK-Rust is optimized for Gemini but supports multiple providers through the `Llm` trait:
+
+- **Gemini**: Google's Gemini models (2.0 Flash, Pro, etc.)
+- **OpenAI**: GPT-4o, GPT-4o-mini, Azure OpenAI
+- **Anthropic**: Claude Opus 4.5, Claude Sonnet 4, Claude 3.5
+- **DeepSeek**: DeepSeek-Chat, DeepSeek-Reasoner with thinking mode
+
+All providers implement the same trait for interchangeable use:
 
 ```rust
 pub trait Llm: Send + Sync {

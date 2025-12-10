@@ -9,6 +9,10 @@ Welcome to the official documentation for ADK-Rust (Agent Development Kit for Ru
 
 ## Core Concepts
 
+### Models
+
+- [Model Providers](models/providers.md) - LLM integrations: Gemini, OpenAI, Anthropic, DeepSeek
+
 ### Agents
 
 - [LlmAgent](agents/llm-agent.md) - The core agent type using Large Language Models for reasoning

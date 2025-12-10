@@ -23,6 +23,17 @@ examples/
 ├── research_paper/          # Full-stack research paper generator
 │
 ├── openai_*/                # OpenAI integration examples
+├── anthropic_*/             # Anthropic Claude examples
+├── deepseek_*/              # DeepSeek integration examples
+│   ├── deepseek_basic/      # Basic chat example
+│   ├── deepseek_reasoner/   # Thinking mode with reasoning
+│   ├── deepseek_tools/      # Function calling
+│   ├── deepseek_thinking_tools/ # Reasoning + tools
+│   ├── deepseek_caching/    # Context caching demo
+│   ├── deepseek_sequential/ # Multi-agent pipeline
+│   ├── deepseek_supervisor/ # Supervisor pattern
+│   └── deepseek_structured/ # Structured JSON output
+│
 ├── realtime_*/              # Realtime voice agent examples
 │
 ├── graph_*/                 # Graph workflow examples
@@ -52,11 +63,21 @@ examples/
 
 ## Prerequisites
 
-Set your Google API key:
+Set your API keys as needed:
 ```bash
+# Google Gemini
 export GOOGLE_API_KEY="your-api-key-here"
 # or
 export GEMINI_API_KEY="your-api-key-here"
+
+# OpenAI
+export OPENAI_API_KEY="your-api-key-here"
+
+# Anthropic
+export ANTHROPIC_API_KEY="your-api-key-here"
+
+# DeepSeek
+export DEEPSEEK_API_KEY="your-api-key-here"
 ```
 
 ## Running Examples
@@ -220,6 +241,66 @@ cargo run --example graph_checkpoint
 ```
 Demonstrates: SQLite checkpointer, state persistence.
 
+### DeepSeek Examples
+
+DeepSeek model integration with unique features:
+
+#### deepseek_basic
+Basic DeepSeek chat:
+```bash
+cargo run --example deepseek_basic --features deepseek
+```
+Demonstrates: DeepSeek client setup, basic chat completion.
+
+#### deepseek_reasoner
+Reasoning model with thinking mode:
+```bash
+cargo run --example deepseek_reasoner --features deepseek
+```
+Demonstrates: Chain-of-thought reasoning, `<thinking>` tags in output.
+
+#### deepseek_tools
+Function calling with DeepSeek:
+```bash
+cargo run --example deepseek_tools --features deepseek
+```
+Demonstrates: Tool definitions, function calling, weather and calculator tools.
+
+#### deepseek_thinking_tools
+Combining reasoning with tool use:
+```bash
+cargo run --example deepseek_thinking_tools --features deepseek
+```
+Demonstrates: Financial analysis with stock prices, currency conversion, reasoning + tools.
+
+#### deepseek_caching
+Context caching demonstration:
+```bash
+cargo run --example deepseek_caching --features deepseek
+```
+Demonstrates: KV cache benefits, document Q&A, cost reduction with repeated prefixes.
+
+#### deepseek_sequential
+Multi-agent sequential pipeline:
+```bash
+cargo run --example deepseek_sequential --features deepseek
+```
+Demonstrates: Researcher -> Analyst -> Writer pipeline, shared model instance.
+
+#### deepseek_supervisor
+Multi-agent supervisor pattern:
+```bash
+cargo run --example deepseek_supervisor --features deepseek
+```
+Demonstrates: Dynamic routing, specialist agents, graph-based workflow.
+
+#### deepseek_structured
+Structured JSON output:
+```bash
+cargo run --example deepseek_structured --features deepseek
+```
+Demonstrates: Output schema, JSON responses, product analysis.
+
 ### Browser Automation Examples
 
 Web browser automation using WebDriver:
@@ -292,6 +373,8 @@ Demonstrates: Custom rubrics, weighted criteria.
 | **Tools** | 2 | load_artifacts, mcp |
 | **Full-Stack** | 1 | research_paper |
 | **OpenAI** | 4+ | openai_basic, openai_tools, openai_multimodal, etc. |
+| **Anthropic** | 2 | anthropic_basic, anthropic_tools |
+| **DeepSeek** | 8 | deepseek_basic, deepseek_reasoner, deepseek_tools, etc. |
 | **Realtime** | 4+ | realtime_basic, realtime_vad, realtime_tools, etc. |
 | **Graph** | 9 | graph_workflow, graph_react, graph_supervisor, etc. |
 | **Browser** | 5 | browser_basic, browser_agent, browser_interactive, etc. |
@@ -321,6 +404,8 @@ ADK-Rust includes additional features not in the Go implementation:
 | Feature | Examples |
 |---------|----------|
 | **OpenAI Integration** | openai_basic, openai_tools, openai_multimodal |
+| **Anthropic Integration** | anthropic_basic, anthropic_tools |
+| **DeepSeek Integration** | deepseek_basic, deepseek_reasoner, deepseek_tools, deepseek_thinking_tools, deepseek_caching, deepseek_sequential, deepseek_supervisor, deepseek_structured |
 | **Realtime Voice** | realtime_basic, realtime_vad, realtime_tools |
 | **Graph Workflows** | graph_react, graph_supervisor, graph_hitl |
 | **Browser Automation** | browser_agent, browser_interactive |
