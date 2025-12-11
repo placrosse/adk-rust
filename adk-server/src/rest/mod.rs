@@ -58,37 +58,37 @@ pub fn create_app_with_a2a(config: ServerConfig, a2a_base_url: Option<&str>) -> 
         .with_state(apps_controller)
         .route("/sessions", post(controllers::session::create_session))
         .route(
-            "/sessions/:app_name/:user_id/:session_id",
+            "/sessions/{app_name}/{user_id}/{session_id}",
             get(controllers::session::get_session).delete(controllers::session::delete_session),
         )
         // adk-go compatible routes
         .route(
-            "/apps/:app_name/users/:user_id/sessions",
+            "/apps/{app_name}/users/{user_id}/sessions",
             get(controllers::session::list_sessions)
                 .post(controllers::session::create_session_from_path),
         )
         .route(
-            "/apps/:app_name/users/:user_id/sessions/:session_id",
+            "/apps/{app_name}/users/{user_id}/sessions/{session_id}",
             get(controllers::session::get_session_from_path)
                 .post(controllers::session::create_session_from_path)
                 .delete(controllers::session::delete_session_from_path),
         )
         .with_state(session_controller)
-        .route("/run/:app_name/:user_id/:session_id", post(controllers::runtime::run_sse))
+        .route("/run/{app_name}/{user_id}/{session_id}", post(controllers::runtime::run_sse))
         .route("/run_sse", post(controllers::runtime::run_sse_compat))
         .with_state(runtime_controller)
         .route(
-            "/sessions/:app_name/:user_id/:session_id/artifacts",
+            "/sessions/{app_name}/{user_id}/{session_id}/artifacts",
             get(controllers::artifacts::list_artifacts),
         )
         .route(
-            "/sessions/:app_name/:user_id/:session_id/artifacts/:artifact_name",
+            "/sessions/{app_name}/{user_id}/{session_id}/artifacts/{artifact_name}",
             get(controllers::artifacts::get_artifact),
         )
         .with_state(artifacts_controller)
-        .route("/debug/trace/:event_id", get(controllers::debug::get_trace))
+        .route("/debug/trace/{event_id}", get(controllers::debug::get_trace))
         .route(
-            "/debug/graph/:app_name/:user_id/:session_id/:event_id",
+            "/debug/graph/{app_name}/{user_id}/{session_id}/{event_id}",
             get(controllers::debug::get_graph),
         )
         .with_state(debug_controller);
@@ -98,7 +98,7 @@ pub fn create_app_with_a2a(config: ServerConfig, a2a_base_url: Option<&str>) -> 
         .route("/ui/", get(web_ui::serve_ui_index))
         .route("/ui/assets/config/runtime-config.json", get(web_ui::serve_runtime_config))
         .with_state(config.clone())
-        .route("/ui/*path", get(web_ui::serve_ui_assets));
+        .route("/ui/{*path}", get(web_ui::serve_ui_assets));
 
     let mut app = Router::new().nest("/api", api_router).merge(ui_router);
 
@@ -122,7 +122,10 @@ pub fn create_app_with_a2a(config: ServerConfig, a2a_base_url: Option<&str>) -> 
             // Tracing for observability
             .layer(TraceLayer::new_for_http())
             // Request timeout
-            .layer(TimeoutLayer::new(config.security.request_timeout))
+            .layer(TimeoutLayer::with_status_code(
+                axum::http::StatusCode::REQUEST_TIMEOUT,
+                config.security.request_timeout,
+            ))
             // Request body size limit
             .layer(DefaultBodyLimit::max(config.security.max_body_size))
             // CORS configuration
