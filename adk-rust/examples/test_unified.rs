@@ -19,8 +19,7 @@ async fn main() -> Result<()> {
     println!("✅ Creating Gemini model...");
     let model_result = GeminiModel::new(&api_key, "gemini-2.5-flash");
 
-    if model_result.is_ok() {
-        let model = model_result.unwrap();
+    if let Ok(model) = model_result {
         println!("   Model: {}", model.name());
 
         // Test 3: Build agent
