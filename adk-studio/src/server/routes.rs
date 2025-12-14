@@ -1,10 +1,9 @@
-use crate::server::{handlers, state::AppState};
+use crate::server::{handlers, sse, state::AppState};
 use axum::{
     routing::{delete, get, post, put},
     Router,
 };
 
-/// Create API router
 pub fn api_routes() -> Router<AppState> {
     Router::new()
         .route("/projects", get(handlers::list_projects))
@@ -13,4 +12,5 @@ pub fn api_routes() -> Router<AppState> {
         .route("/projects/:id", put(handlers::update_project))
         .route("/projects/:id", delete(handlers::delete_project))
         .route("/projects/:id/run", post(handlers::run_project))
+        .route("/projects/:id/stream", get(sse::stream_handler))
 }

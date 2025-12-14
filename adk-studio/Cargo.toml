@@ -29,6 +29,7 @@ adk-graph = { path = "../adk-graph", version = "0.1" }
 tokio.workspace = true
 async-trait.workspace = true
 futures.workspace = true
+async-stream = "0.3"
 
 # Serialization
 serde.workspace = true
@@ -44,6 +45,7 @@ uuid.workspace = true
 chrono.workspace = true
 thiserror.workspace = true
 anyhow.workspace = true
+dotenvy = "0.15"
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 
