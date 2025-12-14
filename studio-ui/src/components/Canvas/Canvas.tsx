@@ -32,12 +32,22 @@ const TOOL_TYPES = [
 type FlowPhase = 'idle' | 'input' | 'output';
 
 export function Canvas() {
-  const { currentProject, closeProject, saveProject, selectNode, selectedNodeId, updateAgent, addAgent, addEdge: addProjectEdge, removeEdge: removeProjectEdge, addToolToAgent, removeToolFromAgent } = useStore();
+  const { currentProject, closeProject, saveProject, selectNode, selectedNodeId, updateAgent, addAgent, removeAgent, addEdge: addProjectEdge, removeEdge: removeProjectEdge, addToolToAgent, removeToolFromAgent } = useStore();
   const [showConsole, setShowConsole] = useState(true);
   const [flowPhase, setFlowPhase] = useState<FlowPhase>('idle');
+  const [selectedSubAgent, setSelectedSubAgent] = useState<{parent: string, sub: string} | null>(null);
 
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
+
+  const removeSubAgent = useCallback((parentId: string, subId: string) => {
+    if (!currentProject) return;
+    const parent = currentProject.agents[parentId];
+    if (!parent || parent.sub_agents.length <= 1) return;
+    updateAgent(parentId, { sub_agents: parent.sub_agents.filter(s => s !== subId) });
+    removeAgent(subId);
+    setSelectedSubAgent(null);
+  }, [currentProject, updateAgent, removeAgent]);
 
   useEffect(() => {
     if (!currentProject) return;
@@ -59,11 +69,24 @@ export function Canvas() {
       if (agent.type === 'sequential' || agent.type === 'loop' || agent.type === 'parallel') {
         const isParallel = agent.type === 'parallel';
         const isLoop = agent.type === 'loop';
-        const subAgentLabels = (agent.sub_agents || []).map((subId, idx) => (
-          <div key={subId} className={`text-xs bg-gray-700 rounded px-2 py-1 ${isParallel ? '' : 'mt-1'}`}>
-            {isParallel ? '' : `${idx + 1}. `}{subId}
-          </div>
-        ));
+        const subAgentLabels = (agent.sub_agents || []).map((subId, idx) => {
+          const isSelected = selectedSubAgent?.parent === id && selectedSubAgent?.sub === subId;
+          return (
+            <div 
+              key={subId} 
+              className={`text-xs rounded px-2 py-1 cursor-pointer ${isParallel ? '' : 'mt-1'} ${isSelected ? 'bg-red-700 ring-1 ring-red-400' : 'bg-gray-700 hover:bg-gray-600'}`}
+              onClick={(e) => { e.stopPropagation(); setSelectedSubAgent(isSelected ? null : {parent: id, sub: subId}); }}
+            >
+              {isParallel ? '' : `${idx + 1}. `}{subId}
+              {isSelected && agent.sub_agents.length > 1 && (
+                <button 
+                  className="ml-2 text-red-300 hover:text-white"
+                  onClick={(e) => { e.stopPropagation(); removeSubAgent(id, subId); }}
+                >×</button>
+              )}
+            </div>
+          );
+        });
         const config = {
           sequential: { icon: '⛓', label: 'Sequential Agent', bg: '#1e3a5f', border: '#60a5fa' },
           loop: { icon: '🔄', label: `Loop Agent (${agent.max_iterations || 3}x)`, bg: '#3d1e5f', border: '#a855f7' },
@@ -115,7 +138,7 @@ export function Canvas() {
       }
     });
     setNodes(newNodes);
-  }, [currentProject, setNodes]);
+  }, [currentProject, setNodes, selectedSubAgent, removeSubAgent]);
 
   // Update edges based on flow phase
   useEffect(() => {
