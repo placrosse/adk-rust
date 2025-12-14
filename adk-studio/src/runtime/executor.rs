@@ -1,9 +1,9 @@
-use crate::compiler::compile_agent;
+use crate::compiler::compile_project;
 use crate::schema::ProjectSchema;
 use adk_core::Content;
 use adk_runner::{Runner, RunnerConfig};
 use adk_session::{CreateRequest, GetRequest, InMemorySessionService, SessionService};
-use anyhow::{anyhow, Result};
+use anyhow::Result;
 use futures::StreamExt;
 use std::collections::HashMap;
 use std::sync::{Arc, OnceLock};
@@ -16,19 +16,10 @@ fn session_service() -> &'static Arc<InMemorySessionService> {
 
 /// Execute a project with a single message
 pub async fn run_project(project: &ProjectSchema, input: &str, api_key: &str) -> Result<String> {
-    let (agent_name, agent_schema) = project
-        .agents
-        .iter()
-        .next()
-        .ok_or_else(|| anyhow!("Project has no agents"))?;
-
-    let agent = compile_agent(agent_name, agent_schema, api_key)?;
+    let agent = compile_project(project, api_key)?;
     let svc = session_service().clone();
-
-    // Use project ID as session ID for persistence
     let session_id = project.id.to_string();
 
-    // Get or create session
     let session = match svc.get(GetRequest {
         app_name: "studio".into(),
         user_id: "user".into(),

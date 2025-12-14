@@ -17,7 +17,7 @@ export function TestConsole({ onFlowPhase }: Props) {
   const { currentProject } = useStore();
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
-  const { send, cancel, isStreaming, streamingText } = useSSE(currentProject?.id ?? null);
+  const { send, cancel, isStreaming, streamingText, currentAgent } = useSSE(currentProject?.id ?? null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const sendingRef = useRef(false);
 
@@ -96,7 +96,7 @@ export function TestConsole({ onFlowPhase }: Props) {
         ))}
         {streamingText && (
           <div className="text-sm text-gray-200">
-            <span className="font-semibold">Agent: </span>
+            <span className="font-semibold">{currentAgent || 'Agent'}: </span>
             <span className="whitespace-pre-wrap">{streamingText}</span>
             <span className="animate-pulse">▌</span>
           </div>

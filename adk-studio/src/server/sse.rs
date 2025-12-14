@@ -1,4 +1,4 @@
-use crate::compiler::compile_agent;
+use crate::compiler::compile_project;
 use crate::server::state::AppState;
 use adk_core::Content;
 use adk_runner::{Runner, RunnerConfig};
@@ -52,25 +52,17 @@ pub async fn stream_handler(
             }
         };
 
-        let (agent_name, agent_schema) = match project.agents.iter().next() {
-            Some(a) => a,
-            None => {
-                yield Ok(Event::default().event("error").data("No agents"));
-                return;
-            }
-        };
-
-        let agent = match compile_agent(agent_name, agent_schema, &api_key) {
+        let agent = match compile_project(&project, &api_key) {
             Ok(a) => a,
             Err(e) => {
                 yield Ok(Event::default().event("error").data(e.to_string()));
                 return;
             }
         };
-        let agent_name = agent_name.to_string();
+        let agent_count = project.agents.len();
         drop(storage);
 
-        yield Ok(Event::default().event("start").data(&agent_name));
+        yield Ok(Event::default().event("start").data(format!("{} agent(s)", agent_count)));
 
         let svc = session_service().clone();
         let session_id = project_id.to_string();
@@ -121,12 +113,17 @@ pub async fn stream_handler(
         };
 
         let mut last_text = String::new();
+        let mut current_agent = String::new();
         while let Some(result) = run_stream.next().await {
             if let Ok(event) = result {
+                // Check if agent changed
+                if event.author != current_agent {
+                    current_agent = event.author.clone();
+                    yield Ok(Event::default().event("agent").data(&current_agent));
+                }
                 if let Some(c) = event.content() {
                     for part in &c.parts {
                         if let Some(text) = part.text() {
-                            // Skip duplicate consecutive text
                             if text != last_text {
                                 yield Ok(Event::default().event("chunk").data(text));
                                 last_text = text.to_string();
