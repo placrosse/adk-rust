@@ -43,8 +43,6 @@ pub async fn stream_handler(
     let stream = async_stream::stream! {
         // If binary_path provided, run the compiled binary
         if let Some(bin_path) = binary_path {
-            yield Ok(Event::default().event("agent").data("graph"));
-            
             let mut child = match Command::new(&bin_path)
                 .env("GOOGLE_API_KEY", &api_key)
                 .stdin(std::process::Stdio::piped())
@@ -68,19 +66,15 @@ pub async fn stream_handler(
             drop(stdin);
             
             let mut reader = BufReader::new(stdout).lines();
-            let mut capturing = false;
-            let mut response = String::new();
             
             while let Ok(Some(line)) = reader.next_line().await {
-                if line.starts_with("> ") || line.starts_with("Graph workflow ready") {
-                    capturing = true;
-                    continue;
+                // Parse trace events
+                if let Some(trace_json) = line.strip_prefix("TRACE:") {
+                    yield Ok(Event::default().event("trace").data(trace_json));
+                } else if let Some(response) = line.strip_prefix("RESPONSE:") {
+                    yield Ok(Event::default().event("chunk").data(response));
                 }
-                if capturing && !line.is_empty() {
-                    if !response.is_empty() { response.push('\n'); }
-                    response.push_str(&line);
-                    yield Ok(Event::default().event("chunk").data(&response));
-                }
+                // Skip other lines (prompts, etc)
             }
             
             let _ = child.wait().await;

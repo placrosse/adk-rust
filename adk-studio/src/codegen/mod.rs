@@ -43,6 +43,7 @@ fn generate_main_rs(project: &ProjectSchema) -> String {
     code.push_str("    graph::StateGraph,\n");
     code.push_str("    node::{AgentNode, ExecutionConfig, NodeOutput},\n");
     code.push_str("    state::State,\n");
+    code.push_str("    StreamEvent,\n");
     code.push_str("};\n");
     code.push_str("use adk_model::gemini::GeminiModel;\n");
     code.push_str("use adk_tool::{FunctionTool, GoogleSearchTool, ExitLoopTool, LoadArtifactsTool};\n");
@@ -76,15 +77,21 @@ fn generate_main_rs(project: &ProjectSchema) -> String {
         .filter(|id| !all_sub_agents.contains(*id))
         .collect();
     
+    // Find first agent (connected from START)
+    let first_agent: Option<&str> = project.workflow.edges.iter()
+        .find(|e| e.from == "START")
+        .map(|e| e.to.as_str());
+    
     // Generate all agent nodes
     for agent_id in &top_level {
         if let Some(agent) = project.agents.get(*agent_id) {
+            let is_first = first_agent == Some(agent_id.as_str());
             match agent.agent_type {
                 AgentType::Router => {
                     code.push_str(&generate_router_node(agent_id, agent));
                 }
                 AgentType::Llm => {
-                    code.push_str(&generate_llm_node(agent_id, agent, project));
+                    code.push_str(&generate_llm_node(agent_id, agent, project, is_first));
                 }
                 _ => {
                     // Sequential/Loop/Parallel - generate as single node wrapping container
@@ -133,7 +140,7 @@ fn generate_main_rs(project: &ProjectSchema) -> String {
     
     code.push_str("        .compile()?;\n\n");
     
-    // Interactive loop
+    // Interactive loop with streaming
     code.push_str("    // Interactive loop\n");
     code.push_str("    println!(\"Graph workflow ready. Type your message (or 'quit' to exit):\");\n");
     code.push_str("    let stdin = std::io::stdin();\n");
@@ -149,10 +156,33 @@ fn generate_main_rs(project: &ProjectSchema) -> String {
     code.push_str("        if msg.is_empty() || msg == \"quit\" { break; }\n\n");
     code.push_str("        let mut state = State::new();\n");
     code.push_str("        state.insert(\"message\".to_string(), json!(msg));\n");
-    code.push_str("        let result = graph.invoke(state, ExecutionConfig::new(&format!(\"turn-{}\", turn))).await?;\n");
+    code.push_str("        \n");
+    code.push_str("        use adk_graph::StreamMode;\n");
+    code.push_str("        use tokio_stream::StreamExt;\n");
+    code.push_str("        let stream = graph.stream(state, ExecutionConfig::new(&format!(\"turn-{}\", turn)), StreamMode::Debug);\n");
+    code.push_str("        tokio::pin!(stream);\n");
+    code.push_str("        let mut final_response = String::new();\n");
+    code.push_str("        \n");
+    code.push_str("        while let Some(event) = stream.next().await {\n");
+    code.push_str("            match event {\n");
+    code.push_str("                Ok(e) => {\n");
+    code.push_str("                    // Output trace event as JSON\n");
+    code.push_str("                    if let Ok(json) = serde_json::to_string(&e) {\n");
+    code.push_str("                        println!(\"TRACE:{}\", json);\n");
+    code.push_str("                    }\n");
+    code.push_str("                    // Capture final response from Done event\n");
+    code.push_str("                    if let adk_graph::StreamEvent::Done { state, .. } = &e {\n");
+    code.push_str("                        if let Some(resp) = state.get(\"response\").and_then(|v| v.as_str()) {\n");
+    code.push_str("                            final_response = resp.to_string();\n");
+    code.push_str("                        }\n");
+    code.push_str("                    }\n");
+    code.push_str("                }\n");
+    code.push_str("                Err(e) => eprintln!(\"Error: {}\", e),\n");
+    code.push_str("            }\n");
+    code.push_str("        }\n");
     code.push_str("        turn += 1;\n\n");
-    code.push_str("        if let Some(response) = result.get(\"response\").and_then(|v| v.as_str()) {\n");
-    code.push_str("            println!(\"\\n{}\\n\", response);\n");
+    code.push_str("        if !final_response.is_empty() {\n");
+    code.push_str("            println!(\"RESPONSE:{}\", final_response);\n");
     code.push_str("        }\n");
     code.push_str("    }\n\n");
     
@@ -213,7 +243,7 @@ fn generate_router_node(id: &str, agent: &AgentSchema) -> String {
     code
 }
 
-fn generate_llm_node(id: &str, agent: &AgentSchema, project: &ProjectSchema) -> String {
+fn generate_llm_node(id: &str, agent: &AgentSchema, project: &ProjectSchema, is_first: bool) -> String {
     let mut code = String::new();
     let model = agent.model.as_deref().unwrap_or("gemini-2.0-flash");
     
@@ -248,7 +278,16 @@ fn generate_llm_node(id: &str, agent: &AgentSchema, project: &ProjectSchema) -> 
     
     code.push_str(&format!("    let {}_node = AgentNode::new({}_llm)\n", id, id));
     code.push_str("        .with_input_mapper(|state| {\n");
-    code.push_str("            let msg = state.get(\"message\").and_then(|v| v.as_str()).unwrap_or(\"\");\n");
+    
+    // First agent reads from "message", subsequent agents read from "response"
+    if is_first {
+        code.push_str("            let msg = state.get(\"message\").and_then(|v| v.as_str()).unwrap_or(\"\");\n");
+    } else {
+        code.push_str("            // Read previous agent's response, fall back to original message\n");
+        code.push_str("            let msg = state.get(\"response\").and_then(|v| v.as_str())\n");
+        code.push_str("                .or_else(|| state.get(\"message\").and_then(|v| v.as_str())).unwrap_or(\"\");\n");
+    }
+    
     code.push_str("            adk_core::Content::new(\"user\").with_text(msg.to_string())\n");
     code.push_str("        })\n");
     code.push_str("        .with_output_mapper(|events| {\n");
@@ -371,7 +410,8 @@ adk-core = "0.1.7"
 adk-model = "0.1.7"
 adk-tool = "0.1.7"
 adk-graph = "0.1.7"
-tokio = {{ version = "1", features = ["full"] }}
+tokio = {{ version = "1", features = ["full", "macros"] }}
+tokio-stream = "0.1"
 anyhow = "1"
 serde_json = "1"
 "#, name)

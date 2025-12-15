@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import { useStore } from '../../store';
-import { useSSE } from '../../hooks/useSSE';
+import { useSSE, TraceEvent } from '../../hooks/useSSE';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -10,6 +10,7 @@ interface Message {
 }
 
 type FlowPhase = 'idle' | 'input' | 'output';
+type Tab = 'chat' | 'events';
 
 interface Props {
   onFlowPhase?: (phase: FlowPhase) => void;
@@ -20,8 +21,10 @@ export function TestConsole({ onFlowPhase, binaryPath }: Props) {
   const { currentProject } = useStore();
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
-  const { send, cancel, isStreaming, streamingText, currentAgent, toolCalls } = useSSE(currentProject?.id ?? null, binaryPath);
+  const [activeTab, setActiveTab] = useState<Tab>('chat');
+  const { send, cancel, isStreaming, streamingText, currentAgent, toolCalls, events, clearEvents } = useSSE(currentProject?.id ?? null, binaryPath);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const eventsEndRef = useRef<HTMLDivElement>(null);
   const sendingRef = useRef(false);
   const lastAgentRef = useRef<string | null>(null);
 
@@ -32,6 +35,10 @@ export function TestConsole({ onFlowPhase, binaryPath }: Props) {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, streamingText]);
+
+  useEffect(() => {
+    eventsEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [events]);
 
   useEffect(() => {
     if (streamingText) {
@@ -72,6 +79,7 @@ export function TestConsole({ onFlowPhase, binaryPath }: Props) {
       await fetch(`/api/projects/${currentProject.id}/session`, { method: 'DELETE' });
     }
     setMessages([]);
+    clearEvents();
   };
 
   const handleCancel = () => {
@@ -81,10 +89,54 @@ export function TestConsole({ onFlowPhase, binaryPath }: Props) {
 
   const isThinking = isStreaming && !streamingText;
 
+  const formatTime = (ts: number) => {
+    const d = new Date(ts);
+    return `${d.toLocaleTimeString('en-US', { hour12: false })}:${String(d.getMilliseconds()).padStart(3, '0')}`;
+  };
+
+  const eventIcon = (type: TraceEvent['type']) => {
+    switch (type) {
+      case 'user': return '👤';
+      case 'agent_start': return '▶️';
+      case 'agent_end': return '✅';
+      case 'model': return '💬';
+      case 'tool_call': return '🔧';
+      case 'tool_result': return '✓';
+      case 'done': return '🏁';
+      case 'error': return '❌';
+      default: return '•';
+    }
+  };
+
+  const eventColor = (type: TraceEvent['type']) => {
+    switch (type) {
+      case 'user': return 'text-blue-400';
+      case 'agent_start': return 'text-green-400';
+      case 'agent_end': return 'text-green-300';
+      case 'model': return 'text-gray-300';
+      case 'done': return 'text-purple-400';
+      case 'error': return 'text-red-400';
+      default: return 'text-gray-400';
+    }
+  };
+
   return (
     <div className="flex flex-col h-full bg-studio-panel border-t border-gray-700">
-      <div className="p-2 border-b border-gray-700 text-sm font-semibold flex justify-between">
-        <span>💬 Test Console</span>
+      <div className="p-2 border-b border-gray-700 text-sm flex justify-between items-center">
+        <div className="flex gap-1">
+          <button 
+            onClick={() => setActiveTab('chat')}
+            className={`px-3 py-1 rounded text-xs ${activeTab === 'chat' ? 'bg-studio-highlight' : 'hover:bg-gray-700'}`}
+          >
+            💬 Chat
+          </button>
+          <button 
+            onClick={() => setActiveTab('events')}
+            className={`px-3 py-1 rounded text-xs ${activeTab === 'events' ? 'bg-studio-highlight' : 'hover:bg-gray-700'}`}
+          >
+            📋 Events {events.length > 0 && `(${events.length})`}
+          </button>
+        </div>
         <div className="flex gap-2">
           {messages.length > 0 && !isStreaming && (
             <button onClick={clearChat} className="text-gray-400 text-xs hover:text-white">Clear</button>
@@ -94,44 +146,72 @@ export function TestConsole({ onFlowPhase, binaryPath }: Props) {
           )}
         </div>
       </div>
-      <div className="flex-1 overflow-y-auto p-3 space-y-3">
-        {messages.length === 0 && !streamingText && !isThinking && (
-          <div className="text-gray-500 text-sm">Send a message to test your agent...</div>
-        )}
-        {messages.map((m, i) => (
-          <div key={i} className={`text-sm ${m.role === 'user' ? 'text-blue-400' : 'text-gray-200'}`}>
-            <span className="font-semibold">{m.role === 'user' ? 'You: ' : `${m.agent || 'Agent'}: `}</span>
-            {m.role === 'user' ? (
-              <span>{m.content}</span>
-            ) : (
-              <div className="prose prose-invert prose-sm max-w-none inline">
-                <ReactMarkdown>{m.content}</ReactMarkdown>
-              </div>
-            )}
-          </div>
-        ))}
-        {isThinking && (
-          <div className="text-sm text-gray-400 flex items-center gap-2">
-            <span className="animate-spin">⏳</span>
-            <span>{currentAgent ? `${currentAgent} is thinking...` : 'Thinking...'}</span>
-          </div>
-        )}
-        {streamingText && (
-          <div className="text-sm text-gray-200">
-            <span className="font-semibold">{currentAgent || 'Agent'}: </span>
-            <div className="prose prose-invert prose-sm max-w-none inline">
-              <ReactMarkdown>{streamingText}</ReactMarkdown>
+
+      {activeTab === 'chat' && (
+        <div className="flex-1 overflow-y-auto p-3 space-y-3">
+          {messages.length === 0 && !streamingText && !isThinking && (
+            <div className="text-gray-500 text-sm">Send a message to test your agent...</div>
+          )}
+          {messages.map((m, i) => (
+            <div key={i} className={`text-sm ${m.role === 'user' ? 'text-blue-400' : 'text-gray-200'}`}>
+              <span className="font-semibold">{m.role === 'user' ? 'You: ' : `${m.agent || 'Agent'}: `}</span>
+              {m.role === 'user' ? (
+                <span>{m.content}</span>
+              ) : (
+                <div className="prose prose-invert prose-sm max-w-none inline">
+                  <ReactMarkdown>{m.content}</ReactMarkdown>
+                </div>
+              )}
             </div>
-            <span className="animate-pulse">▌</span>
-          </div>
-        )}
-        {toolCalls.length > 0 && isStreaming && (
-          <div className="text-xs text-yellow-400 mt-1">
-            Tools used: {toolCalls.map(t => t.name).join(', ')}
-          </div>
-        )}
-        <div ref={messagesEndRef} />
-      </div>
+          ))}
+          {isThinking && (
+            <div className="text-sm text-gray-400 flex items-center gap-2">
+              <span className="animate-spin">⏳</span>
+              <span>{currentAgent ? `${currentAgent} is thinking...` : 'Thinking...'}</span>
+            </div>
+          )}
+          {streamingText && (
+            <div className="text-sm text-gray-200">
+              <span className="font-semibold">{currentAgent || 'Agent'}: </span>
+              <div className="prose prose-invert prose-sm max-w-none inline">
+                <ReactMarkdown>{streamingText}</ReactMarkdown>
+              </div>
+              <span className="animate-pulse">▌</span>
+            </div>
+          )}
+          {toolCalls.length > 0 && isStreaming && (
+            <div className="text-xs text-yellow-400 mt-1">
+              Tools used: {toolCalls.map(t => t.name).join(', ')}
+            </div>
+          )}
+          <div ref={messagesEndRef} />
+        </div>
+      )}
+
+      {activeTab === 'events' && (
+        <div className="flex-1 overflow-y-auto p-2 font-mono text-xs">
+          {events.length === 0 && (
+            <div className="text-gray-500">No events yet. Send a message to see the trace.</div>
+          )}
+          {events.map((e, i) => (
+            <div key={i} className="flex gap-2 py-1 border-b border-gray-800">
+              <span className="text-gray-500 w-24 flex-shrink-0">{formatTime(e.timestamp)}</span>
+              <span>{eventIcon(e.type)}</span>
+              <span className={`${eventColor(e.type)} flex-1`}>
+                {e.agent && <span className="text-yellow-400 mr-2">[{e.agent}]</span>}
+                {e.type === 'user' ? `Input: ${e.data}` : 
+                 e.type === 'agent_start' ? `Started ${e.data}` :
+                 e.type === 'agent_end' ? `Completed in ${e.data}` :
+                 e.type === 'model' ? `Response: ${e.data}` :
+                 e.type === 'done' ? `Done (${e.data})` :
+                 e.data}
+              </span>
+            </div>
+          ))}
+          <div ref={eventsEndRef} />
+        </div>
+      )}
+
       <div className="p-2 border-t border-gray-700 flex gap-2">
         <input
           type="text"
