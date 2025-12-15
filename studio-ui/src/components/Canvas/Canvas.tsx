@@ -519,7 +519,7 @@ export function Canvas() {
                     <div>
                       <label className="block text-sm text-gray-400 mb-1">Description</label>
                       <textarea
-                        className="w-full px-2 py-1 bg-studio-bg border border-gray-600 rounded text-sm h-16"
+                        className="w-full px-2 py-1 bg-studio-bg border border-gray-600 rounded text-sm h-28"
                         placeholder="Gets current weather for a location"
                         value={fnConfig.description}
                         onChange={(e) => updateToolConfig(selectedToolId, { ...fnConfig, description: e.target.value })}
