@@ -286,7 +286,7 @@ export function Canvas() {
           
           <h3 className="font-semibold mb-2">Tools</h3>
           <div className="space-y-1 flex-1">
-            {TOOL_TYPES.map(({ type, label, icon }) => {
+            {TOOL_TYPES.map(({ type, label, icon, configurable }) => {
               const isAdded = selectedNodeId && currentProject?.agents[selectedNodeId]?.tools?.includes(type);
               return (
                 <div
@@ -300,6 +300,7 @@ export function Canvas() {
                       removeToolFromAgent(selectedNodeId, type);
                     } else {
                       addToolToAgent(selectedNodeId, type);
+                      if (configurable) selectTool(`${selectedNodeId}_${type}`);
                     }
                   }}
                 >
