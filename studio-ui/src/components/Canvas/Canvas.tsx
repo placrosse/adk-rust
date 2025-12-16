@@ -421,38 +421,61 @@ export function Canvas() {
 
   const onDragOver = useCallback((e: DragEvent) => {
     e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
+    // Match dropEffect to what's being dragged
+    if (e.dataTransfer.types.includes('text/plain')) {
+      e.dataTransfer.dropEffect = 'copy';  // tools
+    } else {
+      e.dataTransfer.dropEffect = 'move';  // agents
+    }
   }, []);
 
   const onDrop = useCallback((e: DragEvent) => {
     e.preventDefault();
+    e.stopPropagation();
+    console.log('onDrop fired');
     
     // Check if dropping a tool
-    const toolType = e.dataTransfer.getData('tool-type');
+    const dragData = e.dataTransfer.getData('text/plain');
+    const toolType = dragData.startsWith('tool:') ? dragData.slice(5) : '';
+    console.log('onDrop - dragData:', dragData, 'toolType:', toolType, 'selectedNodeId:', selectedNodeId);
     if (toolType) {
-      // Find which node was dropped on by checking position
-      const reactFlowBounds = e.currentTarget.getBoundingClientRect();
-      const x = e.clientX - reactFlowBounds.left;
-      const y = e.clientY - reactFlowBounds.top;
+      // Find node at drop point using DOM
+      const target = e.target as HTMLElement;
+      console.log('drop target:', target, 'className:', target.className);
+      const nodeElement = target.closest('[data-id]');
+      let nodeId = nodeElement?.getAttribute('data-id');
+      console.log('nodeElement:', nodeElement, 'nodeId:', nodeId);
       
-      // Find node at drop position
-      const droppedOnNode = nodes.find(node => {
-        const nodeX = node.position.x;
-        const nodeY = node.position.y;
-        const nodeWidth = 120; // approximate
-        const nodeHeight = 80;
-        return x >= nodeX && x <= nodeX + nodeWidth && y >= nodeY && y <= nodeY + nodeHeight;
-      });
+      // Also try elementsFromPoint as fallback
+      if (!nodeId || nodeId === 'START' || nodeId === 'END') {
+        const elements = document.elementsFromPoint(e.clientX, e.clientY);
+        console.log('elementsFromPoint:', elements.map(el => ({ tag: el.tagName, class: el.className, dataId: (el as HTMLElement).closest('[data-id]')?.getAttribute('data-id') })));
+        for (const el of elements) {
+          const node = (el as HTMLElement).closest('[data-id]');
+          const id = node?.getAttribute('data-id');
+          if (id && id !== 'START' && id !== 'END' && currentProject?.agents[id]) {
+            nodeId = id;
+            break;
+          }
+        }
+      }
       
-      if (droppedOnNode && droppedOnNode.id !== 'START' && droppedOnNode.id !== 'END') {
-        addToolToAgent(droppedOnNode.id, toolType);
-        selectNode(droppedOnNode.id);
+      // Fall back to selected node if no drop target found
+      if ((!nodeId || !currentProject?.agents[nodeId]) && selectedNodeId && currentProject?.agents[selectedNodeId]) {
+        console.log('falling back to selectedNodeId:', selectedNodeId);
+        nodeId = selectedNodeId;
+      }
+      
+      console.log('final nodeId:', nodeId, 'exists:', !!currentProject?.agents[nodeId || '']);
+      if (nodeId && nodeId !== 'START' && nodeId !== 'END' && currentProject?.agents[nodeId]) {
+        addToolToAgent(nodeId, toolType);
+        selectNode(nodeId);
         if (TOOL_TYPES.find(t => t.type === toolType)?.configurable) {
-          const agentTools = currentProject?.agents[droppedOnNode.id]?.tools || [];
+          const agentTools = currentProject?.agents[nodeId]?.tools || [];
           const functionCount = agentTools.filter(t => t.startsWith('function')).length;
           const newToolId = toolType === 'function' 
-            ? `${droppedOnNode.id}_function_${functionCount + 1}`
-            : `${droppedOnNode.id}_${toolType}`;
+            ? `${nodeId}_function_${functionCount + 1}`
+            : `${nodeId}_${toolType}`;
           selectTool(newToolId);
         }
       }
@@ -461,6 +484,7 @@ export function Canvas() {
     
     // Otherwise, creating an agent
     const type = e.dataTransfer.getData('application/reactflow');
+    console.log('agent drop - type:', type);
     if (!type) return;
     createAgent(type);
   }, [createAgent, nodes, addToolToAgent, selectNode, selectTool, currentProject]);
@@ -538,7 +562,7 @@ export function Canvas() {
                   key={type}
                   draggable
                   onDragStart={(e) => {
-                    e.dataTransfer.setData('tool-type', type);
+                    e.dataTransfer.setData('text/plain', `tool:${type}`);
                     e.dataTransfer.effectAllowed = 'copy';
                   }}
                   className={`p-2 rounded text-sm cursor-grab flex items-center gap-2 ${
