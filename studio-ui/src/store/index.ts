@@ -107,21 +107,29 @@ export const useStore = create<StudioState>((set, get) => ({
     setTimeout(() => get().saveProject(), 0);
   },
 
-  removeAgent: (id) =>
+  removeAgent: (id) => {
     set((s) => {
       if (!s.currentProject) return s;
       const { [id]: _, ...agents } = s.currentProject.agents;
+      // Also remove tool configs for this agent
+      const toolConfigs = { ...s.currentProject.tool_configs };
+      Object.keys(toolConfigs).forEach(key => {
+        if (key.startsWith(`${id}_`)) delete toolConfigs[key];
+      });
       return {
         currentProject: {
           ...s.currentProject,
           agents,
+          tool_configs: toolConfigs,
           workflow: {
             ...s.currentProject.workflow,
             edges: s.currentProject.workflow.edges.filter((e) => e.from !== id && e.to !== id),
           },
         },
       };
-    }),
+    });
+    setTimeout(() => get().saveProject(), 0);
+  },
 
   addEdge: (from, to) => {
     set((s) => {

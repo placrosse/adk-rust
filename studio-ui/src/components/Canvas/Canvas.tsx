@@ -477,6 +477,14 @@ export function Canvas() {
     });
   }, [removeProjectEdge]);
 
+  const onNodesDelete = useCallback((nodesToDelete: Node[]) => {
+    nodesToDelete.forEach((node) => {
+      if (node.id !== 'START' && node.id !== 'END') {
+        removeAgent(node.id);
+      }
+    });
+  }, [removeAgent]);
+
   const onEdgeDoubleClick = useCallback((_: React.MouseEvent, edge: Edge) => {
     removeProjectEdge(edge.source, edge.target);
   }, [removeProjectEdge]);
@@ -581,6 +589,7 @@ export function Canvas() {
             onNodesChange={onNodesChange}
             onEdgesChange={onEdgesChange}
             onEdgesDelete={onEdgesDelete}
+            onNodesDelete={onNodesDelete}
             onEdgeDoubleClick={onEdgeDoubleClick}
             onConnect={onConnect}
             onNodeClick={onNodeClick}
