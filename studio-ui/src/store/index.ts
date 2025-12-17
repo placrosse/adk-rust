@@ -110,12 +110,26 @@ export const useStore = create<StudioState>((set, get) => ({
   removeAgent: (id) => {
     set((s) => {
       if (!s.currentProject) return s;
-      const { [id]: _, ...agents } = s.currentProject.agents;
-      // Also remove tool configs for this agent
+      const agent = s.currentProject.agents[id];
+      
+      // Collect all agents to remove (including sub-agents for containers)
+      const agentsToRemove = [id];
+      if (agent?.sub_agents) {
+        agentsToRemove.push(...agent.sub_agents);
+      }
+      
+      // Remove all agents
+      const agents = { ...s.currentProject.agents };
+      agentsToRemove.forEach(agentId => delete agents[agentId]);
+      
+      // Remove tool configs for all removed agents
       const toolConfigs = { ...s.currentProject.tool_configs };
       Object.keys(toolConfigs).forEach(key => {
-        if (key.startsWith(`${id}_`)) delete toolConfigs[key];
+        if (agentsToRemove.some(agentId => key.startsWith(`${agentId}_`))) {
+          delete toolConfigs[key];
+        }
       });
+      
       return {
         currentProject: {
           ...s.currentProject,
@@ -123,7 +137,9 @@ export const useStore = create<StudioState>((set, get) => ({
           tool_configs: toolConfigs,
           workflow: {
             ...s.currentProject.workflow,
-            edges: s.currentProject.workflow.edges.filter((e) => e.from !== id && e.to !== id),
+            edges: s.currentProject.workflow.edges.filter((e) => 
+              !agentsToRemove.includes(e.from) && !agentsToRemove.includes(e.to)
+            ),
           },
         },
       };

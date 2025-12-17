@@ -204,20 +204,73 @@ export function Canvas() {
       if (agent.type === 'sequential' || agent.type === 'loop' || agent.type === 'parallel') {
         const isParallel = agent.type === 'parallel';
         const isLoop = agent.type === 'loop';
-        const subAgentLabels = (agent.sub_agents || []).map((subId, idx) => {
+        const subAgentNodes = (agent.sub_agents || []).map((subId, idx) => {
+          const subAgent = currentProject.agents[subId];
           const isSelected = selectedSubAgent?.parent === id && selectedSubAgent?.sub === subId;
+          const subTools = subAgent?.tools || [];
           return (
             <div 
               key={subId} 
-              className={`text-xs rounded px-2 py-1 cursor-pointer ${isParallel ? '' : 'mt-1'} ${isSelected ? 'bg-red-700 ring-1 ring-red-400' : 'bg-gray-700 hover:bg-gray-600'}`}
+              className={`rounded p-2 cursor-pointer ${isParallel ? '' : idx > 0 ? 'mt-2 border-t border-gray-600 pt-2' : ''} ${isSelected ? 'bg-gray-600 ring-2 ring-blue-400' : 'bg-gray-800 hover:bg-gray-700'}`}
               onClick={(e) => { e.stopPropagation(); setSelectedSubAgent(isSelected ? null : {parent: id, sub: subId}); }}
+              onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
+              onDrop={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const dragData = e.dataTransfer.getData('text/plain');
+                const toolType = dragData.startsWith('tool:') ? dragData.slice(5) : '';
+                if (toolType && subAgent) {
+                  addToolToAgent(subId, toolType);
+                  setSelectedSubAgent({parent: id, sub: subId});
+                }
+              }}
             >
-              {isParallel ? '' : `${idx + 1}. `}{subId}
-              {isSelected && agent.sub_agents.length > 1 && (
-                <button 
-                  className="ml-2 text-red-300 hover:text-white"
-                  onClick={(e) => { e.stopPropagation(); removeSubAgent(id, subId); }}
-                >×</button>
+              <div className="flex justify-between items-center">
+                <span className="text-xs font-medium">{isParallel ? '∥' : `${idx + 1}.`} 🤖 {subId}</span>
+                {isSelected && agent.sub_agents.length > 1 && (
+                  <button 
+                    className="text-red-400 hover:text-red-300 text-xs"
+                    onClick={(e) => { e.stopPropagation(); removeSubAgent(id, subId); }}
+                  >×</button>
+                )}
+              </div>
+              <div className="text-xs text-gray-400">LLM Agent</div>
+              {subTools.length > 0 && (
+                <div className="border-t border-gray-600 pt-1 mt-1">
+                  {subTools.map(t => {
+                    const baseType = t.startsWith('function') ? 'function' : t.startsWith('mcp') ? 'mcp' : t;
+                    const tool = TOOL_TYPES.find(tt => tt.type === baseType);
+                    const isConfigurable = tool?.configurable;
+                    const toolConfigId = `${subId}_${t}`;
+                    const toolConfig = currentProject?.tool_configs?.[toolConfigId];
+                    let displayName = tool?.label || t;
+                    if (baseType === 'function' && toolConfig && 'name' in toolConfig && toolConfig.name) {
+                      displayName = toolConfig.name;
+                    } else if (baseType === 'mcp') {
+                      if (toolConfig && 'name' in toolConfig && toolConfig.name) {
+                        displayName = toolConfig.name;
+                      } else {
+                        const num = t.match(/mcp_(\d+)/)?.[1] || '1';
+                        displayName = `MCP Tool ${num}`;
+                      }
+                    }
+                    return (
+                      <div 
+                        key={t} 
+                        className={`text-xs text-gray-300 px-1 py-0.5 rounded ${isConfigurable ? 'cursor-pointer hover:bg-gray-700 hover:text-white' : ''}`}
+                        onClick={(e) => {
+                          if (isConfigurable) {
+                            e.stopPropagation();
+                            setSelectedSubAgent({parent: id, sub: subId});
+                            selectTool(toolConfigId);
+                          }
+                        }}
+                      >
+                        {tool?.icon} {displayName} {isConfigurable && <span className="text-blue-400">⚙</span>}
+                      </div>
+                    );
+                  })}
+                </div>
               )}
             </div>
           );
@@ -232,17 +285,17 @@ export function Canvas() {
           position: { x: 50, y: 150 + i * 150 },
           data: { 
             label: (
-              <div className="text-center">
+              <div className="text-center min-w-[180px]">
                 <div className="font-semibold">{config.icon} {id}</div>
                 <div className="text-xs text-gray-400 mb-1">{config.label}</div>
-                <div className={`border-t border-gray-600 pt-1 mt-1 ${isLoop ? 'relative' : ''}`}>
+                <div className={`border-t border-gray-600 pt-2 mt-1 ${isLoop ? 'relative' : ''}`}>
                   {isLoop && (
                     <div className="absolute -left-2 top-0 bottom-0 w-1 border-l-2 border-t-2 border-b-2 border-purple-400 rounded-l" />
                   )}
                   {isParallel ? (
-                    <div className="flex gap-1 flex-wrap justify-center">{subAgentLabels}</div>
+                    <div className="flex gap-2 flex-wrap justify-center">{subAgentNodes}</div>
                   ) : (
-                    <div className={isLoop ? 'ml-1' : ''}>{subAgentLabels}</div>
+                    <div className={isLoop ? 'ml-1' : ''}>{subAgentNodes}</div>
                   )}
                   {isLoop && (
                     <div className="absolute -right-2 top-1/2 text-purple-400 text-xs">↩</div>
@@ -251,7 +304,7 @@ export function Canvas() {
               </div>
             )
           },
-          style: { background: config.bg, border: `2px solid ${config.border}`, borderRadius: 8, padding: 12, color: '#fff', minWidth: isParallel ? 250 : 150 },
+          style: { background: config.bg, border: `2px solid ${config.border}`, borderRadius: 8, padding: 12, color: '#fff', minWidth: isParallel ? 280 : 200 },
         });
       } else if (agent.type === 'router') {
         const routes = agent.routes || [];
