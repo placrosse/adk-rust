@@ -37,6 +37,7 @@ fn generate_main_rs(project: &ProjectSchema) -> String {
     
     // Check if any agent uses MCP (handles mcp, mcp_1, mcp_2, etc.)
     let uses_mcp = project.agents.values().any(|a| a.tools.iter().any(|t| t == "mcp" || t.starts_with("mcp_")));
+    let uses_browser = project.agents.values().any(|a| a.tools.contains(&"browser".to_string()));
     
     // Graph imports
     code.push_str("use adk_agent::LlmAgentBuilder;\n");
@@ -50,21 +51,28 @@ fn generate_main_rs(project: &ProjectSchema) -> String {
     code.push_str("};\n");
     code.push_str("use adk_model::gemini::GeminiModel;\n");
     code.push_str("use adk_tool::{FunctionTool, GoogleSearchTool, ExitLoopTool, LoadArtifactsTool};\n");
+    if uses_mcp || uses_browser {
+        code.push_str("use adk_core::{ReadonlyContext, Toolset, Content};\n");
+    }
     if uses_mcp {
         code.push_str("use adk_tool::McpToolset;\n");
-        code.push_str("use adk_core::{ReadonlyContext, Toolset, Content};\n");
         code.push_str("use rmcp::{ServiceExt, transport::TokioChildProcess};\n");
         code.push_str("use tokio::process::Command;\n");
+    }
+    if uses_mcp || uses_browser {
         code.push_str("use async_trait::async_trait;\n");
+    }
+    if uses_browser {
+        code.push_str("use adk_browser::{BrowserSession, BrowserConfig, BrowserToolset};\n");
     }
     code.push_str("use anyhow::Result;\n");
     code.push_str("use serde_json::{json, Value};\n");
     code.push_str("use std::sync::Arc;\n");
     code.push_str("use tracing_subscriber::{fmt, EnvFilter};\n\n");
     
-    // Add MinimalContext for MCP toolset
-    if uses_mcp {
-        code.push_str("// Minimal context for MCP toolset initialization\n");
+    // Add MinimalContext for MCP/browser toolset initialization
+    if uses_mcp || uses_browser {
+        code.push_str("// Minimal context for toolset initialization\n");
         code.push_str("struct MinimalContext { content: Content }\n");
         code.push_str("impl MinimalContext { fn new() -> Self { Self { content: Content { role: String::new(), parts: vec![] } } } }\n");
         code.push_str("#[async_trait]\n");
@@ -100,6 +108,16 @@ fn generate_main_rs(project: &ProjectSchema) -> String {
     code.push_str("    let api_key = std::env::var(\"GOOGLE_API_KEY\")\n");
     code.push_str("        .or_else(|_| std::env::var(\"GEMINI_API_KEY\"))\n");
     code.push_str("        .expect(\"GOOGLE_API_KEY or GEMINI_API_KEY must be set\");\n\n");
+    
+    // Initialize browser session if any agent uses browser
+    let uses_browser = project.agents.values().any(|a| a.tools.contains(&"browser".to_string()));
+    if uses_browser {
+        code.push_str("    // Initialize browser session\n");
+        code.push_str("    let browser_config = BrowserConfig::new().headless(true);\n");
+        code.push_str("    let browser = Arc::new(BrowserSession::new(browser_config));\n");
+        code.push_str("    browser.start().await?;\n");
+        code.push_str("    let browser_toolset = BrowserToolset::new(browser.clone());\n\n");
+    }
     
     // Find top-level agents (not sub-agents of containers)
     let all_sub_agents: std::collections::HashSet<_> = project.agents.values()
@@ -351,11 +369,16 @@ fn generate_llm_node(id: &str, agent: &AgentSchema, project: &ProjectSchema, is_
                 code.push_str(&format!("    {}_builder = {}_builder.tool(Arc::new(FunctionTool::new(\"{}\", \"{}\", {}_fn).with_parameters_schema::<{}Args>()));\n", 
                     id, id, config.name, config.description.replace('"', "\\\""), config.name, struct_name));
             }
-        } else if tool_type != "mcp" {
+        } else if !tool_type.starts_with("mcp") {
             match tool_type.as_str() {
                 "google_search" => code.push_str(&format!("    {}_builder = {}_builder.tool(Arc::new(GoogleSearchTool::new()));\n", id, id)),
                 "exit_loop" => code.push_str(&format!("    {}_builder = {}_builder.tool(Arc::new(ExitLoopTool::new()));\n", id, id)),
                 "load_artifact" => code.push_str(&format!("    {}_builder = {}_builder.tool(Arc::new(LoadArtifactsTool::new()));\n", id, id)),
+                "browser" => {
+                    code.push_str(&format!("    for tool in browser_toolset.tools(Arc::new(MinimalContext::new())).await? {{\n"));
+                    code.push_str(&format!("        {}_builder = {}_builder.tool(tool);\n", id, id));
+                    code.push_str("    }\n");
+                }
                 _ => {}
             }
         }
@@ -631,6 +654,20 @@ uuid = {{ version = "1", features = ["v4"] }}
     if uses_mcp {
         deps.push_str("rmcp = { version = \"0.9\", features = [\"client\", \"transport-child-process\"] }\n");
         deps.push_str("async-trait = \"0.1\"\n");
+    }
+    
+    // Add adk-browser if any agent uses browser tool
+    let uses_browser = project.agents.values().any(|a| a.tools.contains(&"browser".to_string()));
+    if uses_browser {
+        if use_path_deps {
+            deps.push_str(&format!("adk-browser = {{ path = \"{}/adk-browser\" }}\n", adk_root));
+        } else {
+            deps.push_str("adk-browser = \"0.1\"\n");
+        }
+        // async-trait needed for MinimalContext if not already added by MCP
+        if !uses_mcp {
+            deps.push_str("async-trait = \"0.1\"\n");
+        }
     }
     
     // Add patch section at the end (only in dev mode)

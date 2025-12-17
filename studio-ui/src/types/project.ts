@@ -44,6 +44,7 @@ export type ToolConfig = McpToolConfig | FunctionToolConfig | BrowserToolConfig;
 
 export interface McpToolConfig {
   type: 'mcp';
+  name?: string;
   server_command: string;
   server_args: string[];
   tool_filter?: string[];

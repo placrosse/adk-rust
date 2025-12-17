@@ -293,14 +293,18 @@ export function Canvas() {
                     const tool = TOOL_TYPES.find(tt => tt.type === baseType);
                     const isConfigurable = tool?.configurable;
                     const toolConfigId = `${id}_${t}`;
-                    const fnConfig = currentProject?.tool_configs?.[toolConfigId];
+                    const toolConfig = currentProject?.tool_configs?.[toolConfigId];
                     // Show friendly name for function/mcp tools
                     let displayName = tool?.label || t;
-                    if (baseType === 'function' && fnConfig && 'name' in fnConfig && fnConfig.name) {
-                      displayName = fnConfig.name;
+                    if (baseType === 'function' && toolConfig && 'name' in toolConfig && toolConfig.name) {
+                      displayName = toolConfig.name;
                     } else if (baseType === 'mcp') {
-                      const num = t.match(/mcp_(\d+)/)?.[1] || '1';
-                      displayName = `MCP Tool ${num}`;
+                      if (toolConfig && 'name' in toolConfig && toolConfig.name) {
+                        displayName = toolConfig.name;
+                      } else {
+                        const num = t.match(/mcp_(\d+)/)?.[1] || '1';
+                        displayName = `MCP Tool ${num}`;
+                      }
                     }
                     return (
                       <div 
@@ -790,8 +794,12 @@ export function Canvas() {
                         if (baseType === 'function' && toolConfig && 'name' in toolConfig && toolConfig.name) {
                           displayName = toolConfig.name;
                         } else if (baseType === 'mcp') {
-                          const num = t.match(/mcp_(\d+)/)?.[1] || '1';
-                          displayName = `MCP Tool ${num}`;
+                          if (toolConfig && 'name' in toolConfig && toolConfig.name) {
+                            displayName = toolConfig.name;
+                          } else {
+                            const num = t.match(/mcp_(\d+)/)?.[1] || '1';
+                            displayName = `MCP Tool ${num}`;
+                          }
                         }
                         return (
                           <span key={t} className={`text-xs px-2 py-1 rounded flex items-center gap-1 ${toolConfig ? 'bg-green-800' : 'bg-gray-700'}`}>
@@ -855,7 +863,7 @@ export function Canvas() {
                             key={t.name}
                             className="flex items-center gap-1 px-2 py-1 bg-gray-700 hover:bg-gray-600 rounded text-xs text-left"
                             title={t.desc}
-                            onClick={() => updateToolConfig(selectedToolId, { ...mcpConfig, server_command: t.command, server_args: t.args })}
+                            onClick={() => updateToolConfig(selectedToolId, { ...mcpConfig, name: t.name, server_command: t.command, server_args: t.args })}
                           >
                             <span>{t.icon}</span>
                             <span className="truncate">{t.name}</span>
@@ -1263,6 +1271,14 @@ Ok(json!({"result": result, "operation": operation}))`
                 const browserConfig = currentConfig as BrowserToolConfig;
                 return (
                   <div className="space-y-3">
+                    <div className="p-2 bg-yellow-900/50 border border-yellow-600 rounded text-xs">
+                      <div className="font-semibold text-yellow-400 mb-1">⚠️ Requirements</div>
+                      <ul className="list-disc list-inside text-yellow-200 space-y-1">
+                        <li>Chrome or Chromium browser</li>
+                        <li>ChromeDriver (matching Chrome version)</li>
+                        <li>ChromeDriver running: <code className="bg-black/30 px-1 rounded">chromedriver --port=4444</code></li>
+                      </ul>
+                    </div>
                     <div className="flex items-center gap-2">
                       <input
                         type="checkbox"
@@ -1282,7 +1298,7 @@ Ok(json!({"result": result, "operation": operation}))`
                       />
                     </div>
                     <div className="text-xs text-gray-500 mt-2">
-                      Browser tool provides: navigate, click, type, screenshot, get_text
+                      Tools: navigate, click, type, screenshot, get_text
                     </div>
                   </div>
                 );
