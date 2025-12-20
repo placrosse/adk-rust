@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { Node, Edge, useNodesState, useEdgesState } from '@xyflow/react';
 import type { Project, Edge as WorkflowEdge } from '../types/project';
 import { useStore } from '../store';
@@ -16,10 +16,17 @@ export function useCanvasNodes(project: Project | null, execution: ExecutionStat
   const { activeAgent, iteration, flowPhase, thoughts = {} } = execution;
   const layoutDirection = useStore(s => s.layoutDirection);
   const isHorizontal = layoutDirection === 'LR' || layoutDirection === 'RL';
+  
+  // Track project structure for detecting actual changes
+  const prevAgentKeys = useRef<string>('');
 
-  // Build nodes when project or active agent changes
+  // Build nodes only when project STRUCTURE changes (agents added/removed)
   useEffect(() => {
     if (!project) return;
+    const agentKeys = Object.keys(project.agents).sort().join(',');
+    if (agentKeys === prevAgentKeys.current) return; // No structural change
+    prevAgentKeys.current = agentKeys;
+
     const agentIds = Object.keys(project.agents);
     const allSubAgents = new Set(agentIds.flatMap(id => project.agents[id].sub_agents || []));
     const topLevelAgents = agentIds.filter(id => !allSubAgents.has(id));
@@ -42,26 +49,40 @@ export function useCanvasNodes(project: Project | null, execution: ExecutionStat
     sortedAgents.forEach((id, i) => {
       const agent = project.agents[id];
       const pos = { x: 50, y: 150 + i * 150 };
-      const isActive = activeAgent === id || (activeAgent && agent.sub_agents?.includes(activeAgent));
-      const activeSub = activeAgent && agent.sub_agents?.includes(activeAgent) ? activeAgent : undefined;
-
-      if (agent.type === 'sequential') newNodes.push({ id, type: 'sequential', position: pos, data: { label: id, subAgents: agent.sub_agents, activeSubAgent: activeSub, isActive } });
-      else if (agent.type === 'loop') newNodes.push({ id, type: 'loop', position: pos, data: { label: id, subAgents: agent.sub_agents, maxIterations: agent.max_iterations || 3, currentIteration: iteration, activeSubAgent: activeSub, isActive } });
-      else if (agent.type === 'parallel') newNodes.push({ id, type: 'parallel', position: pos, data: { label: id, subAgents: agent.sub_agents, activeSubAgent: activeSub, isActive } });
-      else if (agent.type === 'router') newNodes.push({ id, type: 'router', position: pos, data: { label: id, routes: agent.routes || [], isActive: activeAgent === id } });
-      else newNodes.push({ id, type: 'llm', position: pos, data: { label: id, model: agent.model, tools: agent.tools || [], isActive: activeAgent === id } });
+      if (agent.type === 'sequential') newNodes.push({ id, type: 'sequential', position: pos, data: { label: id, subAgents: agent.sub_agents } });
+      else if (agent.type === 'loop') newNodes.push({ id, type: 'loop', position: pos, data: { label: id, subAgents: agent.sub_agents, maxIterations: agent.max_iterations || 3 } });
+      else if (agent.type === 'parallel') newNodes.push({ id, type: 'parallel', position: pos, data: { label: id, subAgents: agent.sub_agents } });
+      else if (agent.type === 'router') newNodes.push({ id, type: 'router', position: pos, data: { label: id, routes: agent.routes || [] } });
+      else newNodes.push({ id, type: 'llm', position: pos, data: { label: id, model: agent.model, tools: agent.tools || [] } });
     });
     setNodes(newNodes);
-  }, [project, setNodes, activeAgent, iteration]);
+  }, [project, setNodes]);
 
-  // Update thoughts separately - lightweight update
+  // Update execution state (isActive, iteration, thoughts) WITHOUT changing positions
   useEffect(() => {
-    setNodes(nds => nds.map(n => 
-      n.type === 'llm' ? { ...n, data: { ...n.data, thought: thoughts[n.id] } } : n
-    ));
-  }, [thoughts, setNodes]);
+    if (!project) return;
+    setNodes(nds => nds.map(n => {
+      if (n.id === 'START' || n.id === 'END') return n;
+      const agent = project.agents[n.id];
+      if (!agent) return n;
+      
+      const isActive = activeAgent === n.id || (activeAgent && agent.sub_agents?.includes(activeAgent));
+      const activeSub = activeAgent && agent.sub_agents?.includes(activeAgent) ? activeAgent : undefined;
+      
+      return {
+        ...n,
+        data: {
+          ...n.data,
+          isActive,
+          activeSubAgent: activeSub,
+          currentIteration: agent.type === 'loop' ? iteration : undefined,
+          thought: n.type === 'llm' ? thoughts[n.id] : undefined,
+        },
+      };
+    }));
+  }, [project, activeAgent, iteration, thoughts, setNodes]);
 
-  // Rebuild edges when project, execution state, or layout direction changes
+  // Rebuild edges when project edges or layout direction changes
   useEffect(() => {
     if (!project) return;
     setEdges(project.workflow.edges.map((e: WorkflowEdge, i: number) => {
@@ -76,7 +97,7 @@ export function useCanvasNodes(project: Project | null, execution: ExecutionStat
         targetHandle: isHorizontal ? 'left' : 'top',
       };
     }));
-  }, [project, flowPhase, activeAgent, setEdges, layoutDirection, isHorizontal]);
+  }, [project?.workflow.edges, flowPhase, activeAgent, setEdges, layoutDirection, isHorizontal]);
 
   return { nodes, edges, setNodes, setEdges, onNodesChange, onEdgesChange };
 }
