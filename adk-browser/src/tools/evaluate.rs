@@ -3,7 +3,7 @@
 use crate::session::BrowserSession;
 use adk_core::{Result, Tool, ToolContext};
 use async_trait::async_trait;
-use serde_json::{json, Value};
+use serde_json::{Value, json};
 use std::sync::Arc;
 
 /// Tool for executing JavaScript in the browser.

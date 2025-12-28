@@ -1,6 +1,6 @@
+use adk_gemini::Gemini;
 use display_error_chain::DisplayErrorChain;
 use futures::TryStreamExt;
-use adk_gemini::Gemini;
 use std::env;
 use std::io::{self, Write};
 use std::process::ExitCode;
@@ -58,10 +58,7 @@ async fn do_main() -> Result<(), Box<dyn std::error::Error>> {
         io::stdout().flush()?;
     }
 
-    info!(
-        response_length = full_response.len(),
-        "streaming response completed"
-    );
+    info!(response_length = full_response.len(), "streaming response completed");
 
     // Example 2: Streaming with system prompt
     info!("\n🔄 Streaming technical explanation...\n");

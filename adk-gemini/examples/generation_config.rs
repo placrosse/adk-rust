@@ -1,5 +1,5 @@
-use display_error_chain::DisplayErrorChain;
 use adk_gemini::{Gemini, GenerationConfig};
+use display_error_chain::DisplayErrorChain;
 use std::env;
 use std::process::ExitCode;
 use tracing::info;
@@ -69,11 +69,7 @@ async fn do_main() -> Result<(), Box<dyn std::error::Error>> {
         .execute()
         .await?;
 
-    info!(
-        temperature = 0.2,
-        response = response2.text(),
-        "response with low temperature received"
-    );
+    info!(temperature = 0.2, response = response2.text(), "response with low temperature received");
 
     // Setting multiple parameters individually
     info!("starting generation config example with multiple individual parameters");

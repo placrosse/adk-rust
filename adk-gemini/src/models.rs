@@ -88,10 +88,7 @@ pub struct Blob {
 impl Blob {
     /// Create a new blob with mime type and data
     pub fn new(mime_type: impl Into<String>, data: impl Into<String>) -> Self {
-        Self {
-            mime_type: mime_type.into(),
-            data: data.into(),
-        }
+        Self { mime_type: mime_type.into(), data: data.into() }
     }
 }
 
@@ -123,10 +120,7 @@ impl Content {
     /// Create a new content with a function call
     pub fn function_call(function_call: super::tools::FunctionCall) -> Self {
         Self {
-            parts: Some(vec![Part::FunctionCall {
-                function_call,
-                thought_signature: None,
-            }]),
+            parts: Some(vec![Part::FunctionCall { function_call, thought_signature: None }]),
             role: None,
         }
     }
@@ -177,10 +171,7 @@ impl Content {
 
     /// Create a new content with a function response
     pub fn function_response(function_response: super::tools::FunctionResponse) -> Self {
-        Self {
-            parts: Some(vec![Part::FunctionResponse { function_response }]),
-            role: None,
-        }
+        Self { parts: Some(vec![Part::FunctionResponse { function_response }]), role: None }
     }
 
     /// Create a new content with a function response from name and JSON value
@@ -196,9 +187,7 @@ impl Content {
     /// Create a new content with inline data (blob data)
     pub fn inline_data(mime_type: impl Into<String>, data: impl Into<String>) -> Self {
         Self {
-            parts: Some(vec![Part::InlineData {
-                inline_data: Blob::new(mime_type, data),
-            }]),
+            parts: Some(vec![Part::InlineData { inline_data: Blob::new(mime_type, data) }]),
             role: None,
         }
     }
@@ -222,26 +211,17 @@ pub struct Message {
 impl Message {
     /// Create a new user message with text content
     pub fn user(text: impl Into<String>) -> Self {
-        Self {
-            content: Content::text(text).with_role(Role::User),
-            role: Role::User,
-        }
+        Self { content: Content::text(text).with_role(Role::User), role: Role::User }
     }
 
     /// Create a new model message with text content
     pub fn model(text: impl Into<String>) -> Self {
-        Self {
-            content: Content::text(text).with_role(Role::Model),
-            role: Role::Model,
-        }
+        Self { content: Content::text(text).with_role(Role::Model), role: Role::Model }
     }
 
     /// Create a new embedding message with text content
     pub fn embed(text: impl Into<String>) -> Self {
-        Self {
-            content: Content::text(text),
-            role: Role::Model,
-        }
+        Self { content: Content::text(text), role: Role::Model }
     }
 
     /// Create a new function message with function response content from JSON

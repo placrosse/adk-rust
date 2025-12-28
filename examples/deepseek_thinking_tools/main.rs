@@ -20,7 +20,7 @@ use adk_model::deepseek::{DeepSeekClient, DeepSeekConfig};
 use adk_tool::FunctionTool;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-use serde_json::{json, Value};
+use serde_json::{Value, json};
 use std::sync::Arc;
 
 /// Arguments for stock price lookup.
@@ -153,11 +153,7 @@ async fn financial_calculate(
             if args.values.len() >= 2 {
                 let first = args.values[0];
                 let last = args.values[args.values.len() - 1];
-                if first != 0.0 {
-                    ((last - first) / first) * 100.0
-                } else {
-                    0.0
-                }
+                if first != 0.0 { ((last - first) / first) * 100.0 } else { 0.0 }
             } else {
                 0.0
             }
@@ -225,7 +221,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("=== DeepSeek Thinking Mode + Tool Calls Demo ===\n");
     println!("This uses deepseek-reasoner which shows chain-of-thought reasoning.");
     println!("The model will think step-by-step while using tools.\n");
-    println!("Try asking: 'I own 50 shares of AAPL and 30 shares of MSFT. What is my portfolio worth?'\n");
+    println!(
+        "Try asking: 'I own 50 shares of AAPL and 30 shares of MSFT. What is my portfolio worth?'\n"
+    );
 
     // Run interactive console
     adk_cli::console::run_console(

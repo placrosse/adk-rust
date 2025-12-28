@@ -4,7 +4,7 @@
 [![crates.io](https://img.shields.io/crates/v/adk-rust.svg)](https://crates.io/crates/adk-rust)
 [![docs.rs](https://docs.rs/adk-rust/badge.svg)](https://docs.rs/adk-rust)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
-![Rust](https://img.shields.io/badge/rust-1.75%2B-orange.svg)
+![Rust](https://img.shields.io/badge/rust-1.85%2B-orange.svg)
 
 Production-ready Rust implementation of Google's Agent Development Kit (ADK). Build high-performance, memory-safe AI agent systems with streaming responses, workflow orchestration, and extensible tool integration.
 
@@ -17,26 +17,46 @@ ADK-Rust provides a comprehensive framework for building AI agents in Rust, feat
 - **Realtime voice agents**: Bidirectional audio streaming with OpenAI Realtime API and Gemini Live API
 - **Tool ecosystem**: Function tools, Google Search, MCP (Model Context Protocol) integration
 - **Production features**: Session management, artifact storage, memory systems, REST/A2A APIs
-- **Developer experience**: Interactive CLI, 15+ working examples, comprehensive documentation
+- **Developer experience**: Interactive CLI, 80+ working examples, comprehensive documentation
 
 **Status**: Production-ready, actively maintained
+
+## ADK-Rust Studio
+
+Visual development environment for building AI agents with drag-and-drop:
+
+![ADK-Rust Studio - Support Router](adk-studio/docs/studio-screenshot.png)
+
+```bash
+# Install and run
+cargo install adk-studio
+adk-studio --port 6000
+```
+
+**Features**:
+- Drag-and-drop agent creation with ReactFlow canvas
+- Full agent palette: LLM, Sequential, Parallel, Loop, Router
+- Tools: Function, MCP, Browser, Google Search
+- Real-time chat with SSE streaming
+- Code generation: Compile visual designs to Rust
+- Build and run executables from Studio
 
 ## Quick Start
 
 ### Installation
 
-Requires Rust 1.75 or later. Add to your `Cargo.toml`:
+Requires Rust 1.85 or later (Rust 2024 edition). Add to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-adk-rust = "0.1"
+adk-rust = "0.1.8"
 
 # Or individual crates
-adk-core = "0.1"
-adk-agent = "0.1"
-adk-model = "0.1"  # Add features for providers: features = ["openai", "anthropic"]
-adk-tool = "0.1"
-adk-runner = "0.1"
+adk-core = "0.1.8"
+adk-agent = "0.1.8"
+adk-model = "0.1.8"  # Add features for providers: features = ["openai", "anthropic"]
+adk-tool = "0.1.8"
+adk-runner = "0.1.8"
 ```
 
 Set your API key:
@@ -457,7 +477,7 @@ All providers support streaming, function calling, and multimodal inputs (where 
 
 - **Website**: [adk-rust.com](https://adk-rust.com) - Official documentation and guides
 - **API Reference**: [docs.rs/adk-rust](https://docs.rs/adk-rust) - Full API documentation
-- **Examples**: [examples/README.md](examples/README.md) - 50+ working examples with detailed explanations
+- **Examples**: [examples/README.md](examples/README.md) - 80+ working examples with detailed explanations
 
 ### Dynamic UI Generation
 
@@ -521,25 +541,25 @@ Add to your `Cargo.toml`:
 ```toml
 [dependencies]
 # All-in-one crate
-adk-rust = "0.1"
+adk-rust = "0.1.8"
 
 # Or individual crates for finer control
-adk-core = "0.1"
-adk-agent = "0.1"
-adk-model = { version = "0.1", features = ["openai", "anthropic"] }  # Enable providers
-adk-tool = "0.1"
-adk-runner = "0.1"
+adk-core = "0.1.8"
+adk-agent = "0.1.8"
+adk-model = { version = "0.1.8", features = ["openai", "anthropic"] }  # Enable providers
+adk-tool = "0.1.8"
+adk-runner = "0.1.8"
 
 # Optional dependencies
-adk-session = { version = "0.1", optional = true }
-adk-artifact = { version = "0.1", optional = true }
-adk-memory = { version = "0.1", optional = true }
-adk-server = { version = "0.1", optional = true }
-adk-cli = { version = "0.1", optional = true }
-adk-realtime = { version = "0.1", features = ["openai"], optional = true }
-adk-graph = { version = "0.1", features = ["sqlite"], optional = true }
-adk-browser = { version = "0.1", optional = true }
-adk-eval = { version = "0.1", optional = true }
+adk-session = { version = "0.1.8", optional = true }
+adk-artifact = { version = "0.1.8", optional = true }
+adk-memory = { version = "0.1.8", optional = true }
+adk-server = { version = "0.1.8", optional = true }
+adk-cli = { version = "0.1.8", optional = true }
+adk-realtime = { version = "0.1.8", features = ["openai"], optional = true }
+adk-graph = { version = "0.1.8", features = ["sqlite"], optional = true }
+adk-browser = { version = "0.1.8", optional = true }
+adk-eval = { version = "0.1.8", optional = true }
 ```
 
 ## Examples
@@ -555,8 +575,14 @@ See [examples/](examples/) directory for complete, runnable examples:
 **OpenAI Integration** (requires `--features openai`)
 - `openai_basic/` - Simple OpenAI GPT agent
 - `openai_tools/` - OpenAI with function calling
-- `openai_multimodal/` - Vision and image support
 - `openai_workflow/` - Multi-agent workflows with OpenAI
+- `openai_structured/` - Structured JSON output
+
+**DeepSeek Integration** (requires `--features deepseek`)
+- `deepseek_basic/` - Basic DeepSeek chat
+- `deepseek_reasoner/` - Chain-of-thought reasoning mode
+- `deepseek_tools/` - Function calling with DeepSeek
+- `deepseek_caching/` - Context caching for cost reduction
 
 **Workflow Agents**
 - `sequential/` - Sequential workflow execution
@@ -589,6 +615,16 @@ See [examples/](examples/) directory for complete, runnable examples:
 - `eval_trajectory/` - Tool call trajectory validation
 - `eval_semantic/` - LLM-judged semantic matching
 - `eval_rubric/` - Rubric-based scoring
+
+**Guardrails**
+- `guardrail_basic/` - PII redaction and content filtering
+- `guardrail_schema/` - JSON schema validation
+- `guardrail_agent/` - Full agent integration with guardrails
+
+**Dynamic UI**
+- `ui_agent/` - Agent with UI rendering tools
+- `ui_server/` - UI server with streaming updates
+- `ui_react_client/` - React client example
 
 **Production Features**
 - `load_artifacts/` - Working with images and PDFs
@@ -623,7 +659,7 @@ Contributions welcome! Please open an issue or pull request on GitHub.
 
 ## Roadmap
 
-**Implemented** (v0.1.6):
+**Implemented** (v0.1.8):
 - Core framework and agent types
 - Multi-provider LLM support (Gemini, OpenAI, Anthropic, DeepSeek)
 - Tool system with MCP support
@@ -637,13 +673,13 @@ Contributions welcome! Please open an issue or pull request on GitHub.
 - Browser automation (46 WebDriver tools)
 - Agent evaluation framework with trajectory validation and LLM-judged scoring
 - **Dynamic UI generation** (adk-ui) with 28 components, 10 templates, React client
+- **Guardrails** (adk-guardrail) with PII redaction, content filtering, schema validation
+- **ADK-Rust Studio** - Visual agent builder with drag-and-drop, code generation, live streaming
 
 **Planned** (see [docs/roadmap/](docs/roadmap/)):
 
 | Priority | Feature | Target | Status |
 |----------|---------|--------|--------|
-| 🔴 P0 | [Guardrails](docs/roadmap/guardrails.md) | Q1 2026 | Planned |
-| 🔴 P0 | [ADK Studio](docs/roadmap/adk-studio.md) | Q1-Q2 2026 | Planned |
 | 🟡 P1 | [Cloud Integrations](docs/roadmap/cloud-integrations.md) | Q2-Q3 2026 | Planned |
 | 🟡 P1 | [Graph Visualization](docs/roadmap/graph-agent-design.md) | Q2 2026 | Planned |
 | 🟢 P2 | [Enterprise Features](docs/roadmap/enterprise.md) | Q4 2026 | Planned |

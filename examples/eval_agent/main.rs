@@ -14,12 +14,12 @@ use adk_agent::LlmAgentBuilder;
 use adk_core::{Agent, Tool, ToolContext};
 use adk_eval::schema::ToolUse;
 use adk_eval::{
-    schema::{ContentData, EvalCase, IntermediateData, TestFile, Turn},
     EvaluationConfig, EvaluationCriteria, Evaluator, ToolTrajectoryConfig,
+    schema::{ContentData, EvalCase, IntermediateData, TestFile, Turn},
 };
 use adk_model::GeminiModel;
 use async_trait::async_trait;
-use serde_json::{json, Value};
+use serde_json::{Value, json};
 use std::sync::Arc;
 
 // =============================================================================
@@ -201,8 +201,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     invocation_id: "turn_1".to_string(),
                     user_content: ContentData::text("What's the weather in San Francisco?"),
                     intermediate_data: Some(IntermediateData {
-                        tool_uses: vec![ToolUse::new("get_weather")
-                            .with_args(json!({"location": "San Francisco"}))],
+                        tool_uses: vec![
+                            ToolUse::new("get_weather")
+                                .with_args(json!({"location": "San Francisco"})),
+                        ],
                         intermediate_responses: vec![],
                     }),
                     final_response: Some(ContentData::model_response(
@@ -220,8 +222,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     invocation_id: "turn_1".to_string(),
                     user_content: ContentData::text("What's the 3-day forecast for NYC?"),
                     intermediate_data: Some(IntermediateData {
-                        tool_uses: vec![ToolUse::new("get_forecast")
-                            .with_args(json!({"location": "NYC", "days": 3}))],
+                        tool_uses: vec![
+                            ToolUse::new("get_forecast")
+                                .with_args(json!({"location": "NYC", "days": 3})),
+                        ],
                         intermediate_responses: vec![],
                     }),
                     final_response: Some(ContentData::model_response(
@@ -240,7 +244,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     user_content: ContentData::text("What's the weather in Atlantis?"),
                     intermediate_data: Some(IntermediateData {
                         tool_uses: vec![
-                            ToolUse::new("get_weather").with_args(json!({"location": "Atlantis"}))
+                            ToolUse::new("get_weather").with_args(json!({"location": "Atlantis"})),
                         ],
                         intermediate_responses: vec![],
                     }),

@@ -1,5 +1,5 @@
-use display_error_chain::DisplayErrorChain;
 use adk_gemini::{Gemini, Model, TaskType};
+use display_error_chain::DisplayErrorChain;
 use std::process::ExitCode;
 use tracing::info;
 
@@ -40,10 +40,7 @@ async fn do_main() -> Result<(), Box<dyn std::error::Error>> {
         .execute_batch()
         .await?;
 
-    info!(
-        embeddings_count = response.embeddings.len(),
-        "batch embedding completed"
-    );
+    info!(embeddings_count = response.embeddings.len(), "batch embedding completed");
 
     for (i, e) in response.embeddings.iter().enumerate() {
         info!(

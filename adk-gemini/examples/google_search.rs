@@ -1,5 +1,5 @@
-use display_error_chain::DisplayErrorChain;
 use adk_gemini::{Gemini, Tool};
+use display_error_chain::DisplayErrorChain;
 use std::env;
 use std::process::ExitCode;
 use tracing::info;
@@ -44,10 +44,7 @@ async fn do_main() -> Result<(), Box<dyn std::error::Error>> {
         .execute()
         .await?;
 
-    info!(
-        response = response.text(),
-        "google search response received"
-    );
+    info!(response = response.text(), "google search response received");
 
     Ok(())
 }

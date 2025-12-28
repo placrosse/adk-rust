@@ -30,7 +30,7 @@ pub mod init;
 pub mod spans;
 
 // Re-export tracing macros for convenience
-pub use tracing::{debug, error, info, instrument, trace, warn, Span};
+pub use tracing::{Span, debug, error, info, instrument, trace, warn};
 
 // Re-export span helpers
 pub use spans::*;

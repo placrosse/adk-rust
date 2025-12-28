@@ -9,16 +9,12 @@ fn test_model_deserialization() {
         model: Model,
     }
 
-    let response = Response {
-        model: Model::Custom("models/custom_gemini_model".to_string()),
-    };
+    let response = Response { model: Model::Custom("models/custom_gemini_model".to_string()) };
     let serialized = serde_json::to_string(&response).unwrap();
     let deserialized: Response = serde_json::from_str(&serialized).unwrap();
     assert_eq!(deserialized.model, response.model);
 
-    let response = Response {
-        model: Model::Gemini25Flash,
-    };
+    let response = Response { model: Model::Gemini25Flash };
     let serialized = serde_json::to_string(&response).unwrap();
     let deserialized: Response = serde_json::from_str(&serialized).unwrap();
     assert_eq!(deserialized.model, response.model);
@@ -72,10 +68,7 @@ fn test_thought_signature_deserialization() {
 
     // Verify the part is a function call with thought signature
     match &parts[0] {
-        Part::FunctionCall {
-            function_call,
-            thought_signature,
-        } => {
+        Part::FunctionCall { function_call, thought_signature } => {
             assert_eq!(function_call.name, "get_current_weather");
             assert_eq!(function_call.args["location"], "Kaohsiung Zuoying District");
 
@@ -113,10 +106,7 @@ fn test_function_call_with_thought_signature() {
 
     assert_eq!(function_call.name, "test_function");
     assert_eq!(function_call.args["param"], "value");
-    assert_eq!(
-        function_call.thought_signature,
-        Some("test_thought_signature".to_string())
-    );
+    assert_eq!(function_call.thought_signature, Some("test_thought_signature".to_string()));
 
     // Test serialization
     let serialized = serde_json::to_string(&function_call).unwrap();
@@ -179,15 +169,9 @@ fn test_multi_turn_content_structure() {
     assert_eq!(parts.len(), 1);
 
     match &parts[0] {
-        Part::FunctionCall {
-            function_call,
-            thought_signature,
-        } => {
+        Part::FunctionCall { function_call, thought_signature } => {
             assert_eq!(function_call.name, "get_weather");
-            assert_eq!(
-                thought_signature.as_ref().unwrap(),
-                "sample_thought_signature"
-            );
+            assert_eq!(thought_signature.as_ref().unwrap(), "sample_thought_signature");
         }
         _ => panic!("Expected FunctionCall part"),
     }
@@ -241,11 +225,7 @@ fn test_text_with_thought_signature() {
 
     // Check first part (thought without signature)
     match &parts[0] {
-        Part::Text {
-            text,
-            thought,
-            thought_signature,
-        } => {
+        Part::Text { text, thought, thought_signature } => {
             assert_eq!(*thought, Some(true));
             assert_eq!(*thought_signature, None);
             assert!(text.contains("here's what I'm thinking"));
@@ -255,11 +235,7 @@ fn test_text_with_thought_signature() {
 
     // Check second part (text with thought signature)
     match &parts[1] {
-        Part::Text {
-            text,
-            thought,
-            thought_signature,
-        } => {
+        Part::Text { text, thought, thought_signature } => {
             assert_eq!(*thought, None);
             assert!(thought_signature.is_some());
             assert_eq!(thought_signature.as_ref().unwrap(), "Cs4BA.../Yw=");
@@ -294,11 +270,7 @@ fn test_content_creation_with_thought_signature() {
     assert_eq!(parts.len(), 1);
 
     match &parts[0] {
-        Part::Text {
-            text,
-            thought,
-            thought_signature,
-        } => {
+        Part::Text { text, thought, thought_signature } => {
             assert_eq!(text, "Test response");
             assert_eq!(*thought, None);
             assert_eq!(thought_signature.as_ref().unwrap(), "test_signature_123");
@@ -314,11 +286,7 @@ fn test_content_creation_with_thought_signature() {
     assert_eq!(parts.len(), 1);
 
     match &parts[0] {
-        Part::Text {
-            text,
-            thought,
-            thought_signature,
-        } => {
+        Part::Text { text, thought, thought_signature } => {
             assert_eq!(text, "This is my thinking process");
             assert_eq!(*thought, Some(true));
             assert_eq!(thought_signature.as_ref().unwrap(), "thought_signature_456");

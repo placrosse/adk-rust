@@ -15,7 +15,7 @@ use adk_tool::FunctionTool;
 use anyhow::Result;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-use serde_json::{json, Value};
+use serde_json::{Value, json};
 use std::sync::Arc;
 
 #[derive(Debug, Serialize, Deserialize, JsonSchema)]

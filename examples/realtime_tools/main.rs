@@ -11,8 +11,8 @@
 //! ```
 
 use adk_realtime::{
-    config::ToolDefinition, openai::OpenAIRealtimeModel, RealtimeConfig, RealtimeModel,
-    ServerEvent, ToolResponse,
+    RealtimeConfig, RealtimeModel, ServerEvent, ToolResponse, config::ToolDefinition,
+    openai::OpenAIRealtimeModel,
 };
 use serde_json::json;
 use std::sync::Arc;

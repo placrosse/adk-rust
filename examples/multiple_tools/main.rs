@@ -3,7 +3,7 @@ use adk_core::ToolContext;
 use adk_model::gemini::GeminiModel;
 use adk_tool::{FunctionTool, GoogleSearchTool};
 use anyhow::Result;
-use serde_json::{json, Value};
+use serde_json::{Value, json};
 use std::sync::Arc;
 
 async fn generate_poem(

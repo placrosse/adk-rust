@@ -31,7 +31,7 @@
 
 use adk_artifact::ArtifactService;
 use adk_core::{Agent, AgentLoader, Result};
-use adk_server::{create_app, ServerConfig};
+use adk_server::{ServerConfig, create_app};
 use adk_session::InMemorySessionService;
 use clap::{Parser, Subcommand};
 use std::sync::Arc;

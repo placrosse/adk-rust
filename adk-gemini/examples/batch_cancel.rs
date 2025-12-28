@@ -7,8 +7,8 @@
 //! 4. Canceling the batch when CTRL-C is pressed
 //! 5. Properly handling the result
 
-use display_error_chain::DisplayErrorChain;
 use adk_gemini::{Batch, BatchHandleError, BatchStatus, Gemini, Message};
+use display_error_chain::DisplayErrorChain;
 use std::process::ExitCode;
 use std::{env, sync::Arc, time::Duration};
 use tokio::{signal, sync::Mutex};
@@ -71,9 +71,8 @@ async fn do_main() -> Result<(), Box<dyn std::error::Error>> {
     let gemini = Gemini::new(api_key).expect("unable to create Gemini API client");
 
     // Create a batch with multiple requests
-    let mut batch_generate_content = gemini
-        .batch_generate_content()
-        .with_name("batch_cancel_example".to_string());
+    let mut batch_generate_content =
+        gemini.batch_generate_content().with_name("batch_cancel_example".to_string());
 
     // Add several requests to make the batch take some time to process
     for i in 1..=10 {
@@ -107,28 +106,31 @@ async fn do_main() -> Result<(), Box<dyn std::error::Error>> {
         // The lock is released immediately after this block.
         let mut batch_to_cancel = batch_clone.lock().await;
 
-        match batch_to_cancel.take() { Some(batch) => {
-            // Cancel the batch operation
-            match batch.cancel().await {
-                Ok(()) => {
-                    info!("batch canceled successfully");
-                }
-                Err((batch, e)) => {
-                    warn!(error = %e, "failed to cancel batch, retrying");
-                    // Retry once
-                    match batch.cancel().await {
-                        Ok(()) => {
-                            info!("batch canceled successfully on retry");
-                        }
-                        Err((_, retry_error)) => {
-                            error!(error = %retry_error, "failed to cancel batch even on retry");
+        match batch_to_cancel.take() {
+            Some(batch) => {
+                // Cancel the batch operation
+                match batch.cancel().await {
+                    Ok(()) => {
+                        info!("batch canceled successfully");
+                    }
+                    Err((batch, e)) => {
+                        warn!(error = %e, "failed to cancel batch, retrying");
+                        // Retry once
+                        match batch.cancel().await {
+                            Ok(()) => {
+                                info!("batch canceled successfully on retry");
+                            }
+                            Err((_, retry_error)) => {
+                                error!(error = %retry_error, "failed to cancel batch even on retry");
+                            }
                         }
                     }
                 }
             }
-        } _ => {
-            info!("batch was already processed");
-        }}
+            _ => {
+                info!("batch was already processed");
+            }
+        }
     });
 
     // Wait for a short moment to ensure the cancel task is ready

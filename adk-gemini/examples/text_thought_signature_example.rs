@@ -1,9 +1,9 @@
+use adk_gemini::{Content, GenerationResponse, Part};
 /// Example demonstrating text responses with thoughtSignature support
 ///
 /// This example shows how to handle text responses that include thought signatures,
 /// as seen in the Gemini 2.5 Flash API response format.
 use display_error_chain::DisplayErrorChain;
-use adk_gemini::{Content, GenerationResponse, Part};
 use serde_json::json;
 use std::process::ExitCode;
 use tracing::info;
@@ -71,13 +71,7 @@ fn do_main() -> Result<(), Box<dyn std::error::Error>> {
     let response: GenerationResponse = serde_json::from_value(api_response)?;
 
     info!("📋 Parsed API Response:");
-    info!(
-        "Model Version: {}",
-        response
-            .model_version
-            .as_ref()
-            .unwrap_or(&"Unknown".to_string())
-    );
+    info!("Model Version: {}", response.model_version.as_ref().unwrap_or(&"Unknown".to_string()));
 
     // Display usage metadata
     if let Some(usage) = &response.usage_metadata {
@@ -85,10 +79,7 @@ fn do_main() -> Result<(), Box<dyn std::error::Error>> {
         if let Some(prompt_token_count) = usage.prompt_token_count {
             info!("  Prompt tokens: {}", prompt_token_count);
         }
-        info!(
-            "  Response tokens: {}",
-            usage.candidates_token_count.unwrap_or(0)
-        );
+        info!("  Response tokens: {}", usage.candidates_token_count.unwrap_or(0));
         if let Some(total_token_count) = usage.total_token_count {
             info!("  Total tokens: {}", total_token_count);
         }
@@ -142,28 +133,16 @@ fn do_main() -> Result<(), Box<dyn std::error::Error>> {
     if let Some(candidate) = response.candidates.first() {
         if let Some(parts) = &candidate.content.parts {
             for (i, part) in parts.iter().enumerate() {
-                if let Part::Text {
-                    text: _,
-                    thought,
-                    thought_signature,
-                } = part
-                {
+                if let Part::Text { text: _, thought, thought_signature } = part {
                     info!(
                         part_number = i + 1,
-                        text_type = if *thought == Some(true) {
-                            "Thought"
-                        } else {
-                            "Regular"
-                        },
+                        text_type = if *thought == Some(true) { "Thought" } else { "Regular" },
                         has_signature = thought_signature.is_some(),
                         "part analysis"
                     );
 
                     if let Some(sig) = thought_signature {
-                        info!(
-                            signature_preview = &sig[..10.min(sig.len())],
-                            "preserve signature"
-                        );
+                        info!(signature_preview = &sig[..10.min(sig.len())], "preserve signature");
                     }
                 }
             }

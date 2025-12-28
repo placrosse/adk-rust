@@ -67,4 +67,4 @@ pub use agent_tool::{AgentTool, AgentToolConfig};
 pub use builtin::{ExitLoopTool, GoogleSearchTool, LoadArtifactsTool};
 pub use function_tool::FunctionTool;
 pub use mcp::McpToolset;
-pub use toolset::{string_predicate, BasicToolset};
+pub use toolset::{BasicToolset, string_predicate};

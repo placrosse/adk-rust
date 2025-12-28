@@ -1,5 +1,5 @@
-use display_error_chain::DisplayErrorChain;
 use adk_gemini::Gemini;
+use display_error_chain::DisplayErrorChain;
 use std::env;
 use std::process::ExitCode;
 use tracing::{debug, error, info, warn};
@@ -72,10 +72,7 @@ async fn run_all_examples() -> Result<(), Box<dyn std::error::Error>> {
         .execute()
         .await?;
 
-    info!(
-        response_length = response.text().len(),
-        "basic generation completed"
-    );
+    info!(response_length = response.text().len(), "basic generation completed");
     info!("✅ Basic generation completed");
 
     // Example 2: Production-ready API calls with comprehensive tracing
@@ -111,10 +108,7 @@ async fn run_all_examples() -> Result<(), Box<dyn std::error::Error>> {
     info!("this info message shows by default");
     warn!("this is a warning message");
 
-    debug!(
-        operation = "log_levels_example",
-        "starting log levels demonstration"
-    );
+    debug!(operation = "log_levels_example", "starting log levels demonstration");
 
     let response = client
         .generate_content()
@@ -133,10 +127,7 @@ async fn run_all_examples() -> Result<(), Box<dyn std::error::Error>> {
             .unwrap_or(response.text().len())],
         "response preview"
     );
-    info!(
-        response_length = response.text().len(),
-        "log levels demonstration completed"
-    );
+    info!(response_length = response.text().len(), "log levels demonstration completed");
     info!("✅ Log levels demonstration completed");
 
     Ok(())

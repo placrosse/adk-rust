@@ -80,7 +80,7 @@ impl Guardrail for SchemaValidator {
                 return GuardrailResult::Fail {
                     reason: "Content does not contain valid JSON".to_string(),
                     severity: self.severity,
-                }
+                };
             }
         };
 

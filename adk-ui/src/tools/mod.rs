@@ -20,7 +20,7 @@ pub use render_progress::RenderProgressTool;
 pub use render_table::RenderTableTool;
 pub use render_toast::RenderToastTool;
 
-use schemars::{r#gen::SchemaSettings, JsonSchema};
+use schemars::{JsonSchema, r#gen::SchemaSettings};
 use serde::Serialize;
 use serde_json::Value;
 

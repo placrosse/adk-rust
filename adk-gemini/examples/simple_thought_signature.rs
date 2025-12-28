@@ -1,5 +1,5 @@
-use display_error_chain::DisplayErrorChain;
 use adk_gemini::{FunctionCallingMode, FunctionDeclaration, Gemini, ThinkingConfig, Tool};
+use display_error_chain::DisplayErrorChain;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use std::env;
@@ -15,11 +15,7 @@ struct Weather {
 
 impl std::fmt::Display for Weather {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "{}",
-            serde_json::to_string_pretty(self).unwrap_or_default()
-        )
+        write!(f, "{}", serde_json::to_string_pretty(self).unwrap_or_default())
     }
 }
 
@@ -53,9 +49,8 @@ async fn do_main() -> Result<(), Box<dyn std::error::Error>> {
             .with_parameters::<Weather>();
 
     // Configure thinking to enable thoughtSignature
-    let thinking_config = ThinkingConfig::new()
-        .with_dynamic_thinking()
-        .with_thoughts_included(true);
+    let thinking_config =
+        ThinkingConfig::new().with_dynamic_thinking().with_thoughts_included(true);
 
     let response = client
         .generate_content()

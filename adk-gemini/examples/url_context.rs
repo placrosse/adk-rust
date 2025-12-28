@@ -49,8 +49,8 @@ making the content available to the model for analysis and response generation.
 - [`google_search.rs`](google_search.rs) - Google Search tool integration
 */
 
-use display_error_chain::DisplayErrorChain;
 use adk_gemini::{Gemini, Tool};
+use display_error_chain::DisplayErrorChain;
 use std::env;
 use std::process::ExitCode;
 use tracing::info;
@@ -96,10 +96,7 @@ async fn do_main() -> Result<(), Box<dyn std::error::Error>> {
         .execute()
         .await?;
 
-    info!(
-        response = response1.text(),
-        "news article analysis completed"
-    );
+    info!(response = response1.text(), "news article analysis completed");
 
     // Example 2: Extract information from documentation
     info!("example 2: extracting documentation information");
@@ -112,10 +109,7 @@ async fn do_main() -> Result<(), Box<dyn std::error::Error>> {
         .execute()
         .await?;
 
-    info!(
-        response = response2.text(),
-        "documentation analysis completed"
-    );
+    info!(response = response2.text(), "documentation analysis completed");
 
     // Example 3: Compare content from multiple URLs
     info!("example 3: comparing content from multiple sources");

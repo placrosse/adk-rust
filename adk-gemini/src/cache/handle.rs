@@ -28,11 +28,7 @@ impl CachedContentHandle {
 
     /// Retrieves the cached content configuration by making an API call.
     pub async fn get(&self) -> Result<CachedContent, Error> {
-        self.client
-            .get_cached_content(&self.name)
-            .await
-            .map_err(Box::new)
-            .context(ClientSnafu)
+        self.client.get_cached_content(&self.name).await.map_err(Box::new).context(ClientSnafu)
     }
 
     /// Updates the cached content configuration (typically the TTL).

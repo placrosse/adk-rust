@@ -33,7 +33,7 @@ export function useLayout() {
       return { ...node, position: { x: pos.x - 90, y: pos.y - 50 } };
     }));
 
-    setTimeout(() => fitView({ padding: getPadding() }), 50);
+    setTimeout(() => fitView({ padding: getPadding(), maxZoom: 0.9 }), 50);
   }, [getNodes, getEdges, setNodes, fitView, getPadding]);
 
   // Toggle layout direction
@@ -48,7 +48,7 @@ export function useLayout() {
     doLayout(layoutDirection);
   }, [doLayout, layoutDirection]);
 
-  const fitToView = useCallback(() => fitView({ padding: getPadding(), duration: 300 }), [fitView, getPadding]);
+  const fitToView = useCallback(() => fitView({ padding: getPadding(), duration: 300, maxZoom: 0.9 }), [fitView, getPadding]);
 
   return { applyLayout, toggleLayout, fitToView, layoutDirection };
 }

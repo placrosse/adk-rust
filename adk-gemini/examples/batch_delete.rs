@@ -16,8 +16,8 @@
 //! cargo run --package gemini-rust --example batch_delete
 //! ```
 
-use display_error_chain::DisplayErrorChain;
 use adk_gemini::{BatchStatus, Gemini};
+use display_error_chain::DisplayErrorChain;
 use std::env;
 use std::process::ExitCode;
 use tracing::{info, warn};

@@ -1,5 +1,5 @@
-use display_error_chain::DisplayErrorChain;
 use adk_gemini::{Gemini, Model};
+use display_error_chain::DisplayErrorChain;
 use std::process::ExitCode;
 use std::time::Duration;
 use tracing::{error, info, warn};
@@ -111,10 +111,7 @@ async fn do_main() -> Result<(), Box<dyn std::error::Error>> {
         Ok(_) => info!("cache deleted successfully"),
         Err((cache, error)) => {
             error!(error = %error, "failed to delete cache");
-            warn!(
-                cache_name = cache.name(),
-                "cache handle returned for potential retry"
-            );
+            warn!(cache_name = cache.name(), "cache handle returned for potential retry");
         }
     }
 

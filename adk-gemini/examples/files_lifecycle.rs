@@ -1,7 +1,7 @@
 //! An example of uploading a file, downloading it, and verifying the content.
+use adk_gemini::Gemini;
 use display_error_chain::DisplayErrorChain;
 use futures::TryStreamExt;
-use adk_gemini::Gemini;
 use std::process::ExitCode;
 use tracing::{error, info};
 

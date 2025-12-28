@@ -1,9 +1,9 @@
 use crate::ServerConfig;
 use axum::{
+    Json,
     extract::{Path, State},
     http::StatusCode,
     response::sse::{Event, KeepAlive, Sse},
-    Json,
 };
 use futures::stream::{self, Stream};
 use serde::{Deserialize, Serialize};

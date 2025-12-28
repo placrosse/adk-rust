@@ -14,7 +14,7 @@ use adk_model::deepseek::{DeepSeekClient, DeepSeekConfig};
 use adk_tool::FunctionTool;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-use serde_json::{json, Value};
+use serde_json::{Value, json};
 use std::sync::Arc;
 
 /// Arguments for the weather tool.

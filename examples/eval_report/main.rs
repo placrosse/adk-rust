@@ -5,7 +5,7 @@
 //!
 //! Run with: cargo run --example eval_report
 
-use adk_eval::{report::TurnResult, EvaluationReport, EvaluationResult, Failure, ToolUse};
+use adk_eval::{EvaluationReport, EvaluationResult, Failure, ToolUse, report::TurnResult};
 use serde_json::Value;
 use std::collections::HashMap;
 use std::time::Duration;
@@ -113,8 +113,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 ("tool_trajectory".to_string(), 0.67),
                 ("response_similarity".to_string(), 0.72),
             ]),
-            vec![Failure::new("tool_trajectory", Value::Null, Value::Null, 0.67, 1.0)
-                .with_details("Missing one expected tool call")],
+            vec![
+                Failure::new("tool_trajectory", Value::Null, Value::Null, 0.67, 1.0)
+                    .with_details("Missing one expected tool call"),
+            ],
             Duration::from_millis(200),
         ),
         EvaluationResult::passed(
@@ -236,10 +238,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             actual_response: Some("The weather in NYC is 72°F.".to_string()),
             expected_response: Some("The weather in NYC is 72°F and sunny.".to_string()),
             actual_tool_calls: vec![
-                ToolUse::new("get_weather").with_args(serde_json::json!({"location": "NYC"}))
+                ToolUse::new("get_weather").with_args(serde_json::json!({"location": "NYC"})),
             ],
             expected_tool_calls: vec![
-                ToolUse::new("get_weather").with_args(serde_json::json!({"location": "NYC"}))
+                ToolUse::new("get_weather").with_args(serde_json::json!({"location": "NYC"})),
             ],
             scores: HashMap::from([
                 ("tool_trajectory".to_string(), 1.0),
@@ -250,10 +252,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             invocation_id: "turn_2".to_string(),
             actual_response: Some("Tomorrow looks rainy.".to_string()),
             expected_response: Some("Tomorrow's forecast shows rain.".to_string()),
-            actual_tool_calls: vec![ToolUse::new("get_forecast")
-                .with_args(serde_json::json!({"location": "NYC", "days": 1}))],
-            expected_tool_calls: vec![ToolUse::new("get_forecast")
-                .with_args(serde_json::json!({"location": "NYC", "days": 1}))],
+            actual_tool_calls: vec![
+                ToolUse::new("get_forecast")
+                    .with_args(serde_json::json!({"location": "NYC", "days": 1})),
+            ],
+            expected_tool_calls: vec![
+                ToolUse::new("get_forecast")
+                    .with_args(serde_json::json!({"location": "NYC", "days": 1})),
+            ],
             scores: HashMap::from([
                 ("tool_trajectory".to_string(), 1.0),
                 ("response_similarity".to_string(), 0.78),

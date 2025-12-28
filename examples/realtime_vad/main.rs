@@ -11,8 +11,8 @@
 //! ```
 
 use adk_realtime::{
-    openai::OpenAIRealtimeModel, AudioFormat, RealtimeConfig, RealtimeModel, ServerEvent,
-    VadConfig, VadMode,
+    AudioFormat, RealtimeConfig, RealtimeModel, ServerEvent, VadConfig, VadMode,
+    openai::OpenAIRealtimeModel,
 };
 use std::sync::Arc;
 

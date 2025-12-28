@@ -1,4 +1,4 @@
-use adk_studio::{api_routes, AppState, FileStorage};
+use adk_studio::{AppState, FileStorage, api_routes};
 use axum::Router;
 use std::net::SocketAddr;
 use std::path::PathBuf;
@@ -14,7 +14,9 @@ async fn main() -> anyhow::Result<()> {
     dotenvy::dotenv().ok();
 
     tracing_subscriber::registry()
-        .with(tracing_subscriber::EnvFilter::try_from_default_env().unwrap_or_else(|_| "info".into()))
+        .with(
+            tracing_subscriber::EnvFilter::try_from_default_env().unwrap_or_else(|_| "info".into()),
+        )
         .with(tracing_subscriber::fmt::layer())
         .init();
 

@@ -1,5 +1,5 @@
-use display_error_chain::DisplayErrorChain;
 use adk_gemini::{Content, Gemini, Part};
+use display_error_chain::DisplayErrorChain;
 use std::env;
 use std::process::ExitCode;
 use tracing::info;
@@ -68,10 +68,7 @@ async fn do_main() -> Result<(), Box<dyn std::error::Error>> {
         thought_signature: None,
     };
 
-    let content = Content {
-        parts: Some(vec![text_part]),
-        role: None,
-    };
+    let content = Content { parts: Some(vec![text_part]), role: None };
 
     // Add the content directly to the request
     // This exactly mirrors the JSON structure in the curl example

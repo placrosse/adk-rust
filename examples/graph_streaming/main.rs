@@ -24,13 +24,14 @@ use std::sync::Arc;
 #[tokio::main]
 async fn main() -> Result<()> {
     let streaming = !std::env::args().any(|a| a == "--no-stream");
-    
+
     println!("🎭 Graph {} Demo", if streaming { "Streaming" } else { "Non-Streaming" });
     println!("========================\n");
 
     // Load API key
     let _ = dotenvy::dotenv();
-    let api_key = match std::env::var("GOOGLE_API_KEY").or_else(|_| std::env::var("GEMINI_API_KEY")) {
+    let api_key = match std::env::var("GOOGLE_API_KEY").or_else(|_| std::env::var("GEMINI_API_KEY"))
+    {
         Ok(key) => key,
         Err(_) => {
             println!("GOOGLE_API_KEY or GEMINI_API_KEY not set");
@@ -44,7 +45,7 @@ async fn main() -> Result<()> {
         LlmAgentBuilder::new("storyteller")
             .model(model)
             .instruction("You are a creative storyteller. Tell engaging stories.")
-            .build()?
+            .build()?,
     );
 
     // Create agent node
@@ -81,7 +82,7 @@ async fn main() -> Result<()> {
     println!("📝 Prompt: Tell me a very short story about a robot.\n");
 
     let config = ExecutionConfig::new("demo-session");
-    
+
     // Choose streaming mode
     let mode = if streaming { StreamMode::Messages } else { StreamMode::Values };
     let stream = graph.stream(state, config, mode);

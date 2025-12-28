@@ -9,9 +9,9 @@
 //! cargo run --package gemini-rust --example batch_list
 //! ```
 
+use adk_gemini::Gemini;
 use display_error_chain::DisplayErrorChain;
 use futures::StreamExt;
-use adk_gemini::Gemini;
 use std::process::ExitCode;
 use tracing::{error, info};
 

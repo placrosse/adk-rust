@@ -226,8 +226,14 @@ async fn main() -> anyhow::Result<()> {
     println!("{}", "=".repeat(60));
 
     let texts = [
-        ("thread-climate", "Climate change is causing rising sea levels and extreme weather events globally."),
-        ("thread-economy", "The global economy is recovering from pandemic disruptions with supply chain improvements."),
+        (
+            "thread-climate",
+            "Climate change is causing rising sea levels and extreme weather events globally.",
+        ),
+        (
+            "thread-economy",
+            "The global economy is recovering from pandemic disruptions with supply chain improvements.",
+        ),
     ];
 
     for (thread, text) in &texts {

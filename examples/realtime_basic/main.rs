@@ -10,7 +10,7 @@
 //! cargo run --example realtime_basic --features realtime-openai
 //! ```
 
-use adk_realtime::{openai::OpenAIRealtimeModel, RealtimeConfig, RealtimeModel, ServerEvent};
+use adk_realtime::{RealtimeConfig, RealtimeModel, ServerEvent, openai::OpenAIRealtimeModel};
 use std::sync::Arc;
 
 #[tokio::main]

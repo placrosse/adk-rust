@@ -1,5 +1,5 @@
-use display_error_chain::DisplayErrorChain;
 use adk_gemini::{Gemini, GenerationConfig};
+use display_error_chain::DisplayErrorChain;
 use std::env;
 use std::process::ExitCode;
 use tracing::info;
@@ -36,10 +36,7 @@ async fn do_main() -> Result<(), Box<dyn std::error::Error>> {
     )
     .expect("unable to create Gemini API client");
 
-    info!(
-        base_url = custom_base_url,
-        "custom base url client created successfully"
-    );
+    info!(base_url = custom_base_url, "custom base url client created successfully");
 
     let response = client_custom
         .generate_content()
@@ -53,10 +50,7 @@ async fn do_main() -> Result<(), Box<dyn std::error::Error>> {
         .execute()
         .await?;
 
-    info!(
-        response = response.text(),
-        "response received from custom base url"
-    );
+    info!(response = response.text(), "response received from custom base url");
 
     Ok(())
 }

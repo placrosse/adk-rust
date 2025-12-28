@@ -4,9 +4,9 @@ use super::config::{AzureConfig, OpenAIConfig};
 use super::convert;
 use adk_core::{AdkError, Llm, LlmRequest};
 use async_openai::{
+    Client,
     config::{AzureConfig as AsyncAzureConfig, OpenAIConfig as AsyncOpenAIConfig},
     types::CreateChatCompletionRequestArgs,
-    Client,
 };
 use async_stream::try_stream;
 use async_trait::async_trait;

@@ -18,7 +18,7 @@
 use adk_agent::LlmAgentBuilder;
 use adk_core::SingleAgentLoader;
 use adk_model::openai::{OpenAIClient, OpenAIConfig};
-use adk_server::{create_app_with_a2a, RemoteA2aAgent, ServerConfig};
+use adk_server::{RemoteA2aAgent, ServerConfig, create_app_with_a2a};
 use adk_session::InMemorySessionService;
 use anyhow::Result;
 use std::sync::Arc;

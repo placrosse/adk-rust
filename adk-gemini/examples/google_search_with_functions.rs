@@ -1,8 +1,8 @@
-use display_error_chain::DisplayErrorChain;
 use adk_gemini::tools::Behavior;
 use adk_gemini::{
     Content, FunctionCall, FunctionCallingMode, FunctionDeclaration, Gemini, Message, Role, Tool,
 };
+use display_error_chain::DisplayErrorChain;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use std::env;
@@ -95,10 +95,7 @@ async fn do_main() -> Result<(), Box<dyn std::error::Error>> {
         if function_call.name == "schedule_meeting" {
             let meeting: Meeting = serde_json::from_value(function_call.args.clone())?;
 
-            info!(
-                meeting = serde_json::to_string_pretty(&meeting)?,
-                "scheduling meeting"
-            );
+            info!(meeting = serde_json::to_string_pretty(&meeting)?, "scheduling meeting");
 
             let attendees: Vec<String> = meeting.attendees;
             let date: String = meeting.date;
@@ -134,10 +131,7 @@ async fn do_main() -> Result<(), Box<dyn std::error::Error>> {
             let model_function_call =
                 FunctionCall::new("schedule_meeting", function_call.args.clone());
             let model_content = Content::function_call(model_function_call).with_role(Role::Model);
-            let model_message = Message {
-                content: model_content,
-                role: Role::Model,
-            };
+            let model_message = Message { content: model_content, role: Role::Model };
             conversation = conversation.with_message(model_message);
 
             // 3. Add function response
@@ -149,10 +143,7 @@ async fn do_main() -> Result<(), Box<dyn std::error::Error>> {
 
             info!(response = final_response.text(), "final response received");
         } else {
-            info!(
-                function_name = function_call.name,
-                "unknown function call received"
-            );
+            info!(function_name = function_call.name, "unknown function call received");
         }
     } else {
         info!("no function calls in response");

@@ -16,7 +16,7 @@ use adk_core::{AdkError, Part, ToolContext};
 use adk_model::openai::{OpenAIClient, OpenAIConfig};
 use adk_tool::FunctionTool;
 use anyhow::Result;
-use serde_json::{json, Value};
+use serde_json::{Value, json};
 use std::sync::Arc;
 
 async fn conduct_research(_ctx: Arc<dyn ToolContext>, args: Value) -> Result<Value, AdkError> {

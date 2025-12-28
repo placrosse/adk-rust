@@ -263,11 +263,7 @@ impl GenerationResponse {
             .and_then(|c| {
                 c.content.parts.as_ref().and_then(|parts| {
                     parts.first().and_then(|p| match p {
-                        Part::Text {
-                            text,
-                            thought: _,
-                            thought_signature: _,
-                        } => Some(text.clone()),
+                        Part::Text { text, thought: _, thought_signature: _ } => Some(text.clone()),
                         _ => None,
                     })
                 })
@@ -287,10 +283,9 @@ impl GenerationResponse {
                         parts
                             .iter()
                             .filter_map(|p| match p {
-                                Part::FunctionCall {
-                                    function_call,
-                                    thought_signature: _,
-                                } => Some(function_call),
+                                Part::FunctionCall { function_call, thought_signature: _ } => {
+                                    Some(function_call)
+                                }
                                 _ => None,
                             })
                             .collect::<Vec<_>>()
@@ -314,10 +309,9 @@ impl GenerationResponse {
                         parts
                             .iter()
                             .filter_map(|p| match p {
-                                Part::FunctionCall {
-                                    function_call,
-                                    thought_signature,
-                                } => Some((function_call, thought_signature.as_ref())),
+                                Part::FunctionCall { function_call, thought_signature } => {
+                                    Some((function_call, thought_signature.as_ref()))
+                                }
                                 _ => None,
                             })
                             .collect::<Vec<_>>()
@@ -339,11 +333,9 @@ impl GenerationResponse {
                         parts
                             .iter()
                             .filter_map(|p| match p {
-                                Part::Text {
-                                    text,
-                                    thought: Some(true),
-                                    thought_signature: _,
-                                } => Some(text.clone()),
+                                Part::Text { text, thought: Some(true), thought_signature: _ } => {
+                                    Some(text.clone())
+                                }
                                 _ => None,
                             })
                             .collect::<Vec<_>>()
@@ -365,11 +357,9 @@ impl GenerationResponse {
                         parts
                             .iter()
                             .filter_map(|p| match p {
-                                Part::Text {
-                                    text,
-                                    thought,
-                                    thought_signature: _,
-                                } => Some((text.clone(), thought.unwrap_or(false))),
+                                Part::Text { text, thought, thought_signature: _ } => {
+                                    Some((text.clone(), thought.unwrap_or(false)))
+                                }
                                 _ => None,
                             })
                             .collect::<Vec<_>>()
@@ -391,11 +381,7 @@ impl GenerationResponse {
                         parts
                             .iter()
                             .filter_map(|p| match p {
-                                Part::Text {
-                                    text,
-                                    thought,
-                                    thought_signature,
-                                } => Some((
+                                Part::Text { text, thought, thought_signature } => Some((
                                     text.clone(),
                                     thought.unwrap_or(false),
                                     thought_signature.as_ref(),
@@ -468,10 +454,7 @@ impl ThinkingConfig {
 
     /// Create a new thinking config with default settings
     pub fn new() -> Self {
-        Self {
-            thinking_budget: None,
-            include_thoughts: None,
-        }
+        Self { thinking_budget: None, include_thoughts: None }
     }
 
     /// Set the thinking budget
@@ -494,10 +477,7 @@ impl ThinkingConfig {
 
     /// Create a thinking config that enables dynamic thinking with thoughts included
     pub fn dynamic_thinking() -> Self {
-        Self {
-            thinking_budget: Some(-1),
-            include_thoughts: Some(true),
-        }
+        Self { thinking_budget: Some(-1), include_thoughts: Some(true) }
     }
 }
 
@@ -629,9 +609,7 @@ impl SpeechConfig {
     pub fn single_voice(voice_name: impl Into<String>) -> Self {
         Self {
             voice_config: Some(VoiceConfig {
-                prebuilt_voice_config: Some(PrebuiltVoiceConfig {
-                    voice_name: voice_name.into(),
-                }),
+                prebuilt_voice_config: Some(PrebuiltVoiceConfig { voice_name: voice_name.into() }),
             }),
             multi_speaker_voice_config: None,
         }
@@ -654,9 +632,7 @@ impl SpeakerVoiceConfig {
         Self {
             speaker: speaker.into(),
             voice_config: VoiceConfig {
-                prebuilt_voice_config: Some(PrebuiltVoiceConfig {
-                    voice_name: voice_name.into(),
-                }),
+                prebuilt_voice_config: Some(PrebuiltVoiceConfig { voice_name: voice_name.into() }),
             },
         }
     }

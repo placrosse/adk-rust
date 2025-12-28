@@ -1,5 +1,5 @@
-use display_error_chain::DisplayErrorChain;
 use adk_gemini::{GeminiBuilder, Model};
+use display_error_chain::DisplayErrorChain;
 use reqwest::ClientBuilder;
 use std::env;
 use std::process::ExitCode;
@@ -61,10 +61,7 @@ async fn do_main() -> Result<(), Box<dyn std::error::Error>> {
         .execute()
         .await?;
 
-    info!(
-        response = response.text(),
-        "response received using custom HTTP client"
-    );
+    info!(response = response.text(), "response received using custom HTTP client");
 
     Ok(())
 }

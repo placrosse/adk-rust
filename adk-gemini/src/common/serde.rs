@@ -15,9 +15,7 @@ pub(crate) mod i64_as_string {
     where
         D: Deserializer<'de>,
     {
-        String::deserialize(deserializer)?
-            .parse()
-            .map_err(de::Error::custom)
+        String::deserialize(deserializer)?.parse().map_err(de::Error::custom)
     }
 
     /// Optional `i64` as string.

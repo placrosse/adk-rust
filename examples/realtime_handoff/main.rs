@@ -26,8 +26,8 @@
 
 use adk_core::Agent; // Import the Agent trait for name(), description(), sub_agents()
 use adk_realtime::{
-    config::ToolDefinition, openai::OpenAIRealtimeModel, RealtimeAgent, RealtimeConfig,
-    RealtimeModel, ServerEvent, ToolResponse,
+    RealtimeAgent, RealtimeConfig, RealtimeModel, ServerEvent, ToolResponse,
+    config::ToolDefinition, openai::OpenAIRealtimeModel,
 };
 use serde_json::json;
 use std::sync::Arc;

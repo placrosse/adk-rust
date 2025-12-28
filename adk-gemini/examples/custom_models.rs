@@ -1,5 +1,5 @@
-use display_error_chain::DisplayErrorChain;
 use adk_gemini::{Gemini, Model};
+use display_error_chain::DisplayErrorChain;
 use std::env;
 use std::process::ExitCode;
 use tracing::info;
@@ -47,10 +47,8 @@ async fn do_main() -> Result<(), Box<dyn std::error::Error>> {
     info!("created client with Text Embedding 004 model using Model enum");
 
     // 4. Using custom model strings for specific versions or preview models
-    let client_custom_string = Gemini::with_model(
-        api_key.clone(),
-        "models/gemini-2.5-flash-image-preview".to_string(),
-    )?;
+    let client_custom_string =
+        Gemini::with_model(api_key.clone(), "models/gemini-2.5-flash-image-preview".to_string())?;
     info!("created client with custom model string for image generation");
 
     // 5. Using Model::Custom for any other model
@@ -63,11 +61,8 @@ async fn do_main() -> Result<(), Box<dyn std::error::Error>> {
     // Test with the default model
     let test_message = "Hello! Can you tell me which model you are?";
 
-    let response = client_default
-        .generate_content()
-        .with_user_message(test_message)
-        .execute()
-        .await?;
+    let response =
+        client_default.generate_content().with_user_message(test_message).execute().await?;
 
     info!(
         model = "default (Gemini 2.5 Flash)",
@@ -76,11 +71,8 @@ async fn do_main() -> Result<(), Box<dyn std::error::Error>> {
     );
 
     // Test with Pro model for comparison
-    let response_pro = client_pro
-        .generate_content()
-        .with_user_message(test_message)
-        .execute()
-        .await?;
+    let response_pro =
+        client_pro.generate_content().with_user_message(test_message).execute().await?;
 
     info!(
         model = "Gemini 2.5 Pro",

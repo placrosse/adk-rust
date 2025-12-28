@@ -33,9 +33,9 @@ use adk_core::{
 };
 use async_trait::async_trait;
 use futures::StreamExt;
-use serde_json::{json, Value};
+use serde_json::{Value, json};
 use std::collections::HashMap;
-use std::sync::{atomic::AtomicBool, Arc};
+use std::sync::{Arc, atomic::AtomicBool};
 use std::time::Duration;
 
 /// Configuration options for AgentTool behavior.
@@ -381,11 +381,7 @@ impl ReadonlyContext for AgentToolInvocationContext {
 #[async_trait]
 impl CallbackContext for AgentToolInvocationContext {
     fn artifacts(&self) -> Option<Arc<dyn Artifacts>> {
-        if self.forward_artifacts {
-            self.parent_ctx.artifacts()
-        } else {
-            None
-        }
+        if self.forward_artifacts { self.parent_ctx.artifacts() } else { None }
     }
 }
 

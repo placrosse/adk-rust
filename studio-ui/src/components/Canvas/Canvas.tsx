@@ -7,7 +7,7 @@ import { MenuBar } from '../MenuBar';
 import { nodeTypes } from '../Nodes';
 import { edgeTypes } from '../Edges';
 import { AgentPalette, ToolPalette, PropertiesPanel, ToolConfigPanel } from '../Panels';
-import { CodeModal, BuildModal, CodeEditorModal } from '../Overlays';
+import { CodeModal, BuildModal, CodeEditorModal, NewProjectModal } from '../Overlays';
 import { CanvasToolbar } from './CanvasToolbar';
 import { api, GeneratedProject } from '../../api/client';
 import { useKeyboardShortcuts } from '../../hooks/useKeyboardShortcuts';
@@ -15,21 +15,23 @@ import { useLayout } from '../../hooks/useLayout';
 import { useCanvasNodes } from '../../hooks/useCanvasNodes';
 import { useAgentActions } from '../../hooks/useAgentActions';
 import type { FunctionToolConfig, AgentSchema, ToolConfig } from '../../types/project';
+import { TEMPLATES } from '../MenuBar/templates';
 
 type FlowPhase = 'idle' | 'input' | 'output';
 
 export function Canvas() {
-  const { currentProject, openProject, closeProject, saveProject, selectNode, selectedNodeId, updateAgent: storeUpdateAgent, renameAgent, addEdge: addProjectEdge, removeEdge: removeProjectEdge, addToolToAgent, removeToolFromAgent, addSubAgentToContainer, selectedToolId, selectTool, updateToolConfig: storeUpdateToolConfig } = useStore();
+  const { currentProject, openProject, closeProject, saveProject, selectNode, selectedNodeId, updateAgent: storeUpdateAgent, renameAgent, addEdge: addProjectEdge, removeEdge: removeProjectEdge, addToolToAgent, removeToolFromAgent, addSubAgentToContainer, selectedToolId, selectTool, updateToolConfig: storeUpdateToolConfig, addAgent } = useStore();
   const [showConsole, setShowConsole] = useState(true);
   const [flowPhase, setFlowPhase] = useState<FlowPhase>('idle');
   const [activeAgent, setActiveAgent] = useState<string | null>(null);
   const [iteration, setIteration] = useState(0);
   const [thoughts, setThoughts] = useState<Record<string, string>>({});
   const [compiledCode, setCompiledCode] = useState<GeneratedProject | null>(null);
-  const [buildOutput, setBuildOutput] = useState<{success: boolean, output: string, path: string | null} | null>(null);
+  const [buildOutput, setBuildOutput] = useState<{ success: boolean, output: string, path: string | null } | null>(null);
   const [building, setBuilding] = useState(false);
   const [builtBinaryPath, setBuiltBinaryPath] = useState<string | null>(null);
   const [showCodeEditor, setShowCodeEditor] = useState(false);
+  const [showNewProjectModal, setShowNewProjectModal] = useState(false);
 
   const { nodes, edges, onNodesChange, onEdgesChange } = useCanvasNodes(currentProject, { activeAgent, iteration, flowPhase, thoughts });
   const { applyLayout, toggleLayout, fitToView } = useLayout();
@@ -127,19 +129,19 @@ export function Canvas() {
 
   return (
     <div className="flex flex-col h-full">
-      <MenuBar onExportCode={() => setShowCodeEditor(true)} onNewProject={async () => { const name = prompt('Project name:'); if (name) openProject((await api.projects.create(name)).id); }} />
+      <MenuBar onExportCode={() => setShowCodeEditor(true)} onNewProject={() => setShowNewProjectModal(true)} onTemplateApplied={() => setTimeout(() => applyLayout(), 100)} />
       <div className="flex flex-1 overflow-hidden">
-        <div className="w-48 bg-studio-panel border-r border-gray-700 p-4 flex flex-col overflow-y-auto">
+        <div className="w-48 bg-studio-panel border-r border-gray-700 p-2 flex flex-col overflow-y-auto">
           <AgentPalette onDragStart={onDragStart} onCreate={createAgent} />
-          <div className="my-4" />
+          <div className="my-2" />
           <ToolPalette selectedNodeId={selectedNodeId} agentTools={agentTools} onAdd={handleAddTool} onRemove={t => selectedNodeId && removeToolFromAgent(selectedNodeId, t)} />
-          <div className="mt-auto space-y-2 pt-4">
-            <button onClick={handleCompile} className="w-full px-3 py-2 bg-blue-700 hover:bg-blue-600 rounded text-sm">📄 View Code</button>
-            <button onClick={handleBuild} disabled={building} className={`w-full px-3 py-2 rounded text-sm ${building ? 'bg-gray-600' : builtBinaryPath ? 'bg-green-700 hover:bg-green-600' : 'bg-orange-600 hover:bg-orange-500 animate-pulse'}`}>
+          <div className="mt-auto space-y-1.5 pt-2">
+            <button onClick={handleCompile} className="w-full px-2 py-1.5 bg-blue-700 hover:bg-blue-600 rounded text-xs">📄 View Code</button>
+            <button onClick={handleBuild} disabled={building} className={`w-full px-2 py-1.5 rounded text-xs ${building ? 'bg-gray-600' : builtBinaryPath ? 'bg-green-700 hover:bg-green-600' : 'bg-orange-600 hover:bg-orange-500 animate-pulse'}`}>
               {building ? '⏳ Building...' : builtBinaryPath ? '🔨 Build' : '🔨 Build Required'}
             </button>
-            <button onClick={() => setShowConsole(!showConsole)} className="w-full px-3 py-2 bg-gray-700 rounded text-sm">{showConsole ? 'Hide Console' : 'Show Console'}</button>
-            <button onClick={closeProject} className="w-full px-3 py-2 bg-gray-700 rounded text-sm">Back</button>
+            <button onClick={() => setShowConsole(!showConsole)} className="w-full px-2 py-1.5 bg-gray-700 rounded text-xs">{showConsole ? 'Hide Console' : 'Show Console'}</button>
+            <button onClick={closeProject} className="w-full px-2 py-1.5 bg-gray-700 rounded text-xs">Back</button>
           </div>
         </div>
 
@@ -171,6 +173,7 @@ export function Canvas() {
       {compiledCode && <CodeModal code={compiledCode} onClose={() => setCompiledCode(null)} />}
       {buildOutput && <BuildModal building={building} success={buildOutput.success} output={buildOutput.output} path={buildOutput.path} onClose={() => setBuildOutput(null)} />}
       {showCodeEditor && fnConfig && <CodeEditorModal config={fnConfig} onUpdate={c => updateToolConfig(selectedToolId!, c)} onClose={() => setShowCodeEditor(false)} />}
+      {showNewProjectModal && <NewProjectModal onConfirm={async (name) => { setShowNewProjectModal(false); const project = await api.projects.create(name); await openProject(project.id); const defaultTemplate = TEMPLATES.find(t => t.id === 'simple_chat'); if (defaultTemplate) { Object.entries(defaultTemplate.agents).forEach(([id, agent]) => { addAgent(id, agent); }); defaultTemplate.edges.forEach(e => addProjectEdge(e.from, e.to)); setTimeout(() => applyLayout(), 100); } }} onClose={() => setShowNewProjectModal(false)} />}
     </div>
   );
 }

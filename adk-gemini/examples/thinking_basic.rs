@@ -1,5 +1,5 @@
-use display_error_chain::DisplayErrorChain;
 use adk_gemini::{Gemini, GenerationConfig, ThinkingConfig};
+use display_error_chain::DisplayErrorChain;
 use std::env;
 use std::process::ExitCode;
 use tracing::info;
@@ -109,9 +109,8 @@ async fn do_main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Example 4: Use GenerationConfig to set thinking
     info!("example 4: use GenerationConfig to set thinking");
-    let thinking_config = ThinkingConfig::new()
-        .with_thinking_budget(2048)
-        .with_thoughts_included(true);
+    let thinking_config =
+        ThinkingConfig::new().with_thinking_budget(2048).with_thoughts_included(true);
 
     let generation_config = GenerationConfig {
         temperature: Some(0.7),

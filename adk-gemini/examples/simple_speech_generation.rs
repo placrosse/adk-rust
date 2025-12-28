@@ -1,6 +1,6 @@
+use adk_gemini::{Gemini, GenerationConfig, Part, PrebuiltVoiceConfig, SpeechConfig, VoiceConfig};
 use base64::{engine::general_purpose, Engine as _};
 use display_error_chain::DisplayErrorChain;
-use adk_gemini::{Gemini, GenerationConfig, Part, PrebuiltVoiceConfig, SpeechConfig, VoiceConfig};
 use std::fs::File;
 use std::io::Write;
 use std::process::ExitCode;
@@ -43,9 +43,7 @@ async fn do_main() -> Result<(), Box<dyn std::error::Error>> {
         response_modalities: Some(vec!["AUDIO".to_string()]),
         speech_config: Some(SpeechConfig {
             voice_config: Some(VoiceConfig {
-                prebuilt_voice_config: Some(PrebuiltVoiceConfig {
-                    voice_name: "Puck".to_string(),
-                }),
+                prebuilt_voice_config: Some(PrebuiltVoiceConfig { voice_name: "Puck".to_string() }),
             }),
             multi_speaker_voice_config: None,
         }),

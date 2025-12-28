@@ -17,7 +17,7 @@ use adk_tool::{AgentTool, FunctionTool};
 use anyhow::Result;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-use serde_json::{json, Value};
+use serde_json::{Value, json};
 use std::sync::Arc;
 
 #[derive(Debug, Serialize, Deserialize, JsonSchema)]
@@ -49,7 +49,7 @@ async fn calculator(_ctx: Arc<dyn ToolContext>, args: Value) -> Result<Value, ad
         "sqrt" => args.a.sqrt(),
         "percent" => args.a * (args.b / 100.0),
         _ => {
-            return Err(adk_core::AdkError::Tool(format!("Unknown operation: {}", args.operation)))
+            return Err(adk_core::AdkError::Tool(format!("Unknown operation: {}", args.operation)));
         }
     };
 

@@ -83,11 +83,7 @@ fn convert_text_to_parts(text: String) -> Vec<Part> {
         parts.push(Part::Text { text: remainder.to_string() });
     }
 
-    if parts.is_empty() {
-        vec![Part::Text { text }]
-    } else {
-        parts
-    }
+    if parts.is_empty() { vec![Part::Text { text }] } else { parts }
 }
 
 /// Parse a tool call block into a FunctionCall part.

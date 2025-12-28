@@ -1,4 +1,4 @@
-use crate::{event::Event, InvocationContext, Result};
+use crate::{InvocationContext, Result, event::Event};
 use async_trait::async_trait;
 use futures::stream::Stream;
 use std::pin::Pin;

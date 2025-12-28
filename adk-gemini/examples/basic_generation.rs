@@ -1,5 +1,5 @@
-use display_error_chain::DisplayErrorChain;
 use adk_gemini::Gemini;
+use display_error_chain::DisplayErrorChain;
 use std::env;
 use std::process::ExitCode;
 use tracing::info;
@@ -35,11 +35,8 @@ async fn do_main() -> Result<(), Box<dyn std::error::Error>> {
     info!("basic content generation example starting");
 
     // Example 1: Simple user message
-    let response = client
-        .generate_content()
-        .with_user_message("Hello, how are you?")
-        .execute()
-        .await?;
+    let response =
+        client.generate_content().with_user_message("Hello, how are you?").execute().await?;
 
     info!(response = response.text(), "simple response received");
 
@@ -51,10 +48,7 @@ async fn do_main() -> Result<(), Box<dyn std::error::Error>> {
         .execute()
         .await?;
 
-    info!(
-        response = response_with_system.text(),
-        "response with system prompt received"
-    );
+    info!(response = response_with_system.text(), "response with system prompt received");
 
     // Example 3: Multiple messages (conversation)
     let conversation_response = client
@@ -65,10 +59,7 @@ async fn do_main() -> Result<(), Box<dyn std::error::Error>> {
         .execute()
         .await?;
 
-    info!(
-        response = conversation_response.text(),
-        "conversation response received"
-    );
+    info!(response = conversation_response.text(), "conversation response received");
 
     info!("\n✅ Basic content generation examples completed successfully!");
     Ok(())

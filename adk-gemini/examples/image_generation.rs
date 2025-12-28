@@ -1,6 +1,6 @@
+use adk_gemini::{Gemini, GenerationConfig};
 use base64::{engine::general_purpose::STANDARD as BASE64, Engine};
 use display_error_chain::DisplayErrorChain;
-use adk_gemini::{Gemini, GenerationConfig};
 use std::env;
 use std::fs;
 use std::process::ExitCode;
@@ -61,11 +61,7 @@ async fn do_main() -> Result<(), Box<dyn std::error::Error>> {
             for (j, part) in parts.iter().enumerate() {
                 match part {
                     adk_gemini::Part::Text { text, .. } => {
-                        info!(
-                            response_number = j + 1,
-                            text = text,
-                            "text response received"
-                        );
+                        info!(response_number = j + 1, text = text, "text response received");
                     }
                     adk_gemini::Part::InlineData { inline_data } => {
                         info!(
@@ -195,11 +191,7 @@ fn save_generated_images(
 
             // Log any text responses
             if !text_parts.is_empty() {
-                info!(
-                    prefix = prefix,
-                    text = text_parts.join("\n"),
-                    "text response received"
-                );
+                info!(prefix = prefix, text = text_parts.join("\n"), "text response received");
             }
         }
     }

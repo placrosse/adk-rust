@@ -33,8 +33,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                         "The weather in San Francisco is 65°F and partly cloudy.",
                     )),
                     intermediate_data: Some(IntermediateData {
-                        tool_uses: vec![ToolUse::new("get_weather")
-                            .with_args(json!({"location": "San Francisco"}))],
+                        tool_uses: vec![
+                            ToolUse::new("get_weather")
+                                .with_args(json!({"location": "San Francisco"})),
+                        ],
                         ..Default::default()
                     }),
                 }],
@@ -54,7 +56,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                         )),
                         intermediate_data: Some(IntermediateData {
                             tool_uses: vec![
-                                ToolUse::new("get_weather").with_args(json!({"location": "NYC"}))
+                                ToolUse::new("get_weather").with_args(json!({"location": "NYC"})),
                             ],
                             ..Default::default()
                         }),
@@ -66,8 +68,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                             "Tomorrow's forecast for NYC shows a 30% chance of rain.",
                         )),
                         intermediate_data: Some(IntermediateData {
-                            tool_uses: vec![ToolUse::new("get_forecast")
-                                .with_args(json!({"location": "NYC", "days": 1}))],
+                            tool_uses: vec![
+                                ToolUse::new("get_forecast")
+                                    .with_args(json!({"location": "NYC", "days": 1})),
+                            ],
                             ..Default::default()
                         }),
                     },

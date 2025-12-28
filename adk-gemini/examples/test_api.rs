@@ -1,5 +1,5 @@
-use display_error_chain::DisplayErrorChain;
 use adk_gemini::Gemini;
+use display_error_chain::DisplayErrorChain;
 use std::env;
 use std::process::ExitCode;
 use tracing::info;
@@ -33,11 +33,7 @@ async fn do_main() -> Result<(), Box<dyn std::error::Error>> {
     info!("sending request to gemini api");
 
     // Simple text completion with minimal content
-    let response = client
-        .generate_content()
-        .with_user_message("Say hello")
-        .execute()
-        .await?;
+    let response = client.generate_content().with_user_message("Say hello").execute().await?;
 
     info!(response = response.text(), "api test completed");
 

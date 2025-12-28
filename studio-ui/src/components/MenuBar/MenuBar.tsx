@@ -5,9 +5,10 @@ import { TEMPLATES, Template } from './templates';
 interface MenuBarProps {
   onExportCode: () => void;
   onNewProject: () => void;
+  onTemplateApplied?: () => void;
 }
 
-export function MenuBar({ onExportCode, onNewProject }: MenuBarProps) {
+export function MenuBar({ onExportCode, onNewProject, onTemplateApplied }: MenuBarProps) {
   const [openMenu, setOpenMenu] = useState<string | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const { currentProject, addAgent, removeAgent, addEdge, removeEdge } = useStore();
@@ -24,21 +25,25 @@ export function MenuBar({ onExportCode, onNewProject }: MenuBarProps) {
 
   const applyTemplate = (template: Template) => {
     if (!currentProject) return;
-    
+
     // Clear existing edges
     (currentProject.workflow?.edges || []).forEach(e => removeEdge(e.from, e.to));
-    
+
     // Clear existing agents
     Object.keys(currentProject.agents).forEach(id => removeAgent(id));
-    
+
     // Add all agents from template
     Object.entries(template.agents).forEach(([id, agent]) => {
       addAgent(id, agent);
     });
-    
+
     // Add edges from template
     template.edges.forEach(e => addEdge(e.from, e.to));
-    
+
+    if (onTemplateApplied) {
+      onTemplateApplied();
+    }
+
     setOpenMenu(null);
   };
 
@@ -73,7 +78,7 @@ export function MenuBar({ onExportCode, onNewProject }: MenuBarProps) {
   return (
     <div ref={menuRef} className="flex items-center gap-1 px-2 py-1 bg-gray-900 border-b border-gray-700">
       <span className="text-sm font-semibold text-blue-400 mr-4">🔧 ADK Studio</span>
-      
+
       <Menu name="File">
         <MenuItem onClick={onNewProject}>📄 New Project</MenuItem>
         <Divider />
@@ -90,7 +95,7 @@ export function MenuBar({ onExportCode, onNewProject }: MenuBarProps) {
       </Menu>
 
       <Menu name="Help">
-        <MenuItem onClick={() => window.open('https://github.com/amazon/adk-rust', '_blank')}>📚 Documentation</MenuItem>
+        <MenuItem onClick={() => window.open('https://github.com/zavora-ai/adk-rust', '_blank')}>📚 Documentation</MenuItem>
         <Divider />
         <div className="px-3 py-2 text-xs text-gray-400">
           <div className="font-semibold mb-1">Keyboard Shortcuts</div>
@@ -103,7 +108,7 @@ export function MenuBar({ onExportCode, onNewProject }: MenuBarProps) {
       </Menu>
 
       <div className="flex-1" />
-      
+
       {currentProject && (
         <span className="text-sm text-gray-400">
           Project: <span className="text-white">{currentProject.name}</span>

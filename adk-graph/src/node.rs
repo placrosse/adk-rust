@@ -549,7 +549,7 @@ impl GraphSession {
     fn new(id: String) -> Self {
         Self { id, state: GraphState::new(), history: std::sync::RwLock::new(Vec::new()) }
     }
-    
+
     fn append_content(&self, content: adk_core::Content) {
         if let Ok(mut h) = self.history.write() {
             h.push(content);
@@ -577,7 +577,7 @@ impl adk_core::Session for GraphSession {
     fn conversation_history(&self) -> Vec<adk_core::Content> {
         self.history.read().ok().map(|h| h.clone()).unwrap_or_default()
     }
-    
+
     fn append_to_history(&self, content: adk_core::Content) {
         self.append_content(content);
     }

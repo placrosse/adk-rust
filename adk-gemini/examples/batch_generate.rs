@@ -11,8 +11,8 @@
 //! cargo run --package gemini-rust --example batch_generate
 //! ```
 
-use display_error_chain::DisplayErrorChain;
 use adk_gemini::{Batch, BatchHandleError, BatchStatus, Gemini, Message};
+use display_error_chain::DisplayErrorChain;
 use std::process::ExitCode;
 use std::time::Duration;
 use tracing::{error, info, warn};

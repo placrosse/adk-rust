@@ -44,7 +44,7 @@ pub mod database;
 pub use event::{Event, EventActions, Events};
 pub use inmemory::InMemorySessionService;
 pub use service::{CreateRequest, DeleteRequest, GetRequest, ListRequest, SessionService};
-pub use session::{Session, KEY_PREFIX_APP, KEY_PREFIX_TEMP, KEY_PREFIX_USER};
+pub use session::{KEY_PREFIX_APP, KEY_PREFIX_TEMP, KEY_PREFIX_USER, Session};
 pub use state::{ReadonlyState, State};
 
 #[cfg(feature = "database")]

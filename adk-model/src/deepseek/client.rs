@@ -1,6 +1,6 @@
 //! DeepSeek client implementation.
 
-use super::config::{DeepSeekConfig, DEEPSEEK_API_BASE};
+use super::config::{DEEPSEEK_API_BASE, DeepSeekConfig};
 use super::convert::{self, ChatCompletionRequest, ChatCompletionResponse, ThinkingConfig};
 use adk_core::{AdkError, FinishReason, Llm, LlmRequest, LlmResponse, LlmResponseStream, Part};
 use async_stream::try_stream;

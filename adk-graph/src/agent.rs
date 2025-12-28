@@ -3,7 +3,7 @@
 //! Provides a builder pattern similar to LlmAgent and RealtimeAgent.
 
 use crate::checkpoint::Checkpointer;
-use crate::edge::{Edge, EdgeTarget, END, START};
+use crate::edge::{END, Edge, EdgeTarget, START};
 use crate::error::{GraphError, Result};
 use crate::graph::{CompiledGraph, StateGraph};
 use crate::node::{ExecutionConfig, FunctionNode, Node, NodeContext, NodeOutput};

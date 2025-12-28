@@ -1,6 +1,6 @@
 use adk_core::{Result, Tool, ToolContext};
 use async_trait::async_trait;
-use schemars::{schema::RootSchema, JsonSchema};
+use schemars::{JsonSchema, schema::RootSchema};
 use serde::Serialize;
 use serde_json::Value;
 use std::future::Future;

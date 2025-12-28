@@ -1,7 +1,7 @@
 use crate::server::{handlers, sse, state::AppState};
 use axum::{
-    routing::{delete, get, post, put},
     Router,
+    routing::{delete, get, post, put},
 };
 
 pub fn api_routes() -> Router<AppState> {

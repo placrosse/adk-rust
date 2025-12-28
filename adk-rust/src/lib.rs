@@ -701,7 +701,7 @@ pub mod prelude {
 
     // Graph workflows
     #[cfg(feature = "graph")]
-    pub use crate::graph::{GraphAgent, NodeOutput, Router, StateGraph, END, START};
+    pub use crate::graph::{END, GraphAgent, NodeOutput, Router, START, StateGraph};
 
     // UI
     #[cfg(feature = "ui")]

@@ -70,5 +70,7 @@ CLAUDE.md
 packages/adk-ui-react/node_modules/
 docs/ADK-STUDIO-PLAN.md
 docs/ADK-STUDIO-PROGRESS.md
+docs/ADK-STUDIO-FUNCTION-TOOLS.md
+docs/ADK-STUDIO-GRAPH-DESIGN.md
 studio-ui/node_modules/
 studio-ui/node_modules/

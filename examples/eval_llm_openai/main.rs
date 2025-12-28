@@ -12,8 +12,8 @@ use adk_eval::criteria::RubricLevel;
 use adk_eval::{
     EvaluationConfig, EvaluationCriteria, Evaluator, LlmJudge, LlmJudgeConfig, Rubric, RubricConfig,
 };
-use adk_model::openai::OpenAIConfig;
 use adk_model::OpenAIClient;
+use adk_model::openai::OpenAIConfig;
 use std::sync::Arc;
 
 #[tokio::main]
@@ -168,7 +168,10 @@ fn is_prime(n: u64) -> bool {
     let quality_config = RubricConfig { rubrics: quality_rubrics };
 
     let responses = vec![
-        ("Good", "Recursion is a programming technique where a function calls itself to solve smaller instances of the same problem. It requires a base case to prevent infinite loops."),
+        (
+            "Good",
+            "Recursion is a programming technique where a function calls itself to solve smaller instances of the same problem. It requires a base case to prevent infinite loops.",
+        ),
         ("Medium", "Recursion is when a function calls itself."),
         ("Poor", "Recursion is complicated loops."),
     ];

@@ -17,7 +17,7 @@ pub use jsonrpc::{
     JsonRpcError, JsonRpcRequest, JsonRpcResponse, MessageSendConfig, MessageSendParams, Task,
     TasksCancelParams, TasksGetParams,
 };
-pub use metadata::{to_invocation_meta, InvocationMeta};
+pub use metadata::{InvocationMeta, to_invocation_meta};
 pub use parts::{a2a_parts_to_adk, adk_parts_to_a2a};
 pub use remote_agent::{RemoteA2aAgent, RemoteA2aAgentBuilder, RemoteA2aConfig};
 pub use types::*;

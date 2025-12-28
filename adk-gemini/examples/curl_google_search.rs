@@ -1,5 +1,5 @@
-use display_error_chain::DisplayErrorChain;
 use adk_gemini::{Content, Gemini, Part, Tool};
+use display_error_chain::DisplayErrorChain;
 use std::env;
 use std::process::ExitCode;
 use tracing::info;
@@ -58,10 +58,7 @@ async fn do_main() -> Result<(), Box<dyn std::error::Error>> {
         thought_signature: None,
     };
 
-    let content = Content {
-        parts: vec![text_part].into(),
-        role: None,
-    };
+    let content = Content { parts: vec![text_part].into(), role: None };
 
     // Create a Google Search tool
     let google_search_tool = Tool::google_search();
@@ -74,10 +71,7 @@ async fn do_main() -> Result<(), Box<dyn std::error::Error>> {
 
     let response = content_builder.execute().await?;
 
-    info!(
-        response = response.text(),
-        "google search response received"
-    );
+    info!(response = response.text(), "google search response received");
 
     Ok(())
 }

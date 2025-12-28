@@ -1,7 +1,7 @@
 //! Deletes all files associated with the API key.
+use adk_gemini::{ClientError, Gemini};
 use display_error_chain::DisplayErrorChain;
 use futures::stream::TryStreamExt;
-use adk_gemini::{ClientError, Gemini};
 use std::process::ExitCode;
 use std::sync::atomic::{AtomicBool, Ordering};
 use tracing::{error, info};
@@ -41,11 +41,7 @@ async fn do_main() -> Result<(), ClientError> {
             any_files_found.store(true, Ordering::SeqCst);
             async move {
                 info!(
-                    display_name = file
-                        .get_file_meta()
-                        .display_name
-                        .clone()
-                        .unwrap_or_default(),
+                    display_name = file.get_file_meta().display_name.clone().unwrap_or_default(),
                     file_name = file.name(),
                     "deleting file"
                 );

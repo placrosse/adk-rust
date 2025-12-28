@@ -115,11 +115,7 @@ async fn test_cycle_with_limit() {
             "increment",
             |state| {
                 let count = state.get("count").and_then(|v| v.as_i64()).unwrap_or(0);
-                if count >= 5 {
-                    END.to_string()
-                } else {
-                    "increment".to_string()
-                }
+                if count >= 5 { END.to_string() } else { "increment".to_string() }
             },
             [("increment", "increment"), (END, END)],
         )

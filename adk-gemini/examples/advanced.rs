@@ -1,5 +1,5 @@
-use display_error_chain::DisplayErrorChain;
 use adk_gemini::{Content, FunctionCallingMode, FunctionDeclaration, Gemini, Part};
+use display_error_chain::DisplayErrorChain;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use std::env;
@@ -35,20 +35,13 @@ struct Weather {
 
 impl Default for Weather {
     fn default() -> Self {
-        Weather {
-            location: "".to_string(),
-            unit: Some(Unit::Celsius),
-        }
+        Weather { location: "".to_string(), unit: Some(Unit::Celsius) }
     }
 }
 
 impl std::fmt::Display for Weather {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "{}",
-            serde_json::to_string_pretty(self).unwrap_or_default()
-        )
+        write!(f, "{}", serde_json::to_string_pretty(self).unwrap_or_default())
     }
 }
 
@@ -87,13 +80,10 @@ async fn do_main() -> Result<(), Box<dyn std::error::Error>> {
     let client = Gemini::new(api_key).expect("unable to create Gemini API client");
 
     // Define a weather function
-    let get_weather = FunctionDeclaration::new(
-        "get_weather",
-        "Get the current weather for a location",
-        None,
-    )
-    .with_parameters::<Weather>()
-    .with_response::<WeatherResponse>();
+    let get_weather =
+        FunctionDeclaration::new("get_weather", "Get the current weather for a location", None)
+            .with_parameters::<Weather>()
+            .with_response::<WeatherResponse>();
 
     // Create a request with function calling
     info!("sending function call request");
@@ -106,10 +96,7 @@ async fn do_main() -> Result<(), Box<dyn std::error::Error>> {
         .await?;
 
     let Some(function_call) = response.function_calls().first().cloned() else {
-        tracing::error!(
-            response = response.text(),
-            "no function calls in the response"
-        );
+        tracing::error!(response = response.text(), "no function calls in the response");
         return Ok(());
     };
 
@@ -139,9 +126,8 @@ async fn do_main() -> Result<(), Box<dyn std::error::Error>> {
     info!("sending function response");
 
     // First, need to recreate the original prompt and the model's response
-    let mut final_request = client
-        .generate_content()
-        .with_user_message("What's the weather like in Tokyo right now?");
+    let mut final_request =
+        client.generate_content().with_user_message("What's the weather like in Tokyo right now?");
 
     // Add the function call from the model's response
     let call_content = Content {

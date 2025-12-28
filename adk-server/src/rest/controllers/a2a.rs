@@ -1,16 +1,16 @@
-use crate::a2a::{
-    build_agent_card, jsonrpc, AgentCard, Executor, ExecutorConfig, JsonRpcError, JsonRpcRequest,
-    JsonRpcResponse, MessageSendParams, Task, TaskState, TaskStatus, TasksCancelParams,
-    TasksGetParams, UpdateEvent,
-};
 use crate::ServerConfig;
+use crate::a2a::{
+    AgentCard, Executor, ExecutorConfig, JsonRpcError, JsonRpcRequest, JsonRpcResponse,
+    MessageSendParams, Task, TaskState, TaskStatus, TasksCancelParams, TasksGetParams, UpdateEvent,
+    build_agent_card, jsonrpc,
+};
 use adk_runner::RunnerConfig;
 use axum::{
     extract::State,
     http::StatusCode,
     response::{
-        sse::{Event, Sse},
         IntoResponse, Json,
+        sse::{Event, Sse},
     },
 };
 use futures::stream::Stream;
@@ -113,7 +113,7 @@ pub async fn handle_jsonrpc_stream(
                     request.id.clone(),
                     JsonRpcError::invalid_params("Missing params"),
                 )),
-            ))
+            ));
         }
     };
 
@@ -209,11 +209,11 @@ async fn handle_message_send(
                 return Json(JsonRpcResponse::error(
                     id,
                     JsonRpcError::invalid_params(e.to_string()),
-                ))
+                ));
             }
         },
         None => {
-            return Json(JsonRpcResponse::error(id, JsonRpcError::invalid_params("Missing params")))
+            return Json(JsonRpcResponse::error(id, JsonRpcError::invalid_params("Missing params")));
         }
     };
 
@@ -283,11 +283,11 @@ async fn handle_tasks_get(
                 return Json(JsonRpcResponse::error(
                     id,
                     JsonRpcError::invalid_params(e.to_string()),
-                ))
+                ));
             }
         },
         None => {
-            return Json(JsonRpcResponse::error(id, JsonRpcError::invalid_params("Missing params")))
+            return Json(JsonRpcResponse::error(id, JsonRpcError::invalid_params("Missing params")));
         }
     };
 
@@ -310,11 +310,11 @@ async fn handle_tasks_cancel(
                 return Json(JsonRpcResponse::error(
                     id,
                     JsonRpcError::invalid_params(e.to_string()),
-                ))
+                ));
             }
         },
         None => {
-            return Json(JsonRpcResponse::error(id, JsonRpcError::invalid_params("Missing params")))
+            return Json(JsonRpcResponse::error(id, JsonRpcError::invalid_params("Missing params")));
         }
     };
 

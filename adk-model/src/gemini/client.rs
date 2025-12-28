@@ -2,8 +2,8 @@ use adk_core::{
     Content, FinishReason, Llm, LlmRequest, LlmResponse, LlmResponseStream, Part, Result,
     UsageMetadata,
 };
-use async_trait::async_trait;
 use adk_gemini::Gemini;
+use async_trait::async_trait;
 
 pub struct GeminiModel {
     client: Gemini,
@@ -20,7 +20,7 @@ impl GeminiModel {
 
     fn convert_response(resp: &adk_gemini::GenerationResponse) -> Result<LlmResponse> {
         let mut converted_parts: Vec<Part> = Vec::new();
-        
+
         // Convert content parts
         if let Some(parts) = resp.candidates.first().and_then(|c| c.content.parts.as_ref()) {
             for p in parts {
@@ -38,7 +38,10 @@ impl GeminiModel {
                     adk_gemini::Part::FunctionResponse { function_response } => {
                         converted_parts.push(Part::FunctionResponse {
                             name: function_response.name.clone(),
-                            response: function_response.response.clone().unwrap_or(serde_json::Value::Null),
+                            response: function_response
+                                .response
+                                .clone()
+                                .unwrap_or(serde_json::Value::Null),
                             id: None,
                         });
                     }
@@ -46,9 +49,10 @@ impl GeminiModel {
                 }
             }
         }
-        
+
         // Add grounding metadata as text if present (required for Google Search grounding compliance)
-        if let Some(grounding) = resp.candidates.first().and_then(|c| c.grounding_metadata.as_ref()) {
+        if let Some(grounding) = resp.candidates.first().and_then(|c| c.grounding_metadata.as_ref())
+        {
             if let Some(queries) = &grounding.web_search_queries {
                 if !queries.is_empty() {
                     let search_info = format!("\n\n🔍 **Searched:** {}", queries.join(", "));
@@ -56,9 +60,10 @@ impl GeminiModel {
                 }
             }
             if let Some(chunks) = &grounding.grounding_chunks {
-                let sources: Vec<String> = chunks.iter().filter_map(|c| {
-                    c.web.as_ref().map(|w| format!("[{}]({})", w.title, w.uri))
-                }).collect();
+                let sources: Vec<String> = chunks
+                    .iter()
+                    .filter_map(|c| c.web.as_ref().map(|w| format!("[{}]({})", w.title, w.uri)))
+                    .collect();
                 if !sources.is_empty() {
                     let sources_info = format!("\n📚 **Sources:** {}", sources.join(" | "));
                     converted_parts.push(Part::Text { text: sources_info });
@@ -136,7 +141,7 @@ impl Llm for GeminiModel {
                                 });
                             }
                             Part::InlineData { data, mime_type } => {
-                                use base64::{engine::general_purpose::STANDARD, Engine as _};
+                                use base64::{Engine as _, engine::general_purpose::STANDARD};
                                 let encoded = STANDARD.encode(data);
                                 gemini_parts.push(adk_gemini::Part::InlineData {
                                     inline_data: adk_gemini::Blob {

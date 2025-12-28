@@ -7,8 +7,8 @@
 //! Requires: GOOGLE_API_KEY or GEMINI_API_KEY
 
 use adk_agent::{
-    guardrails::{ContentFilter, GuardrailSet, PiiRedactor},
     Agent, LlmAgentBuilder,
+    guardrails::{ContentFilter, GuardrailSet, PiiRedactor},
 };
 use adk_model::GeminiModel;
 use std::sync::Arc;

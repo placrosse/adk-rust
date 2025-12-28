@@ -148,9 +148,7 @@ impl ContentBuilder {
     /// Temperature controls the randomness of the output. Higher values (e.g., 1.0) produce
     /// more creative results, while lower values (e.g., 0.2) produce more deterministic results.
     pub fn with_temperature(mut self, temperature: f32) -> Self {
-        self.generation_config
-            .get_or_insert_with(Default::default)
-            .temperature = Some(temperature);
+        self.generation_config.get_or_insert_with(Default::default).temperature = Some(temperature);
         self
     }
 
@@ -159,9 +157,7 @@ impl ContentBuilder {
     /// Top-p is a sampling method that selects the next token from a cumulative probability
     /// distribution. It can be used to control the diversity of the output.
     pub fn with_top_p(mut self, top_p: f32) -> Self {
-        self.generation_config
-            .get_or_insert_with(Default::default)
-            .top_p = Some(top_p);
+        self.generation_config.get_or_insert_with(Default::default).top_p = Some(top_p);
         self
     }
 
@@ -169,25 +165,21 @@ impl ContentBuilder {
     ///
     /// Top-k is a sampling method that selects the next token from the `k` most likely candidates.
     pub fn with_top_k(mut self, top_k: i32) -> Self {
-        self.generation_config
-            .get_or_insert_with(Default::default)
-            .top_k = Some(top_k);
+        self.generation_config.get_or_insert_with(Default::default).top_k = Some(top_k);
         self
     }
 
     /// Sets the maximum number of output tokens for the request.
     pub fn with_max_output_tokens(mut self, max_output_tokens: i32) -> Self {
-        self.generation_config
-            .get_or_insert_with(Default::default)
-            .max_output_tokens = Some(max_output_tokens);
+        self.generation_config.get_or_insert_with(Default::default).max_output_tokens =
+            Some(max_output_tokens);
         self
     }
 
     /// Sets the number of candidate responses to generate.
     pub fn with_candidate_count(mut self, candidate_count: i32) -> Self {
-        self.generation_config
-            .get_or_insert_with(Default::default)
-            .candidate_count = Some(candidate_count);
+        self.generation_config.get_or_insert_with(Default::default).candidate_count =
+            Some(candidate_count);
         self
     }
 
@@ -195,9 +187,8 @@ impl ContentBuilder {
     ///
     /// The model will stop generating text when it encounters one of these sequences.
     pub fn with_stop_sequences(mut self, stop_sequences: Vec<String>) -> Self {
-        self.generation_config
-            .get_or_insert_with(Default::default)
-            .stop_sequences = Some(stop_sequences);
+        self.generation_config.get_or_insert_with(Default::default).stop_sequences =
+            Some(stop_sequences);
         self
     }
 
@@ -205,9 +196,8 @@ impl ContentBuilder {
     ///
     /// This can be used to request structured output, such as JSON.
     pub fn with_response_mime_type(mut self, mime_type: impl Into<String>) -> Self {
-        self.generation_config
-            .get_or_insert_with(Default::default)
-            .response_mime_type = Some(mime_type.into());
+        self.generation_config.get_or_insert_with(Default::default).response_mime_type =
+            Some(mime_type.into());
         self
     }
 
@@ -216,9 +206,7 @@ impl ContentBuilder {
     /// When used with a JSON MIME type, this schema will be used to validate the model's
     /// output.
     pub fn with_response_schema(mut self, schema: serde_json::Value) -> Self {
-        self.generation_config
-            .get_or_insert_with(Default::default)
-            .response_schema = Some(schema);
+        self.generation_config.get_or_insert_with(Default::default).response_schema = Some(schema);
         self
     }
 
@@ -241,17 +229,15 @@ impl ContentBuilder {
 
     /// Sets the function calling mode for the request.
     pub fn with_function_calling_mode(mut self, mode: FunctionCallingMode) -> Self {
-        self.tool_config
-            .get_or_insert_with(Default::default)
-            .function_calling_config = Some(FunctionCallingConfig { mode });
+        self.tool_config.get_or_insert_with(Default::default).function_calling_config =
+            Some(FunctionCallingConfig { mode });
         self
     }
 
     /// Sets the thinking configuration for the request (Gemini 2.5 series only).
     pub fn with_thinking_config(mut self, thinking_config: ThinkingConfig) -> Self {
-        self.generation_config
-            .get_or_insert_with(Default::default)
-            .thinking_config = Some(thinking_config);
+        self.generation_config.get_or_insert_with(Default::default).thinking_config =
+            Some(thinking_config);
         self
     }
 
@@ -290,17 +276,15 @@ impl ContentBuilder {
 
     /// Enables audio output (text-to-speech).
     pub fn with_audio_output(mut self) -> Self {
-        self.generation_config
-            .get_or_insert_with(Default::default)
-            .response_modalities = Some(vec!["AUDIO".to_string()]);
+        self.generation_config.get_or_insert_with(Default::default).response_modalities =
+            Some(vec!["AUDIO".to_string()]);
         self
     }
 
     /// Sets the speech configuration for text-to-speech generation.
     pub fn with_speech_config(mut self, speech_config: SpeechConfig) -> Self {
-        self.generation_config
-            .get_or_insert_with(Default::default)
-            .speech_config = Some(speech_config);
+        self.generation_config.get_or_insert_with(Default::default).speech_config =
+            Some(speech_config);
         self
     }
 

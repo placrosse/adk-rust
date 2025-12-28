@@ -36,11 +36,7 @@ impl EdgeTarget {
 
 impl From<&str> for EdgeTarget {
     fn from(s: &str) -> Self {
-        if s == END {
-            Self::End
-        } else {
-            Self::Node(s.to_string())
-        }
+        if s == END { Self::End } else { Self::Node(s.to_string()) }
     }
 }
 
@@ -121,11 +117,7 @@ impl Router {
                 .map(|tc| !tc.as_array().map(|a| a.is_empty()).unwrap_or(true))
                 .unwrap_or(false);
 
-            if has_calls {
-                if_true.clone()
-            } else {
-                if_false.clone()
-            }
+            if has_calls { if_true.clone() } else { if_false.clone() }
         }
     }
 
@@ -147,11 +139,7 @@ impl Router {
         move |state: &State| {
             let is_true = state.get(&field).and_then(|v| v.as_bool()).unwrap_or(false);
 
-            if is_true {
-                if_true.clone()
-            } else {
-                if_false.clone()
-            }
+            if is_true { if_true.clone() } else { if_false.clone() }
         }
     }
 
@@ -174,11 +162,7 @@ impl Router {
         move |state: &State| {
             let count = state.get(&counter_field).and_then(|v| v.as_u64()).unwrap_or(0) as usize;
 
-            if count < max {
-                continue_target.clone()
-            } else {
-                done_target.clone()
-            }
+            if count < max { continue_target.clone() } else { done_target.clone() }
         }
     }
 
@@ -200,11 +184,7 @@ impl Router {
         move |state: &State| {
             let has_error = state.get(&error_field).map(|v| !v.is_null()).unwrap_or(false);
 
-            if has_error {
-                error_target.clone()
-            } else {
-                success_target.clone()
-            }
+            if has_error { error_target.clone() } else { success_target.clone() }
         }
     }
 

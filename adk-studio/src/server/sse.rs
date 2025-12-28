@@ -34,12 +34,16 @@ pub struct StreamQuery {
     session_id: Option<String>,
 }
 
-async fn get_or_create_session(session_id: &str, binary_path: &str, api_key: &str) -> Result<(), String> {
+async fn get_or_create_session(
+    session_id: &str,
+    binary_path: &str,
+    api_key: &str,
+) -> Result<(), String> {
     let mut sessions = SESSIONS.lock().await;
     if sessions.contains_key(session_id) {
         return Ok(());
     }
-    
+
     let mut child = Command::new(binary_path)
         .arg(session_id)
         .env("GOOGLE_API_KEY", api_key)
@@ -48,28 +52,35 @@ async fn get_or_create_session(session_id: &str, binary_path: &str, api_key: &st
         .stderr(std::process::Stdio::piped())
         .spawn()
         .map_err(|e| format!("Failed to start binary: {}", e))?;
-    
+
     let stdin = BufWriter::new(child.stdin.take().unwrap());
     let stdout = child.stdout.take().unwrap();
     let stderr = child.stderr.take().unwrap();
-    
+
     let (stdout_tx, stdout_rx) = tokio::sync::mpsc::channel(100);
     tokio::spawn(async move {
         let mut reader = BufReader::new(stdout).lines();
         while let Ok(Some(line)) = reader.next_line().await {
-            if stdout_tx.send(line).await.is_err() { break; }
+            if stdout_tx.send(line).await.is_err() {
+                break;
+            }
         }
     });
-    
+
     let (stderr_tx, stderr_rx) = tokio::sync::mpsc::channel(100);
     tokio::spawn(async move {
         let mut reader = BufReader::new(stderr).lines();
         while let Ok(Some(line)) = reader.next_line().await {
-            if stderr_tx.send(line).await.is_err() { break; }
+            if stderr_tx.send(line).await.is_err() {
+                break;
+            }
         }
     });
-    
-    sessions.insert(session_id.to_string(), SessionProcess { stdin, stdout_rx, stderr_rx, _child: child });
+
+    sessions.insert(
+        session_id.to_string(),
+        SessionProcess { stdin, stdout_rx, stderr_rx, _child: child },
+    );
     Ok(())
 }
 
@@ -78,7 +89,8 @@ pub async fn stream_handler(
     Query(query): Query<StreamQuery>,
     State(_state): State<AppState>,
 ) -> Sse<impl Stream<Item = Result<Event, Infallible>>> {
-    let api_key = query.api_key.or_else(|| std::env::var("GOOGLE_API_KEY").ok()).unwrap_or_default();
+    let api_key =
+        query.api_key.or_else(|| std::env::var("GOOGLE_API_KEY").ok()).unwrap_or_default();
     let input = query.input;
     let binary_path = query.binary_path;
     let session_id = query.session_id.unwrap_or_else(|| uuid::Uuid::new_v4().to_string());
@@ -93,30 +105,30 @@ pub async fn stream_handler(
             yield Ok(Event::default().event("error").data(e));
             return;
         }
-        
+
         yield Ok(Event::default().event("session").data(session_id.clone()));
-        
+
         // Send input
         {
             let mut sessions = SESSIONS.lock().await;
             if let Some(session) = sessions.get_mut(&session_id) {
-                if session.stdin.write_all(format!("{}\n", input).as_bytes()).await.is_err() 
+                if session.stdin.write_all(format!("{}\n", input).as_bytes()).await.is_err()
                     || session.stdin.flush().await.is_err() {
                     yield Ok(Event::default().event("error").data("Failed to send input"));
                     return;
                 }
             }
         }
-        
+
         let timeout = tokio::time::Duration::from_secs(60);
         let start = tokio::time::Instant::now();
-        
+
         loop {
             if start.elapsed() > timeout {
                 yield Ok(Event::default().event("error").data("Timeout"));
                 break;
             }
-            
+
             let (stdout_msg, stderr_msg) = {
                 let mut sessions = SESSIONS.lock().await;
                 match sessions.get_mut(&session_id) {
@@ -127,9 +139,9 @@ pub async fn stream_handler(
                     }
                 }
             };
-            
+
             let mut got_data = false;
-            
+
             if let Some(line) = stdout_msg {
                 got_data = true;
                 let line = line.trim_start_matches("> ");
@@ -148,13 +160,13 @@ pub async fn stream_handler(
                     break;
                 }
             }
-            
+
             if let Some(line) = stderr_msg {
                 got_data = true;
                 if let Ok(json) = serde_json::from_str::<serde_json::Value>(&line) {
                     let fields = json.get("fields");
                     let msg = fields.and_then(|f| f.get("message")).and_then(|m| m.as_str()).unwrap_or("");
-                    
+
                     if msg == "tool_call" {
                         let name = fields.and_then(|f| f.get("tool.name")).and_then(|v| v.as_str()).unwrap_or("");
                         let args = fields.and_then(|f| f.get("tool.args")).and_then(|v| v.as_str()).unwrap_or("{}");
@@ -180,7 +192,7 @@ pub async fn stream_handler(
                     }
                 }
             }
-            
+
             if !got_data {
                 tokio::time::sleep(tokio::time::Duration::from_millis(10)).await;
             }

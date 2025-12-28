@@ -1,8 +1,8 @@
 use crate::ServerConfig;
 use axum::{
+    Json,
     extract::{Query, State},
     http::StatusCode,
-    Json,
 };
 use serde::{Deserialize, Serialize};
 

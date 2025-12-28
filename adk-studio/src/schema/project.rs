@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use uuid::Uuid;
 
-use super::{AgentSchema, ToolSchema, WorkflowSchema, ToolConfig};
+use super::{AgentSchema, ToolConfig, ToolSchema, WorkflowSchema};
 
 /// Complete project schema
 #[derive(Debug, Clone, Serialize, Deserialize)]

@@ -1,5 +1,5 @@
 use adk_core::{Part, Result};
-use base64::{engine::general_purpose, Engine as _};
+use base64::{Engine as _, engine::general_purpose};
 use serde_json::{Map, Value};
 
 pub fn adk_parts_to_a2a(

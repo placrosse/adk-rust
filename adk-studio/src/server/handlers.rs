@@ -1,9 +1,9 @@
 use crate::schema::{ProjectMeta, ProjectSchema};
 use crate::server::state::AppState;
 use axum::{
+    Json,
     extract::{Path, State},
     http::StatusCode,
-    Json,
 };
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
@@ -29,7 +29,11 @@ fn err(status: StatusCode, msg: impl Into<String>) -> (StatusCode, Json<ApiError
 /// List all projects
 pub async fn list_projects(State(state): State<AppState>) -> ApiResult<Vec<ProjectMeta>> {
     let storage = state.storage.read().await;
-    storage.list().await.map(Json).map_err(|e| err(StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))
+    storage
+        .list()
+        .await
+        .map(Json)
+        .map_err(|e| err(StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))
 }
 
 /// Create project request
@@ -118,12 +122,16 @@ pub async fn run_project(
     Path(_id): Path<Uuid>,
     Json(_req): Json<RunRequest>,
 ) -> ApiResult<RunResponse> {
-    Err(err(StatusCode::BAD_REQUEST, "Runtime execution removed. Use 'Build' then run via console with the compiled binary."))
+    Err(err(
+        StatusCode::BAD_REQUEST,
+        "Runtime execution removed. Use 'Build' then run via console with the compiled binary.",
+    ))
 }
 
-
 /// Clear session for a project
-pub async fn clear_session(Path(id): Path<Uuid>) -> Result<StatusCode, (StatusCode, Json<ApiError>)> {
+pub async fn clear_session(
+    Path(id): Path<Uuid>,
+) -> Result<StatusCode, (StatusCode, Json<ApiError>)> {
     // Session is now managed by sse module's persistent process
     // This endpoint is kept for compatibility but does nothing
     let _ = id;
@@ -137,10 +145,10 @@ pub async fn compile_project(
 ) -> ApiResult<crate::codegen::GeneratedProject> {
     let storage = state.storage.read().await;
     let project = storage.get(id).await.map_err(|e| err(StatusCode::NOT_FOUND, e.to_string()))?;
-    
+
     let generated = crate::codegen::generate_rust_project(&project)
         .map_err(|e| err(StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    
+
     Ok(Json(generated))
 }
 
@@ -156,15 +164,17 @@ pub struct BuildResponse {
 pub async fn build_project_stream(
     State(state): State<AppState>,
     Path(id): Path<Uuid>,
-) -> axum::response::Sse<impl futures::Stream<Item = Result<axum::response::sse::Event, std::convert::Infallible>>> {
+) -> axum::response::Sse<
+    impl futures::Stream<Item = Result<axum::response::sse::Event, std::convert::Infallible>>,
+> {
     use axum::response::sse::Event;
+    use std::time::Instant;
     use tokio::io::{AsyncBufReadExt, BufReader};
     use tokio::process::Command;
-    use std::time::Instant;
-    
+
     let stream = async_stream::stream! {
         let start_time = Instant::now();
-        
+
         let storage = state.storage.read().await;
         let project = match storage.get(id).await {
             Ok(p) => p,
@@ -173,7 +183,7 @@ pub async fn build_project_stream(
                 return;
             }
         };
-        
+
         let generated = match crate::codegen::generate_rust_project(&project) {
             Ok(g) => g,
             Err(e) => {
@@ -181,7 +191,7 @@ pub async fn build_project_stream(
                 return;
             }
         };
-        
+
         // Write to temp directory
         let mut project_name = project.name.to_lowercase().replace(' ', "_").replace(|c: char| !c.is_alphanumeric() && c != '_', "");
         if project_name.is_empty() || project_name.chars().next().map(|c| c.is_ascii_digit()).unwrap_or(false) {
@@ -192,7 +202,7 @@ pub async fn build_project_stream(
             yield Ok(Event::default().event("error").data(e.to_string()));
             return;
         }
-        
+
         for file in &generated.files {
             let path = build_dir.join(&file.path);
             if let Some(parent) = path.parent() {
@@ -203,13 +213,13 @@ pub async fn build_project_stream(
                 return;
             }
         }
-        
+
         yield Ok(Event::default().event("status").data("Starting cargo build..."));
-        
+
         // Use shared target directory for faster incremental builds
         let shared_target = std::env::temp_dir().join("adk-studio-builds").join("_shared_target");
         let _ = std::fs::create_dir_all(&shared_target);
-        
+
         let mut child = match Command::new("cargo")
             .arg("build")
             .env("CARGO_TARGET_DIR", &shared_target)
@@ -223,18 +233,18 @@ pub async fn build_project_stream(
                     return;
                 }
             };
-        
+
         let stderr = child.stderr.take().unwrap();
         let mut reader = BufReader::new(stderr).lines();
-        
+
         while let Ok(Some(line)) = reader.next_line().await {
             yield Ok(Event::default().event("output").data(line));
         }
-        
+
         let status = child.wait().await;
         let success = status.map(|s| s.success()).unwrap_or(false);
         let elapsed = start_time.elapsed();
-        
+
         if success {
             let binary = shared_target.join("debug").join(&project_name);
             yield Ok(Event::default().event("output").data(format!("\n✓ Build completed in {:.1}s", elapsed.as_secs_f32())));
@@ -244,7 +254,7 @@ pub async fn build_project_stream(
             yield Ok(Event::default().event("error").data("Build failed"));
         }
     };
-    
+
     axum::response::Sse::new(stream)
 }
 
@@ -255,27 +265,29 @@ pub async fn build_project(
 ) -> ApiResult<BuildResponse> {
     let storage = state.storage.read().await;
     let project = storage.get(id).await.map_err(|e| err(StatusCode::NOT_FOUND, e.to_string()))?;
-    
+
     let generated = crate::codegen::generate_rust_project(&project)
         .map_err(|e| err(StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    
+
     // Write to temp directory
     let project_name = project.name.to_lowercase().replace(' ', "_");
     let build_dir = std::env::temp_dir().join("adk-studio-builds").join(&project_name);
-    std::fs::create_dir_all(&build_dir).map_err(|e| err(StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    
+    std::fs::create_dir_all(&build_dir)
+        .map_err(|e| err(StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+
     for file in &generated.files {
         let path = build_dir.join(&file.path);
         if let Some(parent) = path.parent() {
             std::fs::create_dir_all(parent).ok();
         }
-        std::fs::write(&path, &file.content).map_err(|e| err(StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+        std::fs::write(&path, &file.content)
+            .map_err(|e| err(StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
     }
-    
+
     // Use shared target directory for faster incremental builds
     let shared_target = std::env::temp_dir().join("adk-studio-builds").join("_shared_target");
     let _ = std::fs::create_dir_all(&shared_target);
-    
+
     // Run cargo build
     let output = std::process::Command::new("cargo")
         .arg("build")
@@ -283,11 +295,11 @@ pub async fn build_project(
         .current_dir(&build_dir)
         .output()
         .map_err(|e| err(StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-    
+
     let stdout = String::from_utf8_lossy(&output.stdout);
     let stderr = String::from_utf8_lossy(&output.stderr);
     let combined = format!("{}\n{}", stdout, stderr);
-    
+
     if output.status.success() {
         let binary = shared_target.join("debug").join(&project_name);
         Ok(Json(BuildResponse {
@@ -296,10 +308,6 @@ pub async fn build_project(
             binary_path: Some(binary.to_string_lossy().to_string()),
         }))
     } else {
-        Ok(Json(BuildResponse {
-            success: false,
-            output: combined,
-            binary_path: None,
-        }))
+        Ok(Json(BuildResponse { success: false, output: combined, binary_path: None }))
     }
 }

@@ -7,7 +7,7 @@ license.workspace = true
 authors.workspace = true
 homepage.workspace = true
 repository.workspace = true
-description = "Visual development environment for ADK-Rust agents"
+description = "Visual development environment for AI agents built with Rust Agent Development Kit (ADK-Rust)"
 keywords = ["ai", "agents", "studio", "visual", "low-code"]
 categories = ["development-tools", "gui"]
 

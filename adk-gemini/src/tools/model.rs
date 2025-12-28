@@ -33,30 +33,22 @@ pub struct URLContextConfig {}
 impl Tool {
     /// Create a new tool with a single function declaration
     pub fn new(function_declaration: FunctionDeclaration) -> Self {
-        Self::Function {
-            function_declarations: vec![function_declaration],
-        }
+        Self::Function { function_declarations: vec![function_declaration] }
     }
 
     /// Create a new tool with multiple function declarations
     pub fn with_functions(function_declarations: Vec<FunctionDeclaration>) -> Self {
-        Self::Function {
-            function_declarations,
-        }
+        Self::Function { function_declarations }
     }
 
     /// Create a new Google Search tool
     pub fn google_search() -> Self {
-        Self::GoogleSearch {
-            google_search: GoogleSearchConfig {},
-        }
+        Self::GoogleSearch { google_search: GoogleSearchConfig {} }
     }
 
     /// Create a new URL Context tool
     pub fn url_context() -> Self {
-        Self::URLContext {
-            url_context: URLContextConfig {},
-        }
+        Self::URLContext { url_context: URLContextConfig {} }
     }
 }
 
@@ -119,12 +111,7 @@ impl FunctionDeclaration {
         description: impl Into<String>,
         behavior: Option<Behavior>,
     ) -> Self {
-        Self {
-            name: name.into(),
-            description: description.into(),
-            behavior,
-            ..Default::default()
-        }
+        Self { name: name.into(), description: description.into(), behavior, ..Default::default() }
     }
 
     /// Set the parameters for the function using a struct that implements `JsonSchema`
@@ -161,16 +148,10 @@ pub struct FunctionCall {
 #[derive(Debug, Snafu)]
 pub enum FunctionCallError {
     #[snafu(display("failed to deserialize parameter '{key}'"))]
-    Deserialization {
-        source: serde_json::Error,
-        key: String,
-    },
+    Deserialization { source: serde_json::Error, key: String },
 
     #[snafu(display("parameter '{key}' is missing in arguments '{args}'"))]
-    MissingParameter {
-        key: String,
-        args: serde_json::Value,
-    },
+    MissingParameter { key: String, args: serde_json::Value },
 
     #[snafu(display("arguments should be an object; actual: {actual}"))]
     ArgumentTypeMismatch { actual: String },
@@ -179,11 +160,7 @@ pub enum FunctionCallError {
 impl FunctionCall {
     /// Create a new function call
     pub fn new(name: impl Into<String>, args: serde_json::Value) -> Self {
-        Self {
-            name: name.into(),
-            args,
-            thought_signature: None,
-        }
+        Self { name: name.into(), args, thought_signature: None }
     }
 
     /// Create a new function call with thought signature
@@ -192,11 +169,7 @@ impl FunctionCall {
         args: serde_json::Value,
         thought_signature: impl Into<String>,
     ) -> Self {
-        Self {
-            name: name.into(),
-            args,
-            thought_signature: Some(thought_signature.into()),
-        }
+        Self { name: name.into(), args, thought_signature: Some(thought_signature.into()) }
     }
 
     /// Get a parameter from the arguments
@@ -204,21 +177,14 @@ impl FunctionCall {
         match &self.args {
             serde_json::Value::Object(obj) => {
                 if let Some(value) = obj.get(key) {
-                    serde_json::from_value(value.clone()).with_context(|_| DeserializationSnafu {
-                        key: key.to_string(),
-                    })
+                    serde_json::from_value(value.clone())
+                        .with_context(|_| DeserializationSnafu { key: key.to_string() })
                 } else {
-                    Err(MissingParameterSnafu {
-                        key: key.to_string(),
-                        args: self.args.clone(),
-                    }
-                    .build())
+                    Err(MissingParameterSnafu { key: key.to_string(), args: self.args.clone() }
+                        .build())
                 }
             }
-            _ => Err(ArgumentTypeMismatchSnafu {
-                actual: self.args.to_string(),
-            }
-            .build()),
+            _ => Err(ArgumentTypeMismatchSnafu { actual: self.args.to_string() }.build()),
         }
     }
 }
@@ -237,10 +203,7 @@ pub struct FunctionResponse {
 impl FunctionResponse {
     /// Create a new function response with a JSON value
     pub fn new(name: impl Into<String>, response: serde_json::Value) -> Self {
-        Self {
-            name: name.into(),
-            response: Some(response),
-        }
+        Self { name: name.into(), response: Some(response) }
     }
 
     /// Create a new function response from a serializable type that will be parsed as JSON
@@ -252,10 +215,7 @@ impl FunctionResponse {
         Response: JsonSchema + Serialize,
     {
         let json = serde_json::to_value(&response)?;
-        Ok(Self {
-            name: name.into(),
-            response: Some(json),
-        })
+        Ok(Self { name: name.into(), response: Some(json) })
     }
 
     /// Create a new function response with a string that will be parsed as JSON
@@ -264,10 +224,7 @@ impl FunctionResponse {
         response: impl Into<String>,
     ) -> Result<Self, serde_json::Error> {
         let json = serde_json::from_str(&response.into())?;
-        Ok(Self {
-            name: name.into(),
-            response: Some(json),
-        })
+        Ok(Self { name: name.into(), response: Some(json) })
     }
 }
 

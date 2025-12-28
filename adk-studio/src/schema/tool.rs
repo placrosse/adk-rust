@@ -89,8 +89,12 @@ pub struct BrowserToolConfig {
     pub timeout_ms: u64,
 }
 
-fn default_headless() -> bool { true }
-fn default_timeout() -> u64 { 30000 }
+fn default_headless() -> bool {
+    true
+}
+fn default_timeout() -> u64 {
+    30000
+}
 
 /// Built-in tool identifiers
 pub mod builtins {

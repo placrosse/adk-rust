@@ -1,9 +1,9 @@
 // Please put your sample video at examples/sample.mp4
 // This example sends the mp4 video content to Gemini API and asks AI to describe the video.
 
+use adk_gemini::{Content, Gemini};
 use base64::{engine::general_purpose, Engine as _};
 use display_error_chain::DisplayErrorChain;
-use adk_gemini::{Content, Gemini};
 use std::env;
 use std::fs::File;
 use std::io::Read;
@@ -37,10 +37,7 @@ async fn do_main() -> Result<(), Box<dyn std::error::Error>> {
     let mut buffer = Vec::new();
     file.read_to_end(&mut buffer)?;
     let b64 = general_purpose::STANDARD.encode(&buffer);
-    info!(
-        file_size = buffer.len(),
-        "video file loaded and encoded to base64"
-    );
+    info!(file_size = buffer.len(), "video file loaded and encoded to base64");
 
     // Get API key
     let api_key = env::var("GEMINI_API_KEY")?;
@@ -52,17 +49,11 @@ async fn do_main() -> Result<(), Box<dyn std::error::Error>> {
     let response1 = gemini
         .generate_content()
         .with_user_message("Please describe the content of this video (Message example)")
-        .with_message(adk_gemini::Message {
-            content: video_content,
-            role: adk_gemini::Role::User,
-        })
+        .with_message(adk_gemini::Message { content: video_content, role: adk_gemini::Role::User })
         .execute()
         .await?;
 
-    info!(
-        description = response1.text(),
-        "video description received using Message struct"
-    );
+    info!(description = response1.text(), "video description received using Message struct");
 
     // Example 2: Add mp4 blob directly using builder's with_inline_data
     info!("starting video description example using with_inline_data");
@@ -73,9 +64,6 @@ async fn do_main() -> Result<(), Box<dyn std::error::Error>> {
         .execute()
         .await?;
 
-    info!(
-        description = response2.text(),
-        "video description received using with_inline_data"
-    );
+    info!(description = response2.text(), "video description received using with_inline_data");
     Ok(())
 }

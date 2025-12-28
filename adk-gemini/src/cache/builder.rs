@@ -44,13 +44,7 @@ impl CacheBuilder {
     pub fn with_display_name<S: Into<String>>(mut self, display_name: S) -> Result<Self, Error> {
         let display_name = display_name.into();
         let chars = display_name.chars().count();
-        snafu::ensure!(
-            chars <= 128,
-            LongDisplayNameSnafu {
-                display_name,
-                chars
-            }
-        );
+        snafu::ensure!(chars <= 128, LongDisplayNameSnafu { display_name, chars });
         self.display_name = Some(display_name);
         Ok(self)
     }
@@ -63,15 +57,13 @@ impl CacheBuilder {
 
     /// Add a user message to the cached content.
     pub fn with_user_message<S: Into<String>>(mut self, message: S) -> Self {
-        self.contents
-            .push(crate::Message::user(message.into()).content);
+        self.contents.push(crate::Message::user(message.into()).content);
         self
     }
 
     /// Add a model message to the cached content.
     pub fn with_model_message<S: Into<String>>(mut self, message: S) -> Self {
-        self.contents
-            .push(crate::Message::model(message.into()).content);
+        self.contents.push(crate::Message::model(message.into()).content);
         self
     }
 
@@ -132,16 +124,8 @@ impl CacheBuilder {
         let cached_content = CreateCachedContentRequest {
             display_name: self.display_name,
             model,
-            contents: if self.contents.is_empty() {
-                None
-            } else {
-                Some(self.contents)
-            },
-            tools: if self.tools.is_empty() {
-                None
-            } else {
-                Some(self.tools)
-            },
+            contents: if self.contents.is_empty() { None } else { Some(self.contents) },
+            tools: if self.tools.is_empty() { None } else { Some(self.tools) },
             system_instruction: self.system_instruction,
             tool_config: self.tool_config,
             expiration,

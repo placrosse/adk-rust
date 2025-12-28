@@ -1,6 +1,6 @@
+use adk_gemini::Gemini;
 use base64::{engine::general_purpose::STANDARD as BASE64, Engine};
 use display_error_chain::DisplayErrorChain;
-use adk_gemini::Gemini;
 use std::env;
 use std::fs;
 use std::process::ExitCode;

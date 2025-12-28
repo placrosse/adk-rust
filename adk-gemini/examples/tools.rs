@@ -1,5 +1,5 @@
-use display_error_chain::DisplayErrorChain;
 use adk_gemini::{Content, FunctionCallingMode, FunctionDeclaration, Gemini, Message, Role, Tool};
+use display_error_chain::DisplayErrorChain;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use std::env;
@@ -26,10 +26,7 @@ struct Weather {
 
 impl Default for Weather {
     fn default() -> Self {
-        Weather {
-            location: "".to_string(),
-            unit: Some(Unit::Celsius),
-        }
+        Weather { location: "".to_string(), unit: Some(Unit::Celsius) }
     }
 }
 
@@ -64,11 +61,7 @@ struct Calculation {
 
 impl Default for Calculation {
     fn default() -> Self {
-        Calculation {
-            operation: Operation::Add,
-            a: 0.0,
-            b: 0.0,
-        }
+        Calculation { operation: Operation::Add, a: 0.0, b: 0.0 }
     }
 }
 
@@ -107,13 +100,10 @@ async fn do_main() -> Result<(), Box<dyn std::error::Error>> {
     info!("starting tools example with multiple functions");
 
     // Define a weather function
-    let get_weather = FunctionDeclaration::new(
-        "get_weather",
-        "Get the current weather for a location",
-        None,
-    )
-    .with_parameters::<Weather>()
-    .with_response::<WeatherResponse>();
+    let get_weather =
+        FunctionDeclaration::new("get_weather", "Get the current weather for a location", None)
+            .with_parameters::<Weather>()
+            .with_response::<WeatherResponse>();
 
     // Define a calculator function
     let calculate = FunctionDeclaration::new("calculate", "Perform a calculation", None)
@@ -181,10 +171,7 @@ async fn do_main() -> Result<(), Box<dyn std::error::Error>> {
                 let model_content = Content::function_call((*function_call).clone());
 
                 // Add as model message
-                let model_message = Message {
-                    content: model_content,
-                    role: Role::Model,
-                };
+                let model_message = Message { content: model_content, role: Role::Model };
                 conversation = conversation.with_message(model_message);
 
                 // 3. Add user message with function response
@@ -233,10 +220,7 @@ async fn do_main() -> Result<(), Box<dyn std::error::Error>> {
                 let model_content = Content::function_call((*function_call).clone());
 
                 // Add as model message
-                let model_message = Message {
-                    content: model_content,
-                    role: Role::Model,
-                };
+                let model_message = Message { content: model_content, role: Role::Model };
                 conversation = conversation.with_message(model_message);
 
                 // 3. Add user message with function response

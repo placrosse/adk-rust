@@ -38,9 +38,8 @@ export function ToolPalette({ selectedNodeId, agentTools, onAdd, onRemove }: Pro
               key={type}
               draggable
               onDragStart={(e) => onDragStart(e, type)}
-              className={`p-2 rounded text-sm cursor-grab flex items-center gap-2 ${
-                isAdded ? 'bg-green-800 hover:bg-green-700' : 'bg-gray-700 hover:bg-gray-600'
-              } ${!selectedNodeId ? 'opacity-50' : ''}`}
+              className={`p-1.5 rounded text-xs cursor-grab flex items-center gap-2 ${isAdded ? 'bg-green-800 hover:bg-green-700' : 'bg-gray-700 hover:bg-gray-600'
+                } ${!selectedNodeId ? 'opacity-50' : ''}`}
               onClick={() => {
                 if (!selectedNodeId) return;
                 if (isMultiTool || !isAdded) onAdd(type);

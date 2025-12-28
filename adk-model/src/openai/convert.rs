@@ -93,11 +93,7 @@ fn extract_text(parts: &[Part]) -> String {
 /// Get text content if any exists.
 fn get_text_content(parts: &[Part]) -> Option<String> {
     let text = extract_text(parts);
-    if text.is_empty() {
-        None
-    } else {
-        Some(text)
-    }
+    if text.is_empty() { None } else { Some(text) }
 }
 
 /// Extract tool calls from parts.
@@ -232,11 +228,7 @@ pub fn from_openai_chunk(chunk: &CreateChatCompletionStreamResponse) -> LlmRespo
 
         // Only return content if there are actual parts
         // This prevents empty Content from being accumulated in conversation history
-        if parts.is_empty() {
-            None
-        } else {
-            Some(Content { role: "model".to_string(), parts })
-        }
+        if parts.is_empty() { None } else { Some(Content { role: "model".to_string(), parts }) }
     });
 
     let finish_reason = chunk.choices.first().and_then(|c| c.finish_reason).map(|fr| match fr {

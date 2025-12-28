@@ -1,5 +1,5 @@
-use display_error_chain::DisplayErrorChain;
 use adk_gemini::Gemini;
+use display_error_chain::DisplayErrorChain;
 use serde_json::json;
 use std::env;
 use std::process::ExitCode;
@@ -75,10 +75,7 @@ async fn do_main() -> Result<(), Box<dyn std::error::Error>> {
         .execute()
         .await?;
 
-    info!(
-        response = response.text(),
-        "structured json response received"
-    );
+    info!(response = response.text(), "structured json response received");
 
     // Parse the JSON response
     let json_response: serde_json::Value = serde_json::from_str(&response.text())?;
@@ -93,11 +90,7 @@ async fn do_main() -> Result<(), Box<dyn std::error::Error>> {
 
     if let Some(features) = json_response["key_features"].as_array() {
         for (i, feature) in features.iter().enumerate() {
-            info!(
-                index = i + 1,
-                feature = feature.as_str().unwrap_or("unknown"),
-                "key feature"
-            );
+            info!(index = i + 1, feature = feature.as_str().unwrap_or("unknown"), "key feature");
         }
     }
 

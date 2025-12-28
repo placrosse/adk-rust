@@ -1,5 +1,5 @@
 use adk_core::{Content, Llm, LlmRequest, Part};
-use adk_model::gemini::{streaming::aggregate_stream, GeminiModel};
+use adk_model::gemini::{GeminiModel, streaming::aggregate_stream};
 
 fn get_api_key() -> Option<String> {
     std::env::var("GEMINI_API_KEY").ok()

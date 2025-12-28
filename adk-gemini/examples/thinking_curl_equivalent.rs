@@ -1,5 +1,5 @@
-use display_error_chain::DisplayErrorChain;
 use adk_gemini::{Gemini, GenerationConfig, ThinkingConfig};
+use display_error_chain::DisplayErrorChain;
 use std::env;
 use std::process::ExitCode;
 use tracing::info;
@@ -84,15 +84,11 @@ async fn do_main() -> Result<(), Box<dyn std::error::Error>> {
     // Method 2: Using GenerationConfig to fully match curl example structure
     info!("method 2: fully matching curl example structure");
 
-    let thinking_config = ThinkingConfig {
-        thinking_budget: Some(1024),
-        include_thoughts: Some(true),
-    };
+    let thinking_config =
+        ThinkingConfig { thinking_budget: Some(1024), include_thoughts: Some(true) };
 
-    let generation_config = GenerationConfig {
-        thinking_config: Some(thinking_config),
-        ..Default::default()
-    };
+    let generation_config =
+        GenerationConfig { thinking_config: Some(thinking_config), ..Default::default() };
 
     let response2 = client
         .generate_content()

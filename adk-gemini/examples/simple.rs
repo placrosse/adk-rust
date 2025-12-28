@@ -1,7 +1,7 @@
-use display_error_chain::DisplayErrorChain;
 use adk_gemini::{
     Content, FunctionCallingMode, FunctionDeclaration, Gemini, GenerationConfig, Message, Role,
 };
+use display_error_chain::DisplayErrorChain;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use std::env;
@@ -28,10 +28,7 @@ struct WeatherRequest {
 
 impl Default for WeatherRequest {
     fn default() -> Self {
-        WeatherRequest {
-            location: "".to_string(),
-            unit: Some(Unit::Celsius),
-        }
+        WeatherRequest { location: "".to_string(), unit: Some(Unit::Celsius) }
     }
 }
 
@@ -88,13 +85,10 @@ async fn do_main() -> Result<(), Box<dyn std::error::Error>> {
     info!("starting function calling example");
 
     // Define a weather function
-    let get_weather = FunctionDeclaration::new(
-        "get_weather",
-        "Get the current weather for a location",
-        None,
-    )
-    .with_parameters::<WeatherRequest>()
-    .with_response::<WeatherResponse>();
+    let get_weather =
+        FunctionDeclaration::new("get_weather", "Get the current weather for a location", None)
+            .with_parameters::<WeatherRequest>()
+            .with_response::<WeatherResponse>();
 
     // Create a request with function calling
     let response = client
@@ -132,10 +126,7 @@ async fn do_main() -> Result<(), Box<dyn std::error::Error>> {
         let model_content = Content::function_call((*function_call).clone());
 
         // Add as model message
-        let model_message = Message {
-            content: model_content,
-            role: Role::Model,
-        };
+        let model_message = Message { content: model_content, role: Role::Model };
 
         // Simulate function execution
         let weather_response = format!(
@@ -159,10 +150,7 @@ async fn do_main() -> Result<(), Box<dyn std::error::Error>> {
             .execute()
             .await?;
 
-        info!(
-            final_response = final_response.text(),
-            "function calling completed"
-        );
+        info!(final_response = final_response.text(), "function calling completed");
     } else {
         warn!("no function calls in the response");
     }

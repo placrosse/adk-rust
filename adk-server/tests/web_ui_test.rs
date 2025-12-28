@@ -1,5 +1,5 @@
 use adk_core::{Agent, Event, InvocationContext, Result, SingleAgentLoader};
-use adk_server::{create_app, ServerConfig};
+use adk_server::{ServerConfig, create_app};
 use adk_session::InMemorySessionService;
 use async_trait::async_trait;
 use axum::{
@@ -98,13 +98,9 @@ async fn test_web_ui_index_route() {
         app.oneshot(Request::builder().uri("/ui/").body(Body::empty()).unwrap()).await.unwrap();
 
     assert_eq!(response.status(), StatusCode::OK);
-    assert!(response
-        .headers()
-        .get("content-type")
-        .unwrap()
-        .to_str()
-        .unwrap()
-        .contains("text/html"));
+    assert!(
+        response.headers().get("content-type").unwrap().to_str().unwrap().contains("text/html")
+    );
 }
 
 #[tokio::test]

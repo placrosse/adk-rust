@@ -19,7 +19,7 @@ use adk_core::ToolContext;
 use adk_model::gemini::GeminiModel;
 use adk_tool::{AgentTool, FunctionTool};
 use anyhow::Result;
-use serde_json::{json, Value};
+use serde_json::{Value, json};
 use std::sync::Arc;
 
 /// Calculator tool for the math agent

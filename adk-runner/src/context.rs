@@ -5,7 +5,7 @@ use adk_core::{
 use adk_session::Session as AdkSession;
 use async_trait::async_trait;
 use std::collections::HashMap;
-use std::sync::{atomic::AtomicBool, Arc, RwLock};
+use std::sync::{Arc, RwLock, atomic::AtomicBool};
 
 /// MutableSession wraps a session with shared mutable state.
 ///

@@ -1,7 +1,7 @@
 //! StateGraph builder for constructing graphs
 
 use crate::checkpoint::Checkpointer;
-use crate::edge::{Edge, EdgeTarget, RouterFn, END, START};
+use crate::edge::{END, Edge, EdgeTarget, RouterFn, START};
 use crate::error::{GraphError, Result};
 use crate::node::{FunctionNode, Node, NodeContext, NodeOutput};
 use crate::state::{State, StateSchema};

@@ -6,12 +6,12 @@ pub use controllers::{
     SessionController,
 };
 
-use crate::{web_ui, ServerConfig};
+use crate::{ServerConfig, web_ui};
 use axum::{
-    extract::DefaultBodyLimit,
-    http::{header, HeaderValue, Method},
-    routing::{get, post},
     Router,
+    extract::DefaultBodyLimit,
+    http::{HeaderValue, Method, header},
+    routing::{get, post},
 };
 use tower::ServiceBuilder;
 use tower_http::{

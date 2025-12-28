@@ -93,19 +93,13 @@ pub enum Error {
     Client { source: Box<ClientError> },
 
     #[snafu(display("failed to download batch result file '{file_name}'"))]
-    FileDownload {
-        source: crate::files::Error,
-        file_name: String,
-    },
+    FileDownload { source: crate::files::Error, file_name: String },
 
     #[snafu(display("failed to decode batch result file content as UTF-8"))]
     FileDecode { source: std::string::FromUtf8Error },
 
     #[snafu(display("failed to parse line in batch result file"))]
-    FileParse {
-        source: serde_json::Error,
-        line: String,
-    },
+    FileParse { source: serde_json::Error, line: String },
 
     /// This error should never occur, as the Google API contract
     /// guarantees that a result will always be provided.
@@ -131,16 +125,9 @@ pub enum BatchStatus {
     /// The operation is waiting to be processed.
     Pending,
     /// The operation is currently being processed.
-    Running {
-        pending_count: i64,
-        completed_count: i64,
-        failed_count: i64,
-        total_count: i64,
-    },
+    Running { pending_count: i64, completed_count: i64, failed_count: i64, total_count: i64 },
     /// The operation has completed successfully.
-    Succeeded {
-        results: Vec<BatchGenerationResponseItem>,
-    },
+    Succeeded { results: Vec<BatchGenerationResponseItem> },
     /// The operation was cancelled by the user.
     Cancelled,
     /// The operation has expired.
@@ -153,9 +140,8 @@ impl BatchStatus {
         client: Arc<GeminiClient>,
     ) -> Result<Vec<BatchGenerationResponseItem>, Error> {
         let file = FileHandle::new(client.clone(), response_file);
-        let file_content_bytes = file.download().await.context(FileDownloadSnafu {
-            file_name: file.name(),
-        })?;
+        let file_content_bytes =
+            file.download().await.context(FileDownloadSnafu { file_name: file.name() })?;
         let file_content = String::from_utf8(file_content_bytes).context(FileDecodeSnafu)?;
 
         let mut results = vec![];
@@ -164,9 +150,7 @@ impl BatchStatus {
                 continue;
             }
             let item: BatchResponseFileItem =
-                serde_json::from_str(line).context(FileParseSnafu {
-                    line: line.to_string(),
-                })?;
+                serde_json::from_str(line).context(FileParseSnafu { line: line.to_string() })?;
 
             results.push(BatchGenerationResponseItem {
                 response: item.response.into(),
@@ -190,10 +174,7 @@ impl BatchStatus {
                 })
                 .collect(),
             BatchOperationResponse::ResponsesFile { responses_file } => {
-                let file = crate::files::model::File {
-                    name: responses_file,
-                    ..Default::default()
-                };
+                let file = crate::files::model::File { name: responses_file, ..Default::default() };
                 Self::parse_response_file(file, client).await?
             }
         };
@@ -206,13 +187,11 @@ impl BatchStatus {
     ) -> Result<Self, Error> {
         if operation.done {
             // According to Google API documentation, when done=true, result must be present
-            let result = operation.result.context(MissingResultSnafu {
-                name: operation.name.clone(),
-            })?;
+            let result =
+                operation.result.context(MissingResultSnafu { name: operation.name.clone() })?;
 
-            let response = Result::from(result).context(BatchFailedSnafu {
-                name: operation.name,
-            })?;
+            let response =
+                Result::from(result).context(BatchFailedSnafu { name: operation.name })?;
 
             let mut results = Self::process_successful_response(response, client).await?;
             results.sort_by_key(|r| r.meta.key);
@@ -229,21 +208,12 @@ impl BatchStatus {
                 BatchState::BatchStatePending => Ok(BatchStatus::Pending),
                 BatchState::BatchStateRunning => {
                     let total_count = operation.metadata.batch_stats.request_count;
-                    let pending_count = operation
-                        .metadata
-                        .batch_stats
-                        .pending_request_count
-                        .unwrap_or(total_count);
-                    let completed_count = operation
-                        .metadata
-                        .batch_stats
-                        .completed_request_count
-                        .unwrap_or(0);
-                    let failed_count = operation
-                        .metadata
-                        .batch_stats
-                        .failed_request_count
-                        .unwrap_or(0);
+                    let pending_count =
+                        operation.metadata.batch_stats.pending_request_count.unwrap_or(total_count);
+                    let completed_count =
+                        operation.metadata.batch_stats.completed_request_count.unwrap_or(0);
+                    let failed_count =
+                        operation.metadata.batch_stats.failed_request_count.unwrap_or(0);
                     Ok(BatchStatus::Running {
                         pending_count,
                         completed_count,

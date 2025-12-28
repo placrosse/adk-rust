@@ -1,4 +1,3 @@
-use display_error_chain::DisplayErrorChain;
 /// Comprehensive example demonstrating thoughtSignature support in Gemini 2.5 Pro
 ///
 /// This example shows:
@@ -17,6 +16,7 @@ use display_error_chain::DisplayErrorChain;
 use adk_gemini::{
     FunctionCallingMode, FunctionDeclaration, FunctionResponse, Gemini, ThinkingConfig, Tool,
 };
+use display_error_chain::DisplayErrorChain;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
@@ -33,9 +33,7 @@ struct WeatherRequest {
 
 impl Default for WeatherRequest {
     fn default() -> Self {
-        WeatherRequest {
-            location: "".to_string(),
-        }
+        WeatherRequest { location: "".to_string() }
     }
 }
 
@@ -89,9 +87,8 @@ async fn do_main() -> Result<(), Box<dyn std::error::Error>> {
     let weather_tool = Tool::new(weather_function);
 
     // Configure thinking to enable thoughtSignature
-    let thinking_config = ThinkingConfig::new()
-        .with_dynamic_thinking()
-        .with_thoughts_included(true);
+    let thinking_config =
+        ThinkingConfig::new().with_dynamic_thinking().with_thoughts_included(true);
 
     // First request: Ask about weather (expecting function call with thoughtSignature)
     info!("step 1: asking about weather (expecting function call)");
@@ -250,18 +247,13 @@ async fn do_main() -> Result<(), Box<dyn std::error::Error>> {
                 .with_tool(weather_tool_followup)
                 .with_function_calling_mode(FunctionCallingMode::Auto)
                 .with_thinking_config(
-                    ThinkingConfig::new()
-                        .with_dynamic_thinking()
-                        .with_thoughts_included(true),
+                    ThinkingConfig::new().with_dynamic_thinking().with_thoughts_included(true),
                 );
 
             let followup_response = conversation_builder.execute().await?;
 
             info!("follow-up question: Is this weather suitable for outdoor sports? Please recommend some appropriate activities.");
-            info!(
-                followup_response = followup_response.text(),
-                "follow-up response"
-            );
+            info!(followup_response = followup_response.text(), "follow-up response");
 
             // Check if there are any new function calls with thought signatures in the follow-up
             let followup_function_calls = followup_response.function_calls_with_thoughts();
@@ -284,11 +276,7 @@ async fn do_main() -> Result<(), Box<dyn std::error::Error>> {
             if !followup_thoughts.is_empty() {
                 info!("follow-up thinking summaries");
                 for (i, thought) in followup_thoughts.iter().enumerate() {
-                    info!(
-                        thought_number = i + 1,
-                        thought = thought,
-                        "follow-up thought"
-                    );
+                    info!(thought_number = i + 1, thought = thought, "follow-up thought");
                 }
             }
 

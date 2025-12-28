@@ -180,11 +180,7 @@ impl Validate for Component {
 /// Validate a UiResponse and return Result
 pub fn validate_ui_response(ui: &UiResponse) -> Result<(), Vec<ValidationError>> {
     let errors = ui.validate("UiResponse");
-    if errors.is_empty() {
-        Ok(())
-    } else {
-        Err(errors)
-    }
+    if errors.is_empty() { Ok(()) } else { Err(errors) }
 }
 
 #[cfg(test)]

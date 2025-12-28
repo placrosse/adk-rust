@@ -24,7 +24,7 @@ export function AgentPalette({ onDragStart, onCreate }: Props) {
             draggable
             onDragStart={(e) => onDragStart(e, type)}
             onClick={() => onCreate(type)}
-            className="p-2 bg-studio-accent rounded text-sm cursor-grab hover:bg-studio-highlight"
+            className="p-1.5 bg-studio-accent rounded text-xs cursor-grab hover:bg-studio-highlight"
           >
             ⊕ {label}
           </div>

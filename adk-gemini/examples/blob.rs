@@ -1,6 +1,6 @@
+use adk_gemini::{Gemini, GenerationConfig};
 use base64::{engine::general_purpose, Engine as _};
 use display_error_chain::DisplayErrorChain;
-use adk_gemini::{Gemini, GenerationConfig};
 use std::env;
 use std::fs::File;
 use std::io::Read;
@@ -33,10 +33,8 @@ async fn do_main() -> Result<(), Box<dyn std::error::Error>> {
     let api_key = env::var("GEMINI_API_KEY").expect("GEMINI_API_KEY environment variable not set");
 
     // Image file path (in the same directory)
-    let image_path = Path::new(file!())
-        .parent()
-        .unwrap_or(Path::new("."))
-        .join("image-example.webp"); // Replace with your image filename
+    let image_path =
+        Path::new(file!()).parent().unwrap_or(Path::new(".")).join("image-example.webp"); // Replace with your image filename
 
     // Read the image file
     let mut file = File::open(&image_path)?;

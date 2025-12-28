@@ -1,4 +1,4 @@
-use crate::{types::Content, Agent, Result};
+use crate::{Agent, Result, types::Content};
 use async_trait::async_trait;
 use serde_json::Value;
 use std::collections::HashMap;

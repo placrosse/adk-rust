@@ -1,6 +1,6 @@
+use adk_gemini::Gemini;
 use display_error_chain::DisplayErrorChain;
 use futures_util::TryStreamExt;
-use adk_gemini::Gemini;
 use std::env;
 use std::process::ExitCode;
 use tracing::info;
@@ -96,10 +96,7 @@ async fn do_main() -> Result<(), Box<dyn std::error::Error>> {
     );
 
     // Third turn (continuing the conversation)
-    info!(
-        question = "What are some must-visit places in Tokyo?",
-        "sending third turn"
-    );
+    info!(question = "What are some must-visit places in Tokyo?", "sending third turn");
     let response3 = client
         .generate_content()
         .with_system_prompt("You are a helpful travel assistant.")

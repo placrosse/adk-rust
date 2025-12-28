@@ -1,6 +1,6 @@
 //! Edge and routing tests
 
-use adk_graph::edge::{EdgeTarget, Router, END, START};
+use adk_graph::edge::{END, EdgeTarget, Router, START};
 use adk_graph::state::State;
 use serde_json::json;
 

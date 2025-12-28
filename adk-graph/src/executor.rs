@@ -124,15 +124,15 @@ impl<'a> PregelExecutor<'a> {
                 // For Messages mode, stream from nodes directly
                 if matches!(mode, StreamMode::Messages) {
                     let mut result = SuperStepResult::default();
-                    
+
                     for node_name in &self.pending_nodes {
                         if let Some(node) = self.graph.nodes.get(node_name) {
                             let ctx = NodeContext::new(self.state.clone(), self.config.clone(), self.step);
                             let start = std::time::Instant::now();
-                            
+
                             let mut node_stream = node.execute_stream(&ctx);
                             let mut collected_events = Vec::new();
-                            
+
                             while let Some(event_result) = node_stream.next().await {
                                 match event_result {
                                     Ok(event) => {
@@ -148,12 +148,12 @@ impl<'a> PregelExecutor<'a> {
                                     }
                                 }
                             }
-                            
+
                             let duration_ms = start.elapsed().as_millis() as u64;
                             result.executed_nodes.push(node_name.clone());
                             result.events.push(StreamEvent::node_end(node_name, self.step, duration_ms));
                             result.events.extend(collected_events);
-                            
+
                             // Get output from execute for state updates
                             if let Ok(output) = node.execute(&ctx).await {
                                 for (key, value) in output.updates {
@@ -162,14 +162,14 @@ impl<'a> PregelExecutor<'a> {
                             }
                         }
                     }
-                    
+
                     // Yield node_end events
                     for event in &result.events {
                         if matches!(event, StreamEvent::NodeEnd { .. }) {
                             yield Ok(event.clone());
                         }
                     }
-                    
+
                     self.pending_nodes = self.graph.get_next_nodes(&result.executed_nodes, &self.state);
                     self.step += 1;
                     continue;
@@ -511,11 +511,7 @@ mod tests {
                 "increment",
                 |state| {
                     let count = state.get("count").and_then(|v| v.as_i64()).unwrap_or(0);
-                    if count < 5 {
-                        "increment".to_string()
-                    } else {
-                        END.to_string()
-                    }
+                    if count < 5 { "increment".to_string() } else { END.to_string() }
                 },
                 [("increment", "increment"), (END, END)],
             )

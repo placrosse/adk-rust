@@ -180,11 +180,7 @@ impl ResponseScorer {
                 }
             }
             SimilarityAlgorithm::Contains => {
-                if actual.contains(&expected) || expected.contains(&actual) {
-                    1.0
-                } else {
-                    0.0
-                }
+                if actual.contains(&expected) || expected.contains(&actual) { 1.0 } else { 0.0 }
             }
             SimilarityAlgorithm::Levenshtein => self.levenshtein_similarity(&expected, &actual),
             SimilarityAlgorithm::Jaccard => self.jaccard_similarity(&expected, &actual),
@@ -214,11 +210,7 @@ impl ResponseScorer {
     fn levenshtein_similarity(&self, a: &str, b: &str) -> f64 {
         let distance = self.levenshtein_distance(a, b);
         let max_len = a.len().max(b.len());
-        if max_len == 0 {
-            1.0
-        } else {
-            1.0 - (distance as f64 / max_len as f64)
-        }
+        if max_len == 0 { 1.0 } else { 1.0 - (distance as f64 / max_len as f64) }
     }
 
     /// Calculate Levenshtein distance
@@ -266,11 +258,7 @@ impl ResponseScorer {
         let intersection = a_words.intersection(&b_words).count();
         let union = a_words.union(&b_words).count();
 
-        if union == 0 {
-            0.0
-        } else {
-            intersection as f64 / union as f64
-        }
+        if union == 0 { 0.0 } else { intersection as f64 / union as f64 }
     }
 
     /// ROUGE-N score (n-gram overlap)

@@ -21,14 +21,14 @@ Agent implementations for Rust Agent Development Kit (ADK-Rust, LLM, Custom, Wor
 
 ```toml
 [dependencies]
-adk-agent = "0.1"
+adk-agent = "0.1.8"
 ```
 
 Or use the meta-crate:
 
 ```toml
 [dependencies]
-adk-rust = { version = "0.1", features = ["agents"] }
+adk-rust = { version = "0.1.8", features = ["agents"] }
 ```
 
 ## Quick Start

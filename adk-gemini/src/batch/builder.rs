@@ -21,11 +21,7 @@ pub struct BatchBuilder {
 impl BatchBuilder {
     /// Create a new batch builder
     pub(crate) fn new(client: Arc<GeminiClient>) -> Self {
-        Self {
-            client,
-            display_name: "RustBatch".to_string(),
-            requests: Vec::new(),
-        }
+        Self { client, display_name: "RustBatch".to_string(), requests: Vec::new() }
     }
 
     /// Sets the user-friendly display name for the batch request.
@@ -54,18 +50,13 @@ impl BatchBuilder {
             .requests
             .into_iter()
             .enumerate()
-            .map(|(key, request)| BatchRequestItem {
-                request,
-                metadata: RequestMetadata { key },
-            })
+            .map(|(key, request)| BatchRequestItem { request, metadata: RequestMetadata { key } })
             .collect();
 
         BatchGenerateContentRequest {
             batch: BatchConfig {
                 display_name: self.display_name,
-                input_config: InputConfig::Requests(RequestsContainer {
-                    requests: batch_requests,
-                }),
+                input_config: InputConfig::Requests(RequestsContainer { requests: batch_requests }),
             },
         }
     }
@@ -80,10 +71,7 @@ impl BatchBuilder {
     pub async fn execute(self) -> Result<BatchHandle, Error> {
         let client = self.client.clone();
         let request = self.build();
-        let response = client
-            .batch_generate_content(request)
-            .await
-            .context(ClientSnafu)?;
+        let response = client.batch_generate_content(request).await.context(ClientSnafu)?;
         Ok(BatchHandle::new(response.name, client))
     }
 
@@ -99,10 +87,7 @@ impl BatchBuilder {
     pub async fn execute_as_file(self) -> Result<BatchHandle, Error> {
         let mut json_lines = String::new();
         for (index, item) in self.requests.into_iter().enumerate() {
-            let item = BatchRequestFileItem {
-                request: item,
-                key: index,
-            };
+            let item = BatchRequestFileItem { request: item, key: index };
 
             let line = serde_json::to_string(&item).context(SerializeSnafu)?;
             json_lines.push_str(&line);
@@ -115,9 +100,7 @@ impl BatchBuilder {
         let file = crate::files::builder::FileBuilder::new(self.client.clone(), json_bytes)
             .display_name(file_display_name)
             .with_mime_type(
-                "application/jsonl"
-                    .parse()
-                    .expect("failed to parse MIME type 'application/jsonl'"),
+                "application/jsonl".parse().expect("failed to parse MIME type 'application/jsonl'"),
             )
             .upload()
             .await
@@ -131,10 +114,7 @@ impl BatchBuilder {
         };
 
         let client = self.client.clone();
-        let response = client
-            .batch_generate_content(request)
-            .await
-            .context(ClientSnafu)?;
+        let response = client.batch_generate_content(request).await.context(ClientSnafu)?;
 
         Ok(BatchHandle::new(response.name, client))
     }

@@ -16,12 +16,7 @@ pub struct FileBuilder {
 
 impl FileBuilder {
     pub(crate) fn new<B: Into<Vec<u8>>>(client: Arc<GeminiClient>, file_bytes: B) -> Self {
-        Self {
-            client,
-            file_bytes: file_bytes.into(),
-            display_name: None,
-            mime_type: None,
-        }
+        Self { client, file_bytes: file_bytes.into(), display_name: None, mime_type: None }
     }
 
     /// The display name of the file.

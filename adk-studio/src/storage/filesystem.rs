@@ -40,9 +40,8 @@ impl FileStorage {
 
     pub async fn get(&self, id: Uuid) -> Result<ProjectSchema> {
         let path = self.project_path(id);
-        let content = fs::read_to_string(&path)
-            .await
-            .with_context(|| format!("Project {} not found", id))?;
+        let content =
+            fs::read_to_string(&path).await.with_context(|| format!("Project {} not found", id))?;
         serde_json::from_str(&content).context("Invalid project format")
     }
 

@@ -7,7 +7,7 @@ pub mod validation;
 
 pub use prompts::{UI_AGENT_PROMPT, UI_AGENT_PROMPT_SHORT};
 pub use schema::*;
-pub use templates::{render_template, StatItem, TemplateData, UiTemplate, UserData};
+pub use templates::{StatItem, TemplateData, UiTemplate, UserData, render_template};
 pub use tools::*;
 pub use toolset::UiToolset;
-pub use validation::{validate_ui_response, Validate, ValidationError};
+pub use validation::{Validate, ValidationError, validate_ui_response};

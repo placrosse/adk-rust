@@ -52,4 +52,4 @@ mod config;
 mod convert;
 
 pub use client::DeepSeekClient;
-pub use config::{DeepSeekConfig, DEEPSEEK_API_BASE, DEEPSEEK_BETA_API_BASE};
+pub use config::{DEEPSEEK_API_BASE, DEEPSEEK_BETA_API_BASE, DeepSeekConfig};

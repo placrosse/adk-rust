@@ -822,7 +822,7 @@ impl Agent for LlmAgent {
                             // Find and execute tool
                             let (tool_result, tool_actions) = if let Some(tool) = tools.iter().find(|t| t.name() == name) {
                                 tracing::info!(tool.name = %name, tool.args = %args, "tool_call");
-                                
+
                                 // ✅ Use AgentToolContext that preserves parent context
                                 let tool_ctx: Arc<dyn ToolContext> = Arc::new(AgentToolContext::new(
                                     ctx.clone(),

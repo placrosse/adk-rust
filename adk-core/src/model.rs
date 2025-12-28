@@ -1,4 +1,4 @@
-use crate::{types::Content, Result};
+use crate::{Result, types::Content};
 use async_trait::async_trait;
 use futures::stream::Stream;
 use serde::{Deserialize, Serialize};

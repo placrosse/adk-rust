@@ -60,11 +60,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .execute()
         .await?;
 
-    let contents = response
-        .candidates
-        .into_iter()
-        .map(|c| c.content)
-        .collect::<Vec<_>>();
+    let contents = response.candidates.into_iter().map(|c| c.content).collect::<Vec<_>>();
 
     let mut function_queue = VecDeque::<FunctionCall>::new();
     for content in &contents {

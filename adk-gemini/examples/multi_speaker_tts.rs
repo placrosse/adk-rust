@@ -1,6 +1,6 @@
+use adk_gemini::{Gemini, GenerationConfig, Part, SpeakerVoiceConfig, SpeechConfig};
 use base64::{engine::general_purpose, Engine as _};
 use display_error_chain::DisplayErrorChain;
-use adk_gemini::{Gemini, GenerationConfig, Part, SpeakerVoiceConfig, SpeechConfig};
 use std::fs::File;
 use std::io::Write;
 use std::process::ExitCode;
@@ -38,10 +38,8 @@ async fn do_main() -> Result<(), Box<dyn std::error::Error>> {
     info!("starting gemini multi-speaker speech generation example");
 
     // Create multi-speaker configuration
-    let speakers = vec![
-        SpeakerVoiceConfig::new("Alice", "Puck"),
-        SpeakerVoiceConfig::new("Bob", "Charon"),
-    ];
+    let speakers =
+        vec![SpeakerVoiceConfig::new("Alice", "Puck"), SpeakerVoiceConfig::new("Bob", "Charon")];
 
     // Create generation config with multi-speaker speech settings
     let generation_config = GenerationConfig {
@@ -118,11 +116,7 @@ Alice: I couldn't agree more. It's remarkable how far AI-generated speech has co
                                 }
                             }
                             // Display any text content
-                            Part::Text {
-                                text,
-                                thought,
-                                thought_signature: _,
-                            } => {
+                            Part::Text { text, thought, thought_signature: _ } => {
                                 if thought.unwrap_or(false) {
                                     info!("💭 Model thought: {}", text);
                                 } else {

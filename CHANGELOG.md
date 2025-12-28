@@ -5,6 +5,84 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.8] - 2025-12-28
+
+### ⭐ Highlights
+- **ADK Studio**: Complete visual agent builder with drag-and-drop workflow design
+- **Real-Time Streaming**: Live SSE streaming with agent animations and trace events
+- **Code Generation**: Compile visual workflows to production Rust code
+- **Rust 2024 Edition**: Migrated to Rust 2024 edition for latest language features
+
+### Added
+- **ADK Studio** (`adk-studio`): Visual agent development environment
+  - Drag-and-drop agent creation with ReactFlow-based canvas
+  - Full agent palette: LLM Agent, Sequential, Loop, Parallel, Router agents
+  - Tools support: Function, MCP, Browser, Google Search, Load Artifact, Exit Loop
+  - Real-time SSE streaming with chat interface and session management
+  - **Code generation**: Compile visual designs to Rust code with one click
+  - **Build system**: Compile and run generated Rust executables from Studio
+  - Monaco Editor integration for viewing/editing generated code
+  - MenuBar with File, Templates, Help menus and 7 agent templates
+  - Sub-agent support in container nodes with proper event ordering
+  - MCP server templates with friendly display names and timeout handling
+  - Function tool templates with description editing
+  - Session memory persistence across chat interactions
+  - Agent rename and enhanced LLM property configuration
+- **Studio UI architecture** (`studio-ui`):
+  - Component extraction: Canvas reduced by 83% via modular architecture
+  - Custom node components: `LlmAgentNode`, `RouterNode`, `ThoughtBubble`
+  - Layout system with auto-layout, horizontal/vertical toggle
+  - Node activity animations during execution
+  - State management with Zustand store
+  - Real-time trace events in Events tab
+- **Real-time streaming** (`StreamMode::Messages`):
+  - Live agent execution with proper event accumulation
+  - Trace events for tool calls/results in SSE stream
+  - Agent start and model call events for detailed debugging
+  - Node start/end trace events for sub-agent tracking
+- **Router Agent**: Conditional routing based on LLM decisions
+- **Codegen example**: `codegen_demo` showing code generation from all templates
+- **Host flag**: `--host` flag for backend and studio management scripts
+
+### 🔥 Breaking Changes
+- **Rust 2024 Edition**: All crates now use `edition = "2024"` (requires Rust 1.85+)
+- **Workspace Restructure**: `vendor/gemini-rust` → `adk-gemini`
+  - Import paths change from `gemini_rust::*` to `adk_gemini::*`
+  - Standardized workspace dependencies for consistency
+
+### Changed
+- All ADK crates bumped to version 0.1.8
+- Generated `Cargo.toml` now uses ADK version 0.1.8
+- Improved sub-agent display in containers (robot icon, LLM Agent label, tool descriptions)
+- Sequential agent now properly passes conversation history between sub-agents
+- Output mapper now accumulates text correctly across agent events
+- Auto-detect reqwest dependency in codegen, add User-Agent header
+- Build cache invalidation on project changes
+
+### Fixed
+- **adk-studio**: Real-time streaming now works correctly
+- **adk-studio**: Drag-drop fixed for both agents and tools
+- **adk-studio**: Keyboard delete properly handles agent/tool deletion
+- **adk-studio**: Agents sorted by workflow order, positioned at top-left
+- **adk-studio**: Save on agent delete, handle keyboard delete properly
+- **adk-studio**: MCP codegen only generates tool loop if config exists
+- **adk-studio**: Sub-agent tools properly added to builders in containers
+- **adk-studio**: Tool clicks open config panel, entire tool item clickable
+- **studio-ui**: Prevent layout rearrangement during chat execution
+- **studio-ui**: Thought bubble moved inside node to prevent overlap
+- **adk-agent**: Sequential agent properly passes conversation history between sub-agents
+- **adk-agent**: Output mapper accumulates text correctly across agent events
+- **adk-graph**: Sub-agent events include agent name in completion log
+- **adk-graph**: Proper node_start/node_end trace events emitted
+
+### Internal
+- Tracing subscriber with JSON output for telemetry
+- Grounding metadata display with markdown rendering
+- Screenshot display in console
+- Build output now streams in real-time
+- Graph-based workflow design document added
+- ADK Studio roadmap and UI requirements updated
+
 ## [0.1.7] - 2025-12-14
 
 ### Added
@@ -254,7 +332,11 @@ Initial release - Published to crates.io.
 - Tokio async runtime
 - Google API key for Gemini
 
-[Unreleased]: https://github.com/zavora-ai/adk-rust/compare/v0.1.4...HEAD
+[Unreleased]: https://github.com/zavora-ai/adk-rust/compare/v0.1.8...HEAD
+[0.1.8]: https://github.com/zavora-ai/adk-rust/compare/v0.1.7...v0.1.8
+[0.1.7]: https://github.com/zavora-ai/adk-rust/compare/v0.1.6...v0.1.7
+[0.1.6]: https://github.com/zavora-ai/adk-rust/compare/v0.1.5...v0.1.6
+[0.1.5]: https://github.com/zavora-ai/adk-rust/compare/v0.1.4...v0.1.5
 [0.1.4]: https://github.com/zavora-ai/adk-rust/compare/v0.1.3...v0.1.4
 [0.1.3]: https://github.com/zavora-ai/adk-rust/compare/v0.1.2...v0.1.3
 [0.1.2]: https://github.com/zavora-ai/adk-rust/compare/v0.1.1...v0.1.2

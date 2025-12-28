@@ -9,11 +9,11 @@
 use adk_core::{AdkError, ReadonlyContext, Result, Tool, ToolContext, Toolset};
 use async_trait::async_trait;
 use rmcp::{
+    RoleClient,
     model::{CallToolRequestParam, RawContent, ResourceContents},
     service::RunningService,
-    RoleClient,
 };
-use serde_json::{json, Value};
+use serde_json::{Value, json};
 use std::ops::Deref;
 use std::sync::Arc;
 use tokio::sync::Mutex;
@@ -235,7 +235,7 @@ where
                         _ => {
                             return Err(AdkError::Tool(
                                 "Tool arguments must be an object".to_string(),
-                            ))
+                            ));
                         }
                     }
                 },

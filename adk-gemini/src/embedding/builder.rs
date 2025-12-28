@@ -93,9 +93,7 @@ impl EmbedBuilder {
         output.dimensionality = self.output_dimensionality
     ))]
     pub async fn execute_batch(self) -> Result<BatchContentEmbeddingResponse, ClientError> {
-        let mut batch_request = BatchEmbedContentsRequest {
-            requests: Vec::new(),
-        };
+        let mut batch_request = BatchEmbedContentsRequest { requests: Vec::new() };
 
         for content in self.contents {
             let request = EmbedContentRequest {

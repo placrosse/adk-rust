@@ -1,4 +1,4 @@
-use crate::a2a::{metadata::to_a2a_meta_key, parts, Message, Role};
+use crate::a2a::{Message, Role, metadata::to_a2a_meta_key, parts};
 use adk_core::{Content, Event, EventActions, Result};
 use serde_json::{Map, Value};
 

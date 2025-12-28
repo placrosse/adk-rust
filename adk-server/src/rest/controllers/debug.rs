@@ -1,8 +1,8 @@
 use crate::ServerConfig;
 use axum::{
+    Json,
     extract::{Path, State},
     http::StatusCode,
-    Json,
 };
 use serde::Serialize;
 use std::collections::HashMap;

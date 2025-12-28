@@ -78,9 +78,7 @@ pub enum CacheExpirationRequest {
 impl CacheExpirationRequest {
     /// Create expiration with TTL from a Duration.
     pub fn from_ttl(duration: std::time::Duration) -> Self {
-        Self::Ttl {
-            ttl: format!("{}s", duration.as_secs()),
-        }
+        Self::Ttl { ttl: format!("{}s", duration.as_secs()) }
     }
 
     /// Create expiration with specific expire time.
