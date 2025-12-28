@@ -13,7 +13,7 @@ keywords = ["ai", "agents", "workflow", "graph", "langgraph"]
 categories = ["science", "asynchronous"]
 
 [dependencies]
-adk-core = { path = "../adk-core", version = "0.1.5" }
+adk-core.workspace = true
 
 async-trait.workspace = true
 async-stream.workspace = true

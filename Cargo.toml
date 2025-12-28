@@ -21,6 +21,7 @@ members = [
     "adk-guardrail",
     "adk-studio",
     "adk-rust",
+    "adk-gemini",
 
     # Development packages (not published)
     "examples",
@@ -30,8 +31,6 @@ exclude = [
     "reference/adk-go",
     "reference/mcp-rust-sdk",
     "reference/gemini-rust",
-    # Patched vendor dependency
-    "vendor/gemini-rust",
     # Learning materials (gitignored, not part of CI)
     "learning",
 ]
@@ -51,6 +50,7 @@ homepage = "https://www.zavora.ai"
 repository = "https://github.com/zavora-ai/adk-rust"
 
 [workspace.dependencies]
+# External dependencies
 tokio = { version = "1.40", features = ["full"] }
 tokio-stream = "0.1"
 async-trait = "0.1"
@@ -62,13 +62,29 @@ thiserror = "2.0"
 anyhow = "1.0"
 uuid = { version = "1.10", features = ["v4", "serde"] }
 chrono = { version = "0.4", features = ["serde"] }
-gemini = { version = "1.5", package = "gemini-rust" }
 regex = "1.10"
 tracing = "0.1"
 tracing-subscriber = "0.3"
 opentelemetry = "0.21"
 reqwest = { version = "0.12", default-features = false, features = ["json", "stream", "rustls-tls"] }
 
-# Patch gemini-rust to add DOCUMENT modality support for PDFs
-[patch.crates-io]
-gemini-rust = { path = "vendor/gemini-rust" }
+# ADK internal crates (use { workspace = true } in member crates)
+adk-core = { path = "adk-core", version = "0.1.7" }
+adk-agent = { path = "adk-agent", version = "0.1.7" }
+adk-model = { path = "adk-model", version = "0.1.7" }
+adk-tool = { path = "adk-tool", version = "0.1.7" }
+adk-runner = { path = "adk-runner", version = "0.1.7" }
+adk-server = { path = "adk-server", version = "0.1.7" }
+adk-session = { path = "adk-session", version = "0.1.7" }
+adk-artifact = { path = "adk-artifact", version = "0.1.7" }
+adk-memory = { path = "adk-memory", version = "0.1.7" }
+adk-cli = { path = "adk-cli", version = "0.1.7" }
+adk-realtime = { path = "adk-realtime", version = "0.1.7" }
+adk-graph = { path = "adk-graph", version = "0.1.7" }
+adk-browser = { path = "adk-browser", version = "0.1.7" }
+adk-eval = { path = "adk-eval", version = "0.1.7" }
+adk-ui = { path = "adk-ui", version = "0.1.7" }
+adk-telemetry = { path = "adk-telemetry", version = "0.1.7" }
+adk-guardrail = { path = "adk-guardrail", version = "0.1.7" }
+adk-studio = { path = "adk-studio", version = "0.1.7" }
+adk-gemini = { path = "adk-gemini", version = "0.1.7" }

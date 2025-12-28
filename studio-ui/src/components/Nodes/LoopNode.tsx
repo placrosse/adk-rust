@@ -1,10 +1,16 @@
 import { memo } from 'react';
 import { Handle, Position } from '@xyflow/react';
 
+const toolIcons: Record<string, string> = {
+  google_search: '🔍', browser: '🌐', mcp: '🔌', function: '⚡', file: '📁', code: '💻',
+};
+const getToolIcon = (t: string) => toolIcons[Object.keys(toolIcons).find(k => t.includes(k)) || ''] || '🔧';
+
 interface Props {
   data: {
     label: string;
     subAgents?: string[];
+    subAgentTools?: Record<string, string[]>;
     activeSubAgent?: string;
     maxIterations?: number;
     currentIteration?: number;
@@ -40,18 +46,24 @@ export const LoopNode = memo(({ data, selected }: Props) => {
         <div className="mt-2 border-t border-white/20 pt-2">
           <div className="text-xs text-purple-300 mb-1">{iterLabel}</div>
           <div className="space-y-1">
-            {(data.subAgents || []).map((sub, idx) => (
-              <div 
-                key={sub}
-                className={`px-2 py-1 rounded text-xs transition-all ${
-                  data.activeSubAgent === sub 
-                    ? 'bg-green-900 ring-1 ring-green-400 text-green-200' 
-                    : 'bg-gray-800 text-gray-300'
-                }`}
-              >
-                {data.activeSubAgent === sub ? '⚡' : `${idx + 1}.`} {sub}
-              </div>
-            ))}
+            {(data.subAgents || []).map((sub, idx) => {
+              const tools = data.subAgentTools?.[sub] || [];
+              return (
+                <div 
+                  key={sub}
+                  className={`px-2 py-1 rounded text-xs transition-all ${
+                    data.activeSubAgent === sub 
+                      ? 'bg-green-900 ring-1 ring-green-400 text-green-200' 
+                      : 'bg-gray-800 text-gray-300'
+                  }`}
+                >
+                  <div>{data.activeSubAgent === sub ? '⚡' : `${idx + 1}.`} {sub}</div>
+                  {tools.length > 0 && (
+                    <div className="mt-0.5 text-gray-400">{tools.map(t => getToolIcon(t)).join(' ')}</div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </div>
       </div>

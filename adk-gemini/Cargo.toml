@@ -11,8 +11,8 @@
 
 [package]
 edition = "2021"
-name = "gemini-rust"
-version = "1.5.1"
+name = "adk-gemini"
+version = "0.1.7"
 build = false
 autolib = false
 autobins = false
@@ -33,7 +33,7 @@ license = "MIT"
 repository = "https://github.com/flachesis/gemini-rust"
 
 [lib]
-name = "gemini_rust"
+name = "adk_gemini"
 path = "src/lib.rs"
 
 [[example]]

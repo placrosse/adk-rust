@@ -379,32 +379,32 @@ browser = ["dep:adk-browser", "dep:reqwest"]
 guardrails = ["adk-agent/guardrails", "dep:adk-guardrail"]
 
 [dependencies]
-adk-core = { path = "../adk-core" }
-adk-agent = { path = "../adk-agent" }
-adk-model = { path = "../adk-model" }
-adk-tool = { path = "../adk-tool" }
-adk-cli = { path = "../adk-cli" }
-adk-artifact = { path = "../adk-artifact" }
-adk-runner = { path = "../adk-runner" }
-adk-session = { path = "../adk-session" }
-adk-server = { path = "../adk-server" }
-adk-memory = { path = "../adk-memory" }
-adk-realtime = { path = "../adk-realtime" }
-adk-graph = { path = "../adk-graph" }
-adk-eval = { path = "../adk-eval" }
-adk-ui = { path = "../adk-ui" }
-adk-browser = { path = "../adk-browser", optional = true }
-adk-guardrail = { path = "../adk-guardrail", optional = true }
-tokio = { version = "1.40", features = ["full"] }
-reqwest = { version = "0.12", default-features = false, features = ["rustls-tls"], optional = true }
+adk-core.workspace = true
+adk-agent.workspace = true
+adk-model.workspace = true
+adk-tool.workspace = true
+adk-cli.workspace = true
+adk-artifact.workspace = true
+adk-runner.workspace = true
+adk-session.workspace = true
+adk-server.workspace = true
+adk-memory.workspace = true
+adk-realtime.workspace = true
+adk-graph.workspace = true
+adk-eval.workspace = true
+adk-ui.workspace = true
+adk-browser = { workspace = true, optional = true }
+adk-guardrail = { workspace = true, optional = true }
+tokio.workspace = true
+reqwest = { workspace = true, optional = true }
 base64 = "0.22"
-anyhow = "1.0"
-futures = "0.3"
-serde = { version = "1.0", features = ["derive"] }
-serde_json = "1.0"
+anyhow.workspace = true
+futures.workspace = true
+serde.workspace = true
+serde_json.workspace = true
 schemars = "0.8"
-chrono = "0.4"
-tracing-subscriber = "0.3"
+chrono.workspace = true
+tracing-subscriber.workspace = true
 axum = "0.8"
-async-trait = "0.1"
+async-trait.workspace = true
 dotenvy = "0.15"

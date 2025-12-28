@@ -2,6 +2,8 @@
 
 *Priority: 🔴 P0 | Target: Q1-Q2 2026 | Effort: 8 weeks*
 
+> **📋 Status**: ~90% complete | **Last Updated**: 2025-12-28
+
 ## Overview
 
 Build a visual, low-code development environment for ADK-Rust agents, matching AutoGen Studio capabilities.
@@ -74,7 +76,7 @@ A React-based web application for visual agent development:
 | Node Types | ✅ Done | LLM, Sequential, Loop, Parallel, Router, Start, End |
 | Edge Types | ✅ Done | Sequential, Conditional (router) |
 | State Inspector | 🔲 Pending | View state at each node |
-| Auto-Layout | 🔲 Pending | Automatic graph layout algorithms |
+| Auto-Layout | ✅ Done | Dagre layout with LR/TB toggle via useLayout.ts |
 
 ### 3. Live Testing
 
@@ -101,7 +103,7 @@ A React-based web application for visual agent development:
 | Feature | Status | Description |
 |---------|--------|-------------|
 | MenuBar | ✅ Done | File, Templates, Help menus |
-| Template Gallery | ✅ Done | 7 ready-to-run templates |
+| Template Gallery | ✅ Done | 6 ready-to-run templates |
 | New Project | ✅ Done | Create from menu |
 | Export Code | ✅ Done | View generated code |
 
@@ -111,9 +113,9 @@ A React-based web application for visual agent development:
 
 | Requirement | Status | Description |
 |-------------|--------|-------------|
-| Auto-Layout | 🔲 Pending | Dagre/ELK layout for automatic node positioning |
-| Fit to View | 🔲 Pending | Button to zoom/pan to show all nodes |
-| Mini-Map | 🔲 Pending | Overview for large graphs |
+| Auto-Layout | ✅ Done | Dagre layout with LR/TB toggle via CanvasToolbar |
+| Fit to View | ✅ Done | Button in toolbar + Ctrl+0 shortcut |
+| Mini-Map | ✅ Done | React Flow MiniMap with active node coloring |
 | Zoom Controls | ✅ Done | React Flow built-in controls |
 | Pan & Zoom | ✅ Done | Mouse/trackpad navigation |
 | Grid Snap | 🔲 Pending | Snap nodes to grid |
@@ -129,7 +131,7 @@ A React-based web application for visual agent development:
 | Multi-Select | 🔲 Pending | Shift+click or box select |
 | Copy/Paste | 🔲 Pending | Duplicate agents |
 | Undo/Redo | 🔲 Pending | History stack |
-| Keyboard Shortcuts | 🔲 Pending | Delete, copy, paste, etc. |
+| Keyboard Shortcuts | ✅ Done | Delete, Ctrl+D duplicate, Ctrl+L layout, Ctrl+0 fit, Esc |
 | Context Menu | 🔲 Pending | Right-click options |
 
 ### Visual Feedback
@@ -138,7 +140,7 @@ A React-based web application for visual agent development:
 |-------------|--------|-------------|
 | Active Agent Glow | ✅ Done | Green highlight during execution |
 | Selected Agent Ring | ✅ Done | Blue ring on selected |
-| Edge Animation | 🔲 Pending | Animated flow during execution |
+| Edge Animation | ✅ Done | AnimatedEdge with CSS dash animation |
 | Error Indicators | 🔲 Pending | Red highlight on invalid config |
 | Loading States | ✅ Done | Build progress indicator |
 | Tool Badges | ✅ Done | Show tools on agent nodes |
@@ -231,18 +233,21 @@ A React-based web application for visual agent development:
 - [x] Event stream viewer (trace tab)
 - [x] Rust code export
 - [x] Build from UI
-- [x] Template gallery (7 templates)
+- [x] Template gallery (6 templates)
 - [x] MenuBar (File, Templates, Help)
 
-### 🔲 Phase 5: UI Polish (Pending)
-- [ ] Auto-layout (Dagre/ELK)
-- [ ] Fit to view
-- [ ] Mini-map
+### ✅ Phase 5: UI Polish (Mostly Complete)
+- [x] Auto-layout (Dagre with LR/TB toggle)
+- [x] Fit to view (button + Ctrl+0)
+- [x] Mini-map (with active node coloring)
+- [x] Keyboard shortcuts (Delete, Ctrl+D, Ctrl+L, Ctrl+0, Esc)
+- [x] Edge animation during execution (AnimatedEdge.tsx)
+- [x] Thought bubbles (ThoughtBubble.tsx with Framer Motion)
 - [ ] Resizable panels
 - [ ] Undo/Redo
-- [ ] Copy/Paste
-- [ ] Keyboard shortcuts
-- [ ] Edge animation during execution
+- [ ] Copy/Paste (Ctrl+D duplicate exists)
+- [ ] Multi-select
+- [ ] Context menu
 
 ### 🔲 Phase 6: Debugging (Pending)
 - [ ] State inspector

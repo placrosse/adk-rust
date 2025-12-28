@@ -1,10 +1,16 @@
 import { memo } from 'react';
 import { Handle, Position } from '@xyflow/react';
 
+const toolIcons: Record<string, string> = {
+  google_search: '🔍', browser: '🌐', mcp: '🔌', function: '⚡', file: '📁', code: '💻',
+};
+const getToolIcon = (t: string) => toolIcons[Object.keys(toolIcons).find(k => t.includes(k)) || ''] || '🔧';
+
 interface Props {
   data: {
     label: string;
     subAgents?: string[];
+    subAgentTools?: Record<string, string[]>;
     activeSubAgent?: string;
     isActive?: boolean;
   };
@@ -32,19 +38,25 @@ export const ParallelNode = memo(({ data, selected }: Props) => {
           <span>{data.label}</span>
           {isActive && <span className="ml-auto text-green-400 animate-pulse">●</span>}
         </div>
-        <div className="mt-2 border-t border-white/20 pt-2 flex flex-wrap gap-1">
-          {(data.subAgents || []).map(sub => (
-            <div 
-              key={sub}
-              className={`px-2 py-1 rounded text-xs transition-all ${
-                data.activeSubAgent === sub 
-                  ? 'bg-green-900 ring-1 ring-green-400 text-green-200' 
-                  : 'bg-gray-800 text-gray-300'
-              }`}
-            >
-              ∥ {sub}
-            </div>
-          ))}
+        <div className="mt-2 border-t border-white/20 pt-2 space-y-1">
+          {(data.subAgents || []).map(sub => {
+            const tools = data.subAgentTools?.[sub] || [];
+            return (
+              <div 
+                key={sub}
+                className={`px-2 py-1 rounded text-xs transition-all ${
+                  data.activeSubAgent === sub 
+                    ? 'bg-green-900 ring-1 ring-green-400 text-green-200' 
+                    : 'bg-gray-800 text-gray-300'
+                }`}
+              >
+                <div>∥ {sub}</div>
+                {tools.length > 0 && (
+                  <div className="mt-0.5 text-gray-400">{tools.map(t => getToolIcon(t)).join(' ')}</div>
+                )}
+              </div>
+            );
+          })}
         </div>
       </div>
       

@@ -21,19 +21,19 @@ name = "adk"
 path = "src/main.rs"
 
 [dependencies]
-adk-core = { path = "../adk-core", version = "0.1.5" }
-adk-agent = { path = "../adk-agent", version = "0.1.5" }
-adk-model = { path = "../adk-model", version = "0.1.5" }
-adk-runner = { path = "../adk-runner", version = "0.1.5" }
-adk-server = { path = "../adk-server", version = "0.1.5" }
-adk-session = { path = "../adk-session", version = "0.1.5" }
-adk-artifact = { path = "../adk-artifact", version = "0.1.5" }
-adk-telemetry = { path = "../adk-telemetry", version = "0.1.5" }
+adk-core.workspace = true
+adk-agent.workspace = true
+adk-model.workspace = true
+adk-runner.workspace = true
+adk-server.workspace = true
+adk-session.workspace = true
+adk-artifact.workspace = true
+adk-telemetry.workspace = true
 clap = { version = "4.5", features = ["derive"] }
 rustyline = "14.0"
-tokio = { version = "1.40", features = ["full"] }
-anyhow = "1.0"
-futures = "0.3"
+tokio.workspace = true
+anyhow.workspace = true
+futures.workspace = true
 axum = "0.8"
-async-trait = "0.1"
-serde_json = "1.0"
+async-trait.workspace = true
+serde_json.workspace = true

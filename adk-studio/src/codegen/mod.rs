@@ -357,12 +357,15 @@ fn generate_llm_node(id: &str, agent: &AgentSchema, project: &ProjectSchema, is_
         code.push_str(&format!("    {}_builder = {}_builder.instruction(\"{}\");\n", id, id, escaped));
     }
     
-    // Add MCP tools if present
-    for (idx, _) in mcp_tools.iter().enumerate() {
-        let var_suffix = if idx == 0 { "mcp".to_string() } else { format!("mcp_{}", idx + 1) };
-        code.push_str(&format!("    for tool in {}_{}_tools {{\n", id, var_suffix));
-        code.push_str(&format!("        {}_builder = {}_builder.tool(tool);\n", id, id));
-        code.push_str("    }\n");
+    // Add MCP tools if present (only for configured MCP tools)
+    for (idx, mcp_tool) in mcp_tools.iter().enumerate() {
+        let tool_id = format!("{}_{}", id, mcp_tool);
+        if project.tool_configs.get(&tool_id).is_some() {
+            let var_suffix = if idx == 0 { "mcp".to_string() } else { format!("mcp_{}", idx + 1) };
+            code.push_str(&format!("    for tool in {}_{}_tools {{\n", id, var_suffix));
+            code.push_str(&format!("        {}_builder = {}_builder.tool(tool);\n", id, id));
+            code.push_str("    }\n");
+        }
     }
     
     for tool_type in &agent.tools {
@@ -680,15 +683,8 @@ adk-tool = "0.1.7"
 adk-graph = "0.1.7""#.to_string()
     };
     
-    // In dev mode, also patch gemini-rust to use vendored version with grounding_metadata
-    let patch_section = if use_path_deps {
-        format!(r#"
-[patch.crates-io]
-gemini-rust = {{ path = "{}/vendor/gemini-rust" }}
-"#, adk_root)
-    } else {
-        String::new()
-    };
+    // No patch section needed - adk-gemini is a workspace member
+    let patch_section = String::new();
     
     let mut deps = format!(r#"[package]
 name = "{}"

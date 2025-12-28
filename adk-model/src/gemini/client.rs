@@ -3,7 +3,7 @@ use adk_core::{
     UsageMetadata,
 };
 use async_trait::async_trait;
-use gemini::Gemini;
+use adk_gemini::Gemini;
 
 pub struct GeminiModel {
     client: Gemini,
@@ -18,24 +18,24 @@ impl GeminiModel {
         Ok(Self { client, model_name: model.into() })
     }
 
-    fn convert_response(resp: &gemini::GenerationResponse) -> Result<LlmResponse> {
+    fn convert_response(resp: &adk_gemini::GenerationResponse) -> Result<LlmResponse> {
         let mut converted_parts: Vec<Part> = Vec::new();
         
         // Convert content parts
         if let Some(parts) = resp.candidates.first().and_then(|c| c.content.parts.as_ref()) {
             for p in parts {
                 match p {
-                    gemini::Part::Text { text, .. } => {
+                    adk_gemini::Part::Text { text, .. } => {
                         converted_parts.push(Part::Text { text: text.clone() });
                     }
-                    gemini::Part::FunctionCall { function_call, .. } => {
+                    adk_gemini::Part::FunctionCall { function_call, .. } => {
                         converted_parts.push(Part::FunctionCall {
                             name: function_call.name.clone(),
                             args: function_call.args.clone(),
                             id: None,
                         });
                     }
-                    gemini::Part::FunctionResponse { function_response } => {
+                    adk_gemini::Part::FunctionResponse { function_response } => {
                         converted_parts.push(Part::FunctionResponse {
                             name: function_response.name.clone(),
                             response: function_response.response.clone().unwrap_or(serde_json::Value::Null),
@@ -80,10 +80,10 @@ impl GeminiModel {
 
         let finish_reason =
             resp.candidates.first().and_then(|c| c.finish_reason.as_ref()).map(|fr| match fr {
-                gemini::FinishReason::Stop => FinishReason::Stop,
-                gemini::FinishReason::MaxTokens => FinishReason::MaxTokens,
-                gemini::FinishReason::Safety => FinishReason::Safety,
-                gemini::FinishReason::Recitation => FinishReason::Recitation,
+                adk_gemini::FinishReason::Stop => FinishReason::Stop,
+                adk_gemini::FinishReason::MaxTokens => FinishReason::MaxTokens,
+                adk_gemini::FinishReason::Safety => FinishReason::Safety,
+                adk_gemini::FinishReason::Recitation => FinishReason::Recitation,
                 _ => FinishReason::Other,
             });
 
@@ -129,7 +129,7 @@ impl Llm for GeminiModel {
                     for part in &content.parts {
                         match part {
                             Part::Text { text } => {
-                                gemini_parts.push(gemini::Part::Text {
+                                gemini_parts.push(adk_gemini::Part::Text {
                                     text: text.clone(),
                                     thought: None,
                                     thought_signature: None,
@@ -138,8 +138,8 @@ impl Llm for GeminiModel {
                             Part::InlineData { data, mime_type } => {
                                 use base64::{engine::general_purpose::STANDARD, Engine as _};
                                 let encoded = STANDARD.encode(data);
-                                gemini_parts.push(gemini::Part::InlineData {
-                                    inline_data: gemini::Blob {
+                                gemini_parts.push(adk_gemini::Part::InlineData {
+                                    inline_data: adk_gemini::Blob {
                                         mime_type: mime_type.clone(),
                                         data: encoded,
                                     },
@@ -149,13 +149,13 @@ impl Llm for GeminiModel {
                         }
                     }
                     if !gemini_parts.is_empty() {
-                        let user_content = gemini::Content {
-                            role: Some(gemini::Role::User),
+                        let user_content = adk_gemini::Content {
+                            role: Some(adk_gemini::Role::User),
                             parts: Some(gemini_parts),
                         };
-                        builder = builder.with_message(gemini::Message {
+                        builder = builder.with_message(adk_gemini::Message {
                             content: user_content,
-                            role: gemini::Role::User,
+                            role: adk_gemini::Role::User,
                         });
                     }
                 }
@@ -165,15 +165,15 @@ impl Llm for GeminiModel {
                     for part in &content.parts {
                         match part {
                             Part::Text { text } => {
-                                gemini_parts.push(gemini::Part::Text {
+                                gemini_parts.push(adk_gemini::Part::Text {
                                     text: text.clone(),
                                     thought: None,
                                     thought_signature: None,
                                 });
                             }
                             Part::FunctionCall { name, args, .. } => {
-                                gemini_parts.push(gemini::Part::FunctionCall {
-                                    function_call: gemini::FunctionCall {
+                                gemini_parts.push(adk_gemini::Part::FunctionCall {
+                                    function_call: adk_gemini::FunctionCall {
                                         name: name.clone(),
                                         args: args.clone(),
                                         thought_signature: None,
@@ -185,13 +185,13 @@ impl Llm for GeminiModel {
                         }
                     }
                     if !gemini_parts.is_empty() {
-                        let model_content = gemini::Content {
-                            role: Some(gemini::Role::Model),
+                        let model_content = adk_gemini::Content {
+                            role: Some(adk_gemini::Role::Model),
                             parts: Some(gemini_parts),
                         };
-                        builder = builder.with_message(gemini::Message {
+                        builder = builder.with_message(adk_gemini::Message {
                             content: model_content,
-                            role: gemini::Role::Model,
+                            role: adk_gemini::Role::Model,
                         });
                     }
                 }
@@ -211,7 +211,7 @@ impl Llm for GeminiModel {
 
         // Add generation config
         if let Some(config) = req.config {
-            let gen_config = gemini::GenerationConfig {
+            let gen_config = adk_gemini::GenerationConfig {
                 temperature: config.temperature,
                 top_p: config.top_p,
                 top_k: config.top_k,
@@ -232,22 +232,22 @@ impl Llm for GeminiModel {
                     continue;
                 }
 
-                // Deserialize our tool declaration into gemini::FunctionDeclaration
+                // Deserialize our tool declaration into adk_gemini::FunctionDeclaration
                 if let Ok(func_decl) =
-                    serde_json::from_value::<gemini::FunctionDeclaration>(tool_decl.clone())
+                    serde_json::from_value::<adk_gemini::FunctionDeclaration>(tool_decl.clone())
                 {
                     function_declarations.push(func_decl);
                 }
             }
 
             if !function_declarations.is_empty() {
-                let tool = gemini::Tool::with_functions(function_declarations);
+                let tool = adk_gemini::Tool::with_functions(function_declarations);
                 builder = builder.with_tool(tool);
             }
 
             if has_google_search {
                 // Enable built-in Google Search
-                let tool = gemini::Tool::google_search();
+                let tool = adk_gemini::Tool::google_search();
                 builder = builder.with_tool(tool);
             }
         }

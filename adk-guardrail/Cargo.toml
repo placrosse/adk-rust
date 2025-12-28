@@ -12,7 +12,7 @@ keywords = ["ai", "agents", "guardrails", "safety", "validation"]
 categories = ["development-tools", "asynchronous"]
 
 [dependencies]
-adk-core = { path = "../adk-core", version = "0.1" }
+adk-core.workspace = true
 async-trait = { workspace = true }
 tokio = { workspace = true }
 futures = { workspace = true }

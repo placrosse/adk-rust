@@ -19,13 +19,17 @@ export function useCanvasNodes(project: Project | null, execution: ExecutionStat
   
   // Track project structure for detecting actual changes
   const prevAgentKeys = useRef<string>('');
+  const prevToolsHash = useRef<string>('');
 
   // Build nodes only when project STRUCTURE changes (agents added/removed)
   useEffect(() => {
     if (!project) return;
     const agentKeys = Object.keys(project.agents).sort().join(',');
-    if (agentKeys === prevAgentKeys.current) return; // No structural change
+    const toolsHash = Object.entries(project.agents).map(([id, a]) => `${id}:${a.tools?.join(',')}`).join('|');
+    
+    if (agentKeys === prevAgentKeys.current && toolsHash === prevToolsHash.current) return;
     prevAgentKeys.current = agentKeys;
+    prevToolsHash.current = toolsHash;
 
     const agentIds = Object.keys(project.agents);
     const allSubAgents = new Set(agentIds.flatMap(id => project.agents[id].sub_agents || []));
@@ -49,9 +53,14 @@ export function useCanvasNodes(project: Project | null, execution: ExecutionStat
     sortedAgents.forEach((id, i) => {
       const agent = project.agents[id];
       const pos = { x: 50, y: 150 + i * 150 };
-      if (agent.type === 'sequential') newNodes.push({ id, type: 'sequential', position: pos, data: { label: id, subAgents: agent.sub_agents } });
-      else if (agent.type === 'loop') newNodes.push({ id, type: 'loop', position: pos, data: { label: id, subAgents: agent.sub_agents, maxIterations: agent.max_iterations || 3 } });
-      else if (agent.type === 'parallel') newNodes.push({ id, type: 'parallel', position: pos, data: { label: id, subAgents: agent.sub_agents } });
+      const subAgentTools = (agent.sub_agents || []).reduce((acc, subId) => {
+        acc[subId] = project.agents[subId]?.tools || [];
+        return acc;
+      }, {} as Record<string, string[]>);
+      
+      if (agent.type === 'sequential') newNodes.push({ id, type: 'sequential', position: pos, data: { label: id, subAgents: agent.sub_agents, subAgentTools } });
+      else if (agent.type === 'loop') newNodes.push({ id, type: 'loop', position: pos, data: { label: id, subAgents: agent.sub_agents, subAgentTools, maxIterations: agent.max_iterations || 3 } });
+      else if (agent.type === 'parallel') newNodes.push({ id, type: 'parallel', position: pos, data: { label: id, subAgents: agent.sub_agents, subAgentTools } });
       else if (agent.type === 'router') newNodes.push({ id, type: 'router', position: pos, data: { label: id, routes: agent.routes || [] } });
       else newNodes.push({ id, type: 'llm', position: pos, data: { label: id, model: agent.model, tools: agent.tools || [] } });
     });

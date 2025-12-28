@@ -14,7 +14,7 @@ readme = "README.md"
 
 [dependencies]
 # Core ADK dependencies
-adk-core = { path = "../adk-core", version = "0.1.5" }
+adk-core.workspace = true
 
 # Async runtime
 tokio = { workspace = true }

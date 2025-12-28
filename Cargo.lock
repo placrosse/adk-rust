@@ -150,6 +150,33 @@ dependencies = [
 ]
 
 [[package]]
+name = "adk-gemini"
+version = "0.1.7"
+dependencies = [
+ "async-stream",
+ "async-trait",
+ "base64 0.22.1",
+ "display-error-chain",
+ "eventsource-stream",
+ "futures",
+ "futures-util",
+ "mime",
+ "mime_guess",
+ "reqwest 0.12.25",
+ "schemars 1.1.0",
+ "serde",
+ "serde_json",
+ "snafu",
+ "strum",
+ "strum_macros",
+ "time",
+ "tokio",
+ "tracing",
+ "tracing-subscriber",
+ "url",
+]
+
+[[package]]
 name = "adk-graph"
 version = "0.1.7"
 dependencies = [
@@ -198,6 +225,7 @@ name = "adk-model"
 version = "0.1.7"
 dependencies = [
  "adk-core",
+ "adk-gemini",
  "adk-telemetry",
  "anyhow",
  "async-openai",
@@ -206,7 +234,6 @@ dependencies = [
  "base64 0.21.7",
  "claudius",
  "futures",
- "gemini-rust",
  "reqwest 0.12.25",
  "serde",
  "serde_json",
@@ -399,7 +426,7 @@ dependencies = [
  "schemars 0.8.22",
  "serde",
  "serde_json",
- "thiserror 1.0.69",
+ "thiserror 2.0.17",
 ]
 
 [[package]]
@@ -1305,6 +1332,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "display-error-chain"
+version = "0.2.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0bc2146e86bc19f52f4c064a64782f05f139ca464ed72937301631e73f8d6cf5"
+
+[[package]]
 name = "displaydoc"
 version = "0.2.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1621,31 +1654,6 @@ dependencies = [
  "pin-project-lite",
  "pin-utils",
  "slab",
-]
-
-[[package]]
-name = "gemini-rust"
-version = "1.5.1"
-dependencies = [
- "async-stream",
- "async-trait",
- "base64 0.22.1",
- "eventsource-stream",
- "futures",
- "futures-util",
- "mime",
- "mime_guess",
- "reqwest 0.12.25",
- "schemars 1.1.0",
- "serde",
- "serde_json",
- "snafu",
- "strum",
- "strum_macros",
- "time",
- "tokio",
- "tracing",
- "url",
 ]
 
 [[package]]

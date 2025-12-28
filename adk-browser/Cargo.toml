@@ -13,7 +13,7 @@ keywords = ["adk", "browser", "automation", "webdriver", "selenium"]
 categories = ["web-programming", "development-tools"]
 
 [dependencies]
-adk-core = { path = "../adk-core", version = "0.1.5" }
+adk-core.workspace = true
 thirtyfour = "0.35"
 tokio.workspace = true
 async-trait.workspace = true
