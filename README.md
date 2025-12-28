@@ -23,6 +23,9 @@ ADK-Rust provides a comprehensive framework for building AI agents in Rust, feat
 
 ## ADK-Rust Studio
 
+[![adk-studio](https://img.shields.io/crates/v/adk-studio.svg)](https://crates.io/crates/adk-studio)
+![New](https://img.shields.io/badge/new-v0.1.8-brightgreen)
+
 Visual development environment for building AI agents with drag-and-drop:
 
 ![ADK-Rust Studio - Support Router](adk-studio/docs/studio-screenshot.png)
