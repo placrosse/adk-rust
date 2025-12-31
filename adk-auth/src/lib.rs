@@ -11,6 +11,10 @@
 //! - [`AccessControl`] - Permission checking
 //! - [`AuditSink`] - Audit logging trait
 //!
+//! ## Features
+//!
+//! - `sso` - Enable SSO/OAuth/OIDC support
+//!
 //! ## Quick Start
 //!
 //! ```rust,ignore
@@ -39,6 +43,10 @@ mod error;
 mod middleware;
 mod permission;
 mod role;
+
+// SSO module (feature-gated)
+#[cfg(feature = "sso")]
+pub mod sso;
 
 pub use access_control::{AccessControl, AccessControlBuilder};
 pub use audit::{AuditEvent, AuditEventType, AuditOutcome, AuditSink, FileAuditSink};

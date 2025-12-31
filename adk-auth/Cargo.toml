@@ -12,15 +12,25 @@ keywords = ["ai", "agent", "adk", "auth", "security"]
 categories = ["authentication", "api-bindings"]
 readme = "README.md"
 
+[features]
+default = []
+sso = ["jsonwebtoken", "reqwest", "dashmap", "base64"]
+
 [dependencies]
 adk-core.workspace = true
 async-trait.workspace = true
-tokio.workspace = true
+tokio = { workspace = true, features = ["sync"] }
 serde = { workspace = true, features = ["derive"] }
 serde_json.workspace = true
 thiserror.workspace = true
 tracing.workspace = true
 chrono = { version = "0.4", features = ["serde"] }
+
+# SSO dependencies (optional)
+jsonwebtoken = { version = "9.3", optional = true }
+reqwest = { workspace = true, features = ["json"], optional = true }
+dashmap = { version = "6", optional = true }
+base64 = { version = "0.22", optional = true }
 
 [dev-dependencies]
 tokio = { workspace = true, features = ["rt-multi-thread", "macros"] }
