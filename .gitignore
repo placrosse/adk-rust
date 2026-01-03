@@ -59,6 +59,7 @@ Thumbs.db
 /scripts/
 /.kiro/
 /.claude/
+/.vscode/
 
 # Internal working documents
 PUBLISHING.md

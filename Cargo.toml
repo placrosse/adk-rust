@@ -24,6 +24,9 @@ members = [
     "adk-rust",
     "adk-gemini",
 
+    # Git-only packages (not published to crates.io due to git dependencies)
+    "adk-mistralrs",
+
     # Development packages (not published)
     "examples",
 ]
