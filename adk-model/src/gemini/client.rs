@@ -121,6 +121,7 @@ impl Llm for GeminiModel {
     }
 
     #[adk_telemetry::instrument(
+        name = "call_llm",
         skip(self, req),
         fields(
             model.name = %self.model_name,
