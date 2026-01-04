@@ -156,6 +156,7 @@ impl Launcher {
             session_service,
             artifact_service: self.artifact_service,
             memory_service: None,
+            run_config: None,
         })?;
 
         println!("🤖 Agent ready! Type your questions (or 'exit' to quit).\n");

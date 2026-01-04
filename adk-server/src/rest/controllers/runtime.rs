@@ -99,6 +99,7 @@ pub async fn run_sse(
             session_service: controller.config.session_service.clone(),
             artifact_service: controller.config.artifact_service.clone(),
             memory_service: None,
+            run_config: None,
         })
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
@@ -191,13 +192,20 @@ pub async fn run_sse_compat(
         .await
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
-    // Create runner
+    // Create runner with streaming config from request
+    let streaming_mode = if req.streaming {
+        adk_core::StreamingMode::SSE
+    } else {
+        adk_core::StreamingMode::None
+    };
+    
     let runner = adk_runner::Runner::new(adk_runner::RunnerConfig {
         app_name,
         agent,
         session_service: controller.config.session_service.clone(),
         artifact_service: controller.config.artifact_service.clone(),
         memory_service: None,
+        run_config: Some(adk_core::RunConfig { streaming_mode }),
     })
     .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
