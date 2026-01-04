@@ -106,8 +106,8 @@ impl StreamPrinter {
         match part {
             Part::Text { text } => self.handle_text_chunk(text),
             Part::FunctionCall { name, args, .. } => self.print_tool_call(name, args),
-            Part::FunctionResponse { name, response, .. } => {
-                self.print_tool_response(name, response)
+            Part::FunctionResponse { function_response, .. } => {
+                self.print_tool_response(&function_response.name, &function_response.response)
             }
             Part::InlineData { mime_type, data } => self.print_inline_data(mime_type, data.len()),
             Part::FileData { mime_type, file_uri } => self.print_file_data(mime_type, file_uri),

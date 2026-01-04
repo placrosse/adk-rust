@@ -30,8 +30,18 @@ pub async fn get_trace_by_event_id(
     Path(event_id): Path<String>,
 ) -> Result<Json<HashMap<String, String>>, StatusCode> {
     if let Some(exporter) = &controller.config.span_exporter {
+        // First try direct lookup by event_id
         if let Some(attributes) = exporter.get_trace_by_event_id(&event_id) {
             return Ok(Json(attributes));
+        }
+        
+        // If not found, search through all spans for matching session event ID
+        let trace_dict = exporter.get_trace_dict();
+        for (_, attributes) in trace_dict.iter() {
+            // Check if any span has this event_id in its attributes
+            if attributes.values().any(|v| v == &event_id) {
+                return Ok(Json(attributes.clone()));
+            }
         }
     }
     

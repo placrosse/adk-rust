@@ -1,7 +1,7 @@
 use adk_core::{
     AfterAgentCallback, AfterModelCallback, AfterToolCallback, Agent, BeforeAgentCallback,
     BeforeModelCallback, BeforeModelResult, BeforeToolCallback, CallbackContext, Content, Event,
-    EventActions, GlobalInstructionProvider, InstructionProvider, InvocationContext, Llm,
+    EventActions, FunctionResponseData, GlobalInstructionProvider, InstructionProvider, InvocationContext, Llm,
     LlmRequest, MemoryEntry, Part, ReadonlyContext, Result, Tool, ToolContext,
 };
 use async_stream::stream;
@@ -638,6 +638,9 @@ impl Agent for LlmAgent {
                     let mut cached_event = Event::new(&invocation_id);
                     cached_event.author = agent_name.clone();
                     cached_event.llm_response.content = cached_response.content.clone();
+                    cached_event.llm_request = Some(serde_json::to_string(&request).unwrap_or_default());
+                    cached_event.gcp_llm_request = Some(serde_json::to_string(&request).unwrap_or_default());
+                    cached_event.gcp_llm_response = Some(serde_json::to_string(&cached_response).unwrap_or_default());
 
                     // Populate long_running_tool_ids for function calls from long-running tools
                     if let Some(ref content) = cached_response.content {
@@ -718,6 +721,9 @@ impl Agent for LlmAgent {
                         // Yield the (possibly modified) partial event
                         let mut partial_event = Event::new(&invocation_id);
                         partial_event.author = agent_name.clone();
+                        partial_event.llm_request = Some(request_json.clone());
+                        partial_event.gcp_llm_request = Some(request_json.clone());
+                        partial_event.gcp_llm_response = Some(serde_json::to_string(&chunk).unwrap_or_default());
                         partial_event.llm_response.content = chunk.content.clone();
 
                         // Populate long_running_tool_ids for function calls from long-running tools
@@ -895,8 +901,10 @@ impl Agent for LlmAgent {
                             tool_event.llm_response.content = Some(Content {
                                 role: "function".to_string(),
                                 parts: vec![Part::FunctionResponse {
-                                    name: name.clone(),
-                                    response: tool_result.clone(),
+                                    function_response: FunctionResponseData {
+                                        name: name.clone(),
+                                        response: tool_result.clone(),
+                                    },
                                     id: id.clone(),
                                 }],
                             });
@@ -912,8 +920,10 @@ impl Agent for LlmAgent {
                             conversation_history.push(Content {
                                 role: "function".to_string(),
                                 parts: vec![Part::FunctionResponse {
-                                    name: name.clone(),
-                                    response: tool_result,
+                                    function_response: FunctionResponseData {
+                                        name: name.clone(),
+                                        response: tool_result,
+                                    },
                                     id: id.clone(),
                                 }],
                             });

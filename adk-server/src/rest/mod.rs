@@ -86,12 +86,8 @@ pub fn create_app_with_a2a(config: ServerConfig, a2a_base_url: Option<&str>) -> 
             get(controllers::artifacts::get_artifact),
         )
         .with_state(artifacts_controller)
-        // UI-compatible route: /api/debug/trace/{session_id}
-        .route("/debug/trace/{session_id}", get(controllers::debug::get_session_traces))
-        .route(
-            "/debug/trace/session/{session_id}",
-            get(controllers::debug::get_session_traces),
-        )
+        .route("/debug/trace/{event_id}", get(controllers::debug::get_trace_by_event_id))
+        .route("/debug/trace/session/{session_id}", get(controllers::debug::get_session_traces))
         .route(
             "/debug/graph/{app_name}/{user_id}/{session_id}/{event_id}",
             get(controllers::debug::get_graph),

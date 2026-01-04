@@ -37,11 +37,13 @@ impl GeminiModel {
                     }
                     adk_gemini::Part::FunctionResponse { function_response } => {
                         converted_parts.push(Part::FunctionResponse {
-                            name: function_response.name.clone(),
-                            response: function_response
-                                .response
-                                .clone()
-                                .unwrap_or(serde_json::Value::Null),
+                            function_response: adk_core::FunctionResponseData {
+                                name: function_response.name.clone(),
+                                response: function_response
+                                    .response
+                                    .clone()
+                                    .unwrap_or(serde_json::Value::Null),
+                            },
                             id: None,
                         });
                     }
@@ -213,9 +215,9 @@ impl Llm for GeminiModel {
                 "function" => {
                     // For function responses
                     for part in &content.parts {
-                        if let Part::FunctionResponse { name, response, .. } = part {
+                        if let Part::FunctionResponse { function_response, .. } = part {
                             builder = builder
-                                .with_function_response(name, response.clone())
+                                .with_function_response(&function_response.name, function_response.response.clone())
                                 .map_err(|e| adk_core::AdkError::Model(e.to_string()))?;
                         }
                     }
