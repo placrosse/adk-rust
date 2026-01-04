@@ -41,7 +41,7 @@ edition = "2024"
 [dependencies]
 adk-rust = "{{version}}"
 tokio = { version = "1.40", features = ["full"] }
-dotenv = "0.15"
+dotenvy = "0.15"
 ```
 
 Install the dependencies:
@@ -82,7 +82,7 @@ use std::sync::Arc;
 #[tokio::main]
 async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     // Load environment variables from .env file
-    dotenv::dotenv().ok();
+    dotenvy::dotenv().ok();
     
     // Get API key from environment
     let api_key = std::env::var("GOOGLE_API_KEY")
@@ -142,7 +142,7 @@ use std::sync::Arc;
 
 #[tokio::main]
 async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
-    dotenv::dotenv().ok();
+    dotenvy::dotenv().ok();
     
     let api_key = std::env::var("GOOGLE_API_KEY")
         .expect("GOOGLE_API_KEY environment variable not set");
