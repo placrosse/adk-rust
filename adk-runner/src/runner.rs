@@ -4,6 +4,7 @@ use adk_core::{Agent, Content, EventStream, Memory, Result};
 use adk_session::SessionService;
 use async_stream::stream;
 use std::sync::Arc;
+use tracing::Instrument;
 
 pub struct RunnerConfig {
     pub app_name: String,
@@ -113,8 +114,16 @@ impl Runner {
                 return;
             }
 
-            // Run the agent
-            let mut agent_stream = match agent_to_run.run(ctx.clone()).await {
+            // Run the agent with instrumentation (ADK-Go style attributes)
+            let agent_span = tracing::info_span!(
+                "agent.execute", 
+                "gcp.vertex.agent.invocation_id" = %invocation_id,
+                "gcp.vertex.agent.session_id" = %session_id,
+                "gcp.vertex.agent.event_id" = %invocation_id, // Use invocation_id as event_id for agent spans
+                "agent.name" = %agent_to_run.name()
+            );
+
+            let mut agent_stream = match agent_to_run.run(ctx.clone()).instrument(agent_span).await {
                 Ok(s) => s,
                 Err(e) => {
                     yield Err(e);

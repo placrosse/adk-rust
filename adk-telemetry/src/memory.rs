@@ -7,21 +7,18 @@ use tracing_subscriber::{layer::Context, registry::LookupSpan, Layer};
 
 /// Data for a captured span
 #[derive(Debug, Clone, Serialize)]
-#[serde(rename_all = "camelCase")]
 pub struct SpanData {
-    #[serde(rename = "spanId")]
+    #[serde(rename = "span_id")]
     pub id: String,
-    #[serde(rename = "traceId")]
+    #[serde(rename = "trace_id")]
     pub trace_id: String,
     pub name: String,
-    #[serde(rename = "parentSpanId", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "parent_span_id", skip_serializing_if = "Option::is_none")]
     pub parent_id: Option<String>,
     
-    // OTLP standard fields (nanoseconds as string)
-    #[serde(rename = "startTimeUnixNano")]
-    pub start_time_unix_nano: String,
-    #[serde(rename = "endTimeUnixNano")]
-    pub end_time_unix_nano: Option<String>,
+    // Original ADK format: nanoseconds as numbers
+    pub start_time: u128,
+    pub end_time: Option<u128>,
     
     // OTLP Kind:
     // 0=Unspecified, 1=Internal, 2=Server, 3=Client, 4=Producer, 5=Consumer
@@ -29,6 +26,9 @@ pub struct SpanData {
     
     pub attributes: HashMap<String, serde_json::Value>,
     pub status: SpanStatus,
+    
+    // UI compatibility field
+    pub invoc_id: String,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -57,6 +57,7 @@ impl SharedTraceStorage {
     }
 
     pub fn get_trace(&self, key: &str) -> Option<Vec<SpanData>> {
+        eprintln!("DEBUG: SharedTraceStorage::get_trace called with key: {}", key);
         // Resolve alias if exists
         let real_key = if let Ok(aliases) = self.aliases.read() {
             aliases.get(key).cloned().unwrap_or_else(|| key.to_string())
@@ -64,12 +65,18 @@ impl SharedTraceStorage {
             key.to_string()
         };
 
-        self.traces.read().ok()?.get(&real_key).cloned()
+        let result = self.traces.read().ok()?.get(&real_key).cloned();
+        eprintln!("DEBUG: get_trace result for key '{}': {:?}", key, result.as_ref().map(|v| v.len()));
+        result
     }
 
     pub fn add_span(&self, key: String, span: SpanData) {
+        eprintln!("DEBUG: SharedTraceStorage::add_span called with key: {}", key);
         if let Ok(mut traces) = self.traces.write() {
-            traces.entry(key).or_default().push(span);
+            traces.entry(key.clone()).or_default().push(span);
+            eprintln!("DEBUG: Span added to storage, total keys: {}", traces.len());
+        } else {
+            eprintln!("DEBUG: Failed to acquire write lock on traces");
         }
     }
 
@@ -174,14 +181,11 @@ where
             .duration_since(SystemTime::UNIX_EPOCH)
             .unwrap_or_default()
             .as_nanos() as u128;
-            
-        // Convert to nanoseconds string for OTLP (already in nanos)
-        let start_ns = start_time_nanos.to_string();
-        let end_ns = end_time_nanos.to_string();
 
         // Extract metadata
         let metadata = span.metadata();
         let name = metadata.name().to_string();
+        let span_name_for_debug = name.clone();
 
         // Retrieve captured fields
         let mut fields = extensions.get::<SpanFields>().map(|f| f.0.clone()).unwrap_or_default();
@@ -223,7 +227,12 @@ where
         }
 
         if keys.is_empty() {
-             return;
+             // Add session_id as fallback key if no other keys found
+             if let Some(sess_id) = fields.get("session_id").and_then(|v| v.as_str()) {
+                 keys.push(sess_id.to_string());
+             } else {
+                 return; // No keys to store under
+             }
         }
         
         // Ensure camelCase keys are present in attributes for UI (backward compat)
@@ -240,25 +249,34 @@ where
         }
 
         // Create span data once
+        let _final_invoc_id = if trace_id.is_empty() { 
+            Some(format!("span-{:016x}", id.into_u64()))
+        } else { 
+            Some(trace_id.clone()) 
+        };
+        
         let span_data = SpanData {
             id: format!("{:016x}", id.into_u64()), // Hex span ID (padded)
-            trace_id,
+            trace_id: trace_id.clone(),
             name,
             parent_id: span.parent().map(|p| format!("{:016x}", p.id().into_u64())), // Hex parent ID
             
-            start_time_unix_nano: start_ns,
-            end_time_unix_nano: Some(end_ns),
+            start_time: start_time_nanos,
+            end_time: Some(end_time_nanos),
             
             kind: 1, // INTERNAL
             status: SpanStatus { code: 1, message: None }, // OK
             
             attributes: fields,
+            invoc_id: trace_id.clone(),
         };
         
         // Store under all keys
         for key in keys {
+            eprintln!("DEBUG: Storing span '{}' under key '{}'", span_name_for_debug, key);
             self.storage.add_span(key, span_data.clone());
         }
+        eprintln!("DEBUG: Span storage complete");
     }
 }
 

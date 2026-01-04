@@ -52,7 +52,7 @@ pub struct ServerConfig {
     pub agent_loader: Arc<dyn adk_core::AgentLoader>,
     pub session_service: Arc<dyn adk_session::SessionService>,
     pub artifact_service: Option<Arc<dyn adk_artifact::ArtifactService>>,
-    pub trace_storage: Option<Arc<adk_telemetry::memory::SharedTraceStorage>>,
+    pub span_exporter: Option<Arc<adk_telemetry::AdkSpanExporter>>,
     pub backend_url: Option<String>,
     pub security: SecurityConfig,
 }
@@ -66,7 +66,7 @@ impl ServerConfig {
             agent_loader,
             session_service,
             artifact_service: None,
-            trace_storage: None,
+            span_exporter: None,
             backend_url: None,
             security: SecurityConfig::default(),
         }
@@ -98,11 +98,11 @@ impl ServerConfig {
         self
     }
 
-    pub fn with_trace_storage(
+    pub fn with_span_exporter(
         mut self,
-        trace_storage: Arc<adk_telemetry::memory::SharedTraceStorage>,
+        span_exporter: Arc<adk_telemetry::AdkSpanExporter>,
     ) -> Self {
-        self.trace_storage = Some(trace_storage);
+        self.span_exporter = Some(span_exporter);
         self
     }
 

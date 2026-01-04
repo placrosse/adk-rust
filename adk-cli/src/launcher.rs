@@ -237,20 +237,24 @@ impl Launcher {
 
     /// Run web server with UI.
     async fn run_serve(self, port: u16) -> Result<()> {
-        // Initialize trace storage
-        let trace_storage = Arc::new(adk_telemetry::memory::SharedTraceStorage::new());
-
-        // Initialize telemetry with storage
-        if let Err(e) = adk_telemetry::init_with_storage("adk-server", trace_storage.clone()) {
-            eprintln!("Warning: Failed to initialize telemetry: {}", e);
-        }
+        // Initialize telemetry with ADK-Go style exporter
+        let span_exporter = match adk_telemetry::init_with_adk_exporter("adk-server") {
+            Ok(exporter) => Some(exporter),
+            Err(e) => {
+                eprintln!("Warning: Failed to initialize telemetry: {}", e);
+                None
+            }
+        };
 
         let session_service = Arc::new(InMemorySessionService::new());
         let agent_loader = Arc::new(SingleAgentLoader::new(self.agent));
 
-        let config = ServerConfig::new(agent_loader, session_service)
-            .with_artifact_service_opt(self.artifact_service)
-            .with_trace_storage(trace_storage);
+        let mut config = ServerConfig::new(agent_loader, session_service)
+            .with_artifact_service_opt(self.artifact_service);
+        
+        if let Some(exporter) = span_exporter {
+            config = config.with_span_exporter(exporter);
+        }
 
         let app = create_app(config);
 

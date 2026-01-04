@@ -5,11 +5,10 @@ use axum::{
     http::StatusCode,
 };
 use serde::Serialize;
-
+use std::collections::HashMap;
 
 #[derive(Clone)]
 pub struct DebugController {
-    #[allow(dead_code)] // Reserved for future debug functionality
     config: ServerConfig,
 }
 
@@ -25,33 +24,42 @@ pub struct GraphResponse {
     pub dot_src: String,
 }
 
-#[derive(Serialize)]
-pub struct TraceResponse {
-    pub spans: Vec<adk_telemetry::memory::SpanData>,
-}
-
-pub async fn get_trace(
+// ADK-Go compatible trace response (attributes map)
+pub async fn get_trace_by_event_id(
     State(controller): State<DebugController>,
     Path(event_id): Path<String>,
-) -> Result<Json<Vec<adk_telemetry::memory::SpanData>>, StatusCode> {
-    if let Some(storage) = &controller.config.trace_storage {
-        if let Some(spans) = storage.get_trace(&event_id) {
-            return Ok(Json(spans));
+) -> Result<Json<HashMap<String, String>>, StatusCode> {
+    if let Some(exporter) = &controller.config.span_exporter {
+        if let Some(attributes) = exporter.get_trace_by_event_id(&event_id) {
+            return Ok(Json(attributes));
         }
     }
     
-    // Return empty list if not found or no storage
-    Ok(Json(Vec::new()))
+    Err(StatusCode::NOT_FOUND)
 }
 
+// Convert ADK exporter format to UI-compatible SpanData format
+fn convert_to_span_data(attributes: &HashMap<String, String>) -> serde_json::Value {
+    serde_json::json!({
+        "name": attributes.get("span_name").map_or("unknown", |v| v.as_str()),
+        "start_time": attributes.get("start_time").and_then(|s| s.parse::<u64>().ok()).unwrap_or(0),
+        "end_time": attributes.get("end_time").and_then(|s| s.parse::<u64>().ok()).unwrap_or(0),
+        "attributes": attributes,
+        "invoc_id": attributes.get("gcp.vertex.agent.invocation_id").map_or("", |v| v.as_str())
+    })
+}
+
+// Get all spans for a session (UI-compatible format)
 pub async fn get_session_traces(
     State(controller): State<DebugController>,
     Path(session_id): Path<String>,
-) -> Result<Json<Vec<adk_telemetry::memory::SpanData>>, StatusCode> {
-    if let Some(storage) = &controller.config.trace_storage {
-        if let Some(spans) = storage.get_trace(&session_id) {
-            return Ok(Json(spans));
-        }
+) -> Result<Json<Vec<serde_json::Value>>, StatusCode> {
+    if let Some(exporter) = &controller.config.span_exporter {
+        let traces = exporter.get_session_trace(&session_id);
+        let span_data: Vec<serde_json::Value> = traces.iter()
+            .map(convert_to_span_data)
+            .collect();
+        return Ok(Json(span_data));
     }
     
     Ok(Json(Vec::new()))

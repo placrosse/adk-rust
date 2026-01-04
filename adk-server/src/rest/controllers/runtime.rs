@@ -109,26 +109,11 @@ pub async fn run_sse(
             .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
         // Convert to SSE stream
-        let trace_storage = controller.config.trace_storage.clone();
         let sse_stream = stream::unfold(event_stream, move |mut stream| {
-            let trace_storage = trace_storage.clone();
             async move {
                 use futures::StreamExt;
                 match stream.next().await {
                     Some(Ok(event)) => {
-                        // Log correlation for tracing UI
-                        tracing::info!(
-                            target: "adk_trace_correlation",
-                            event_id = %event.id,
-                            invocation_id = %event.invocation_id,
-                            "Correlation event"
-                        );
-                        
-                        // Ensure trace storage has alias from event_id to invocation_id
-                        if let Some(storage) = &trace_storage {
-                            storage.add_alias(event.id.clone(), event.invocation_id.clone());
-                        }
-                        
                         let json = serde_json::to_string(&event).ok()?;
                         Some((Ok(Event::default().data(json)), stream))
                     }
@@ -212,26 +197,11 @@ pub async fn run_sse_compat(
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
     // Convert to SSE stream
-    let trace_storage = controller.config.trace_storage.clone();
     let sse_stream = stream::unfold(event_stream, move |mut stream| {
-        let trace_storage = trace_storage.clone();
         async move {
             use futures::StreamExt;
             match stream.next().await {
                 Some(Ok(event)) => {
-                    // Log correlation for tracing UI
-                    tracing::info!(
-                        target: "adk_trace_correlation",
-                        event_id = %event.id,
-                        invocation_id = %event.invocation_id,
-                        "Correlation event"
-                    );
-                    
-                    // Ensure trace storage has alias from event_id to invocation_id
-                    if let Some(storage) = &trace_storage {
-                        storage.add_alias(event.id.clone(), event.invocation_id.clone());
-                    }
-                    
                     let json = serde_json::to_string(&event).ok()?;
                     Some((Ok(Event::default().data(json)), stream))
                 }

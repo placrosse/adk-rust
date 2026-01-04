@@ -661,6 +661,10 @@ impl Agent for LlmAgent {
 
                     accumulated_content = cached_response.content;
                 } else {
+                    // Record LLM request for tracing
+                    let request_json = serde_json::to_string(&request).unwrap_or_default();
+                    tracing::Span::current().record("gcp.vertex.agent.llm_request", &request_json);
+                    
                     // Call model with STREAMING ENABLED
                     let mut response_stream = model.generate_content(request, true).await?;
 
@@ -795,6 +799,12 @@ impl Agent for LlmAgent {
 
                 if !has_function_calls {
                     // No function calls, we're done
+                    // Record LLM response for tracing
+                    if let Some(ref content) = accumulated_content {
+                        let response_json = serde_json::to_string(content).unwrap_or_default();
+                        tracing::Span::current().record("gcp.vertex.agent.llm_response", &response_json);
+                    }
+                    
                     tracing::info!(agent.name = %agent_name, "Agent execution complete");
                     break;
                 }
