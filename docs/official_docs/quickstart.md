@@ -131,7 +131,7 @@ You: exit
 👋 Goodbye!
 ```
 
-## Step 6: Add a Tool (Optional)
+## Step 6: Add a Tool
 
 Let's enhance your agent with the Google Search tool to give it access to real-time information:
 
@@ -163,7 +163,13 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
 }
 ```
 
-Now your agent can search the web:
+Start your agent again in interactive console mode:
+
+```bash
+cargo run
+```
+
+Now you can prompt your agent to search the web:
 
 ```
 You: What's the weather like in Tokyo today?

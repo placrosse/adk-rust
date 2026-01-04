@@ -10,6 +10,10 @@ use serde::{Deserialize, Serialize};
 use std::convert::Infallible;
 use tracing::{info, Instrument};
 
+fn default_streaming_true() -> bool {
+    true
+}
+
 #[derive(Clone)]
 pub struct RuntimeController {
     config: ServerConfig,
@@ -34,7 +38,7 @@ pub struct RunSseRequest {
     pub user_id: String,
     pub session_id: String,
     pub new_message: NewMessage,
-    #[serde(default)]
+    #[serde(default = "default_streaming_true")]
     pub streaming: bool,
     #[serde(default)]
     pub state_delta: Option<serde_json::Value>,
