@@ -166,14 +166,18 @@ where
             .unwrap_or_default()
             .as_nanos() as u64;
         
-        // Use event_id as both trace_id and span_id to ensure uniqueness
+        // Use invocation_id as trace_id (for grouping in UI)
+        // Use event_id as span_id (for uniqueness)
+        let invocation_id = attributes.get("gcp.vertex.agent.invocation_id")
+            .cloned()
+            .unwrap_or_else(|| format!("{:016x}", id.into_u64()));
         let event_id = attributes.get("gcp.vertex.agent.event_id")
             .cloned()
             .unwrap_or_else(|| format!("{:016x}", id.into_u64()));
             
         attributes.insert("span_name".to_string(), span_name.clone());
-        attributes.insert("trace_id".to_string(), event_id.clone());
-        attributes.insert("span_id".to_string(), event_id);
+        attributes.insert("trace_id".to_string(), invocation_id);  // Group by invocation
+        attributes.insert("span_id".to_string(), event_id);       // Unique per span
         attributes.insert("start_time".to_string(), (now_nanos - duration_nanos).to_string());
         attributes.insert("end_time".to_string(), now_nanos.to_string());
         
