@@ -29,12 +29,19 @@ impl Tool for AddTool {
 
     async fn execute(
         &self,
-        _ctx: Arc<dyn ToolContext>,
+        ctx: Arc<dyn ToolContext>,
         args: serde_json::Value,
     ) -> Result<serde_json::Value> {
         let a: f64 = args.get("a").and_then(|v| v.as_f64()).unwrap_or(0.0);
         let b: f64 = args.get("b").and_then(|v| v.as_f64()).unwrap_or(0.0);
         let result = a + b;
+        
+        // Store calculation in state via EventActions
+        let mut actions = ctx.actions();
+        actions.state_delta.insert("last_calculation".to_string(), serde_json::json!(result));
+        actions.state_delta.insert("calculation_history".to_string(), serde_json::json!(format!("{} + {} = {}", a, b, result)));
+        ctx.set_actions(actions);
+        
         Ok(serde_json::json!({ "result": result }))
     }
 }
@@ -51,9 +58,10 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     // Build agent with tools
     let agent = LlmAgentBuilder::new("search_assistant")
         .description("An assistant that can search the web and do math")
-        .instruction("You are a helpful assistant. Use the search tool for current info and the add tool for arithmetic.")
+        .instruction("You are a helpful assistant. Use the search tool for current info and the add tool for arithmetic. When you learn the user's name, store it as 'user:name'. When you complete a calculation, store the result as 'last_calculation'.")
         .model(Arc::new(model))        
         .tool(Arc::new(AddTool))                   // Math capability
+        .output_key("agent_response")              // Store responses in state
         .build()?;
 
     Launcher::new(Arc::new(agent)).run().await?;
