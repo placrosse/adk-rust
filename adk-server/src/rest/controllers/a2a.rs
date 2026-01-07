@@ -15,13 +15,39 @@ use axum::{
 };
 use futures::stream::Stream;
 use serde_json::Value;
-use std::{convert::Infallible, sync::Arc, time::Duration};
+use std::{collections::HashMap, convert::Infallible, sync::Arc, time::Duration};
+use tokio::sync::RwLock;
+
+/// In-memory task storage
+#[derive(Default)]
+pub struct TaskStore {
+    tasks: RwLock<HashMap<String, Task>>,
+}
+
+impl TaskStore {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    pub async fn store(&self, task: Task) {
+        self.tasks.write().await.insert(task.id.clone(), task);
+    }
+
+    pub async fn get(&self, task_id: &str) -> Option<Task> {
+        self.tasks.read().await.get(task_id).cloned()
+    }
+
+    pub async fn remove(&self, task_id: &str) -> Option<Task> {
+        self.tasks.write().await.remove(task_id)
+    }
+}
 
 /// Controller for A2A protocol endpoints
 #[derive(Clone)]
 pub struct A2aController {
     config: ServerConfig,
     agent_card: AgentCard,
+    task_store: Arc<TaskStore>,
 }
 
 impl A2aController {
@@ -30,7 +56,7 @@ impl A2aController {
         let invoke_url = format!("{}/a2a", base_url.trim_end_matches('/'));
         let agent_card = build_agent_card(root_agent.as_ref(), &invoke_url);
 
-        Self { config, agent_card }
+        Self { config, agent_card, task_store: Arc::new(TaskStore::new()) }
     }
 }
 
@@ -264,6 +290,9 @@ async fn handle_message_send(
                 }
             }
 
+            // Store task for later retrieval
+            controller.task_store.store(task.clone()).await;
+
             Json(JsonRpcResponse::success(id, serde_json::to_value(task).unwrap_or_default()))
         }
         Err(e) => Json(JsonRpcResponse::error(
@@ -277,11 +306,11 @@ async fn handle_message_send(
 }
 
 async fn handle_tasks_get(
-    _controller: &A2aController,
+    controller: &A2aController,
     params: Option<Value>,
     id: Option<Value>,
 ) -> Json<JsonRpcResponse> {
-    let _params: TasksGetParams = match params {
+    let params: TasksGetParams = match params {
         Some(p) => match serde_json::from_value(p) {
             Ok(p) => p,
             Err(e) => {
@@ -299,11 +328,15 @@ async fn handle_tasks_get(
         }
     };
 
-    // TODO: Implement task storage and retrieval
-    Json(JsonRpcResponse::error(
-        id,
-        JsonRpcError::internal_error("Task retrieval not yet implemented"),
-    ))
+    match controller.task_store.get(&params.task_id).await {
+        Some(task) => {
+            Json(JsonRpcResponse::success(id, serde_json::to_value(task).unwrap_or_default()))
+        }
+        None => Json(JsonRpcResponse::error(
+            id,
+            JsonRpcError::internal_error(format!("Task not found: {}", params.task_id)),
+        )),
+    }
 }
 
 async fn handle_tasks_cancel(

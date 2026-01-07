@@ -292,9 +292,14 @@ impl Tool for AgentTool {
         };
 
         match result {
-            Ok((events, _state_delta, _artifact_delta)) => {
-                // TODO: Forward state_delta and artifact_delta back to parent context
-                // This would require extending ToolContext or EventActions
+            Ok((events, state_delta, artifact_delta)) => {
+                // Forward state_delta and artifact_delta to parent context
+                if !state_delta.is_empty() || !artifact_delta.is_empty() {
+                    let mut parent_actions = ctx.actions();
+                    parent_actions.state_delta.extend(state_delta);
+                    parent_actions.artifact_delta.extend(artifact_delta);
+                    ctx.set_actions(parent_actions);
+                }
 
                 // Extract and return the response
                 let response = Self::extract_response(&events);
