@@ -3,7 +3,7 @@
 /// Configuration for connecting to an Ollama server.
 #[derive(Debug, Clone)]
 pub struct OllamaConfig {
-    /// Ollama server host URL. Default: "http://localhost:11434"
+    /// Ollama server host URL. Default: `http://localhost:11434`
     pub host: String,
     /// Model name to use (e.g., "llama3.2", "mistral", "qwen2.5")
     pub model: String,

@@ -37,7 +37,7 @@ type ConditionFn = Box<dyn Fn(&dyn InvocationContext) -> bool + Send + Sync>;
 /// Rule-based conditional routing agent.
 ///
 /// Executes one of two sub-agents based on a synchronous condition function.
-/// For LLM-based intelligent routing, use [`LlmConditionalAgent`] instead.
+/// For LLM-based intelligent routing, use [`crate::LlmConditionalAgent`] instead.
 ///
 /// # Example
 ///

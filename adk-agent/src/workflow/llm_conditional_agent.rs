@@ -42,7 +42,7 @@ use std::sync::Arc;
 /// Uses an LLM to classify user input and route to the appropriate sub-agent
 /// based on the classification result. Supports multi-way routing.
 ///
-/// For rule-based routing (A/B testing, feature flags), use [`ConditionalAgent`].
+/// For rule-based routing (A/B testing, feature flags), use [`crate::ConditionalAgent`].
 ///
 /// # Example
 ///
