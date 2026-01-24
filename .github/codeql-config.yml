@@ -1,0 +1,23 @@
+# CodeQL configuration for ADK-Rust
+# https://docs.github.com/en/code-security/code-scanning/creating-an-advanced-setup-for-code-scanning/customizing-your-advanced-setup-for-code-scanning
+
+name: "ADK-Rust CodeQL Config"
+
+# Exclude paths from analysis
+paths-ignore:
+  # Minified/bundled JavaScript files (vendor code)
+  - "adk-server/assets/webui/*.js"
+  - "adk-studio/ui/dist/**"
+  # Node modules
+  - "**/node_modules/**"
+  # Build artifacts
+  - "target/**"
+  # Test fixtures
+  - "**/test_data/**"
+  - "**/fixtures/**"
+
+# Query filters to reduce false positives
+query-filters:
+  # Exclude low-severity alerts from minified files
+  - exclude:
+      tags: contain: /minified/
