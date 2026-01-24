@@ -66,5 +66,5 @@ pub use adk_core::{Tool, ToolContext, Toolset};
 pub use agent_tool::{AgentTool, AgentToolConfig};
 pub use builtin::{ExitLoopTool, GoogleSearchTool, LoadArtifactsTool};
 pub use function_tool::FunctionTool;
-pub use mcp::McpToolset;
+pub use mcp::{McpAuth, McpHttpClientBuilder, McpTaskConfig, McpToolset, OAuth2Config};
 pub use toolset::{BasicToolset, string_predicate};

@@ -6,17 +6,20 @@
 // The McpToolset connects to an MCP server, discovers available tools,
 // and exposes them as ADK-compatible tools for use with LlmAgent.
 
+use super::task::{McpTaskConfig, TaskError, TaskStatus};
 use adk_core::{AdkError, ReadonlyContext, Result, Tool, ToolContext, Toolset};
 use async_trait::async_trait;
 use rmcp::{
     RoleClient,
-    model::{CallToolRequestParam, RawContent, ResourceContents},
+    model::{CallToolRequestParams, RawContent, ResourceContents},
     service::RunningService,
 };
 use serde_json::{Value, json};
 use std::ops::Deref;
 use std::sync::Arc;
+use std::time::Instant;
 use tokio::sync::Mutex;
+use tracing::{debug, warn};
 
 /// Type alias for tool filter predicate
 pub type ToolFilter = Arc<dyn Fn(&str) -> bool + Send + Sync>;
@@ -82,6 +85,8 @@ where
     tool_filter: Option<ToolFilter>,
     /// Name of this toolset
     name: String,
+    /// Task configuration for long-running operations
+    task_config: McpTaskConfig,
 }
 
 impl<S> McpToolset<S>
@@ -110,12 +115,31 @@ where
             client: Arc::new(Mutex::new(client)),
             tool_filter: None,
             name: "mcp_toolset".to_string(),
+            task_config: McpTaskConfig::default(),
         }
     }
 
     /// Set a custom name for this toolset.
     pub fn with_name(mut self, name: impl Into<String>) -> Self {
         self.name = name.into();
+        self
+    }
+
+    /// Enable task support for long-running operations.
+    ///
+    /// When enabled, tools marked as `is_long_running()` will use MCP's
+    /// async task lifecycle (SEP-1686) instead of blocking calls.
+    ///
+    /// # Example
+    ///
+    /// ```rust,ignore
+    /// let toolset = McpToolset::new(client)
+    ///     .with_task_support(McpTaskConfig::enabled()
+    ///         .poll_interval(Duration::from_secs(2))
+    ///         .timeout(Duration::from_secs(300)));
+    /// ```
+    pub fn with_task_support(mut self, config: McpTaskConfig) -> Self {
+        self.task_config = config;
         self
     }
 
@@ -220,6 +244,8 @@ where
                     schema
                 }),
                 client: self.client.clone(),
+                is_long_running: false, // TODO: detect from MCP tool annotations
+                task_config: self.task_config.clone(),
             };
 
             tools.push(Arc::new(adk_tool) as Arc<dyn Tool>);
@@ -241,6 +267,222 @@ where
     input_schema: Option<Value>,
     output_schema: Option<Value>,
     client: Arc<Mutex<RunningService<RoleClient, S>>>,
+    /// Whether this tool is long-running (from MCP tool metadata)
+    is_long_running: bool,
+    /// Task configuration
+    task_config: McpTaskConfig,
+}
+
+impl<S> McpTool<S>
+where
+    S: rmcp::service::Service<RoleClient> + Send + Sync + 'static,
+{
+    /// Poll a task until completion or timeout
+    async fn poll_task(
+        &self,
+        client: &RunningService<RoleClient, S>,
+        task_id: &str,
+    ) -> std::result::Result<Value, TaskError> {
+        let start = Instant::now();
+        let mut attempts = 0u32;
+
+        loop {
+            // Check timeout
+            if let Some(timeout_ms) = self.task_config.timeout_ms {
+                let elapsed = start.elapsed().as_millis() as u64;
+                if elapsed >= timeout_ms {
+                    return Err(TaskError::Timeout {
+                        task_id: task_id.to_string(),
+                        elapsed_ms: elapsed,
+                    });
+                }
+            }
+
+            // Check max attempts
+            if let Some(max_attempts) = self.task_config.max_poll_attempts {
+                if attempts >= max_attempts {
+                    return Err(TaskError::MaxAttemptsExceeded {
+                        task_id: task_id.to_string(),
+                        attempts,
+                    });
+                }
+            }
+
+            // Wait before polling
+            tokio::time::sleep(self.task_config.poll_duration()).await;
+            attempts += 1;
+
+            debug!(
+                task_id = task_id,
+                attempt = attempts,
+                "Polling MCP task status"
+            );
+
+            // Poll task status using tasks/get
+            // Note: This requires the MCP server to support SEP-1686 task lifecycle
+            let poll_result = client
+                .call_tool(CallToolRequestParams {
+                    name: "tasks/get".into(),
+                    arguments: Some(serde_json::Map::from_iter([(
+                        "task_id".to_string(),
+                        Value::String(task_id.to_string()),
+                    )])),
+                    task: None,
+                    meta: None,
+                })
+                .await
+                .map_err(|e| TaskError::PollFailed(e.to_string()))?;
+
+            // Parse task status from response
+            let status = self.parse_task_status(&poll_result)?;
+
+            match status {
+                TaskStatus::Completed => {
+                    debug!(task_id = task_id, "Task completed successfully");
+                    // Extract result from the poll response
+                    return self.extract_task_result(&poll_result);
+                }
+                TaskStatus::Failed => {
+                    let error_msg = self.extract_error_message(&poll_result);
+                    return Err(TaskError::TaskFailed {
+                        task_id: task_id.to_string(),
+                        error: error_msg,
+                    });
+                }
+                TaskStatus::Cancelled => {
+                    return Err(TaskError::Cancelled(task_id.to_string()));
+                }
+                TaskStatus::Pending | TaskStatus::Running => {
+                    // Continue polling
+                    debug!(
+                        task_id = task_id,
+                        status = ?status,
+                        "Task still in progress"
+                    );
+                }
+            }
+        }
+    }
+
+    /// Parse task status from poll response
+    fn parse_task_status(
+        &self,
+        result: &rmcp::model::CallToolResult,
+    ) -> std::result::Result<TaskStatus, TaskError> {
+        // Try to extract status from structured content first
+        if let Some(ref structured) = result.structured_content {
+            if let Some(status_str) = structured.get("status").and_then(|v| v.as_str()) {
+                return match status_str {
+                    "pending" => Ok(TaskStatus::Pending),
+                    "running" => Ok(TaskStatus::Running),
+                    "completed" => Ok(TaskStatus::Completed),
+                    "failed" => Ok(TaskStatus::Failed),
+                    "cancelled" => Ok(TaskStatus::Cancelled),
+                    _ => {
+                        warn!(status = status_str, "Unknown task status");
+                        Ok(TaskStatus::Running) // Assume still running
+                    }
+                };
+            }
+        }
+
+        // Try to extract from text content
+        for content in &result.content {
+            if let Some(text_content) = content.deref().as_text() {
+                // Try to parse as JSON
+                if let Ok(parsed) = serde_json::from_str::<Value>(&text_content.text) {
+                    if let Some(status_str) = parsed.get("status").and_then(|v| v.as_str()) {
+                        return match status_str {
+                            "pending" => Ok(TaskStatus::Pending),
+                            "running" => Ok(TaskStatus::Running),
+                            "completed" => Ok(TaskStatus::Completed),
+                            "failed" => Ok(TaskStatus::Failed),
+                            "cancelled" => Ok(TaskStatus::Cancelled),
+                            _ => Ok(TaskStatus::Running),
+                        };
+                    }
+                }
+            }
+        }
+
+        // Default to running if we can't determine status
+        Ok(TaskStatus::Running)
+    }
+
+    /// Extract result from completed task
+    fn extract_task_result(
+        &self,
+        result: &rmcp::model::CallToolResult,
+    ) -> std::result::Result<Value, TaskError> {
+        // Try structured content first
+        if let Some(ref structured) = result.structured_content {
+            if let Some(output) = structured.get("result") {
+                return Ok(json!({ "output": output }));
+            }
+            return Ok(json!({ "output": structured }));
+        }
+
+        // Fall back to text content
+        let mut text_parts: Vec<String> = Vec::new();
+        for content in &result.content {
+            if let Some(text_content) = content.deref().as_text() {
+                text_parts.push(text_content.text.clone());
+            }
+        }
+
+        if text_parts.is_empty() {
+            Ok(json!({ "output": null }))
+        } else {
+            Ok(json!({ "output": text_parts.join("\n") }))
+        }
+    }
+
+    /// Extract error message from failed task
+    fn extract_error_message(&self, result: &rmcp::model::CallToolResult) -> String {
+        // Try structured content
+        if let Some(ref structured) = result.structured_content {
+            if let Some(error) = structured.get("error").and_then(|v| v.as_str()) {
+                return error.to_string();
+            }
+        }
+
+        // Try text content
+        for content in &result.content {
+            if let Some(text_content) = content.deref().as_text() {
+                return text_content.text.clone();
+            }
+        }
+
+        "Unknown error".to_string()
+    }
+
+    /// Extract task ID from create task response
+    fn extract_task_id(
+        &self,
+        result: &rmcp::model::CallToolResult,
+    ) -> std::result::Result<String, TaskError> {
+        // Try structured content
+        if let Some(ref structured) = result.structured_content {
+            if let Some(task_id) = structured.get("task_id").and_then(|v| v.as_str()) {
+                return Ok(task_id.to_string());
+            }
+        }
+
+        // Try text content (might be JSON)
+        for content in &result.content {
+            if let Some(text_content) = content.deref().as_text() {
+                if let Ok(parsed) = serde_json::from_str::<Value>(&text_content.text) {
+                    if let Some(task_id) = parsed.get("task_id").and_then(|v| v.as_str()) {
+                        return Ok(task_id.to_string());
+                    }
+                }
+            }
+        }
+
+        Err(TaskError::CreateFailed(
+            "No task_id in response".to_string(),
+        ))
+    }
 }
 
 #[async_trait]
@@ -257,7 +499,7 @@ where
     }
 
     fn is_long_running(&self) -> bool {
-        false
+        self.is_long_running
     }
 
     fn parameters_schema(&self) -> Option<Value> {
@@ -271,9 +513,60 @@ where
     async fn execute(&self, _ctx: Arc<dyn ToolContext>, args: Value) -> Result<Value> {
         let client = self.client.lock().await;
 
-        // Call the MCP tool
+        // Determine if we should use task mode
+        let use_task_mode = self.task_config.enable_tasks && self.is_long_running;
+
+        if use_task_mode {
+            debug!(
+                tool = self.name,
+                "Executing tool in task mode (long-running)"
+            );
+
+            // Create task request with task parameters
+            let task_params = self.task_config.to_task_params();
+            let task_map = task_params.as_object().cloned();
+
+            let create_result = client
+                .call_tool(CallToolRequestParams {
+                    name: self.name.clone().into(),
+                    arguments: if args.is_null() || args == json!({}) {
+                        None
+                    } else {
+                        match args {
+                            Value::Object(map) => Some(map),
+                            _ => {
+                                return Err(AdkError::Tool(
+                                    "Tool arguments must be an object".to_string(),
+                                ));
+                            }
+                        }
+                    },
+                    task: task_map,
+                    meta: None,
+                })
+                .await
+                .map_err(|e| {
+                    AdkError::Tool(format!("Failed to create task for '{}': {}", self.name, e))
+                })?;
+
+            // Extract task ID
+            let task_id = self.extract_task_id(&create_result).map_err(|e| {
+                AdkError::Tool(format!("Failed to get task ID: {}", e))
+            })?;
+
+            debug!(tool = self.name, task_id = task_id, "Task created, polling for completion");
+
+            // Poll for completion
+            let result = self.poll_task(&client, &task_id).await.map_err(|e| {
+                AdkError::Tool(format!("Task execution failed: {}", e))
+            })?;
+
+            return Ok(result);
+        }
+
+        // Standard synchronous execution
         let result = client
-            .call_tool(CallToolRequestParam {
+            .call_tool(CallToolRequestParams {
                 name: self.name.clone().into(),
                 arguments: if args.is_null() || args == json!({}) {
                     None
@@ -288,7 +581,8 @@ where
                         }
                     }
                 },
-                task: None, // Task support added in MCP spec 2025-11
+                task: None,
+                meta: None,
             })
             .await
             .map_err(|e| {

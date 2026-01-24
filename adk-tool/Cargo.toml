@@ -12,6 +12,11 @@ keywords = ["ai", "agent", "adk", "tools", "mcp"]
 categories = ["api-bindings", "asynchronous"]
 readme = "README.md"
 
+[features]
+default = []
+# Enable HTTP transport for remote MCP servers (streamable HTTP)
+http-transport = ["rmcp/transport-streamable-http-client-reqwest", "reqwest"]
+
 [dependencies]
 adk-core.workspace = true
 adk-telemetry.workspace = true
@@ -20,11 +25,13 @@ tokio.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 schemars = "0.8"
-rmcp = { version = "0.13", features = ["client"] }
+rmcp = { version = "0.14", features = ["client"] }
 tracing.workspace = true
 base64 = "0.21"
 uuid.workspace = true
 futures.workspace = true
+# Optional: HTTP client for remote MCP servers
+reqwest = { version = "0.12", features = ["json"], optional = true }
 
 [dev-dependencies]
 async-stream.workspace = true
