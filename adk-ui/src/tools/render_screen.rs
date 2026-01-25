@@ -258,7 +258,15 @@ mod tests {
 
         let ctx: Arc<dyn ToolContext> = Arc::new(TestContext::new());
         let value = tool.execute(ctx, args).await.unwrap();
-        let jsonl = value.as_str().unwrap();
+        
+        // The tool now returns a JSON object with components, data_model, and jsonl
+        assert!(value.is_object());
+        assert!(value.get("surface_id").is_some());
+        assert!(value.get("components").is_some());
+        assert!(value.get("jsonl").is_some());
+        
+        // Verify JSONL is still generated
+        let jsonl = value["jsonl"].as_str().unwrap();
         let lines: Vec<Value> = jsonl
             .trim_end()
             .lines()
@@ -270,9 +278,9 @@ mod tests {
         assert!(lines[1].get("updateDataModel").is_some());
         assert!(lines[2].get("updateComponents").is_some());
         
-        // Verify component structure
-        let components = &lines[2]["updateComponents"]["components"];
-        assert!(components.is_array());
+        // Verify component structure in the returned JSON
+        let components = value["components"].as_array().unwrap();
+        assert_eq!(components.len(), 3);
         let root = &components[2];
         assert_eq!(root["id"], "root");
         assert!(root["component"]["Column"].is_object());
