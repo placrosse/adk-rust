@@ -257,6 +257,35 @@ export const useStore = create<StudioState>((set, get) => ({
         }
       });
       
+      // Reconnect edges: connect sources to targets to maintain flow
+      const currentEdges = s.currentProject.workflow.edges;
+      const newEdges: typeof currentEdges = [];
+      
+      // For each agent being removed, find incoming and outgoing edges
+      for (const removedId of agentsToRemove) {
+        const incomingEdges = currentEdges.filter(e => e.to === removedId);
+        const outgoingEdges = currentEdges.filter(e => e.from === removedId);
+        
+        // Connect each source to each target
+        for (const incoming of incomingEdges) {
+          for (const outgoing of outgoingEdges) {
+            // Don't create self-loops or duplicate edges
+            if (incoming.from !== outgoing.to) {
+              const edgeExists = newEdges.some(e => e.from === incoming.from && e.to === outgoing.to) ||
+                                 currentEdges.some(e => e.from === incoming.from && e.to === outgoing.to && !agentsToRemove.includes(e.from) && !agentsToRemove.includes(e.to));
+              if (!edgeExists) {
+                newEdges.push({ from: incoming.from, to: outgoing.to });
+              }
+            }
+          }
+        }
+      }
+      
+      // Keep edges not involving removed agents, plus add reconnected edges
+      const remainingEdges = currentEdges.filter((e) => 
+        !agentsToRemove.includes(e.from) && !agentsToRemove.includes(e.to)
+      );
+      
       return {
         currentProject: {
           ...s.currentProject,
@@ -264,9 +293,7 @@ export const useStore = create<StudioState>((set, get) => ({
           tool_configs: toolConfigs,
           workflow: {
             ...s.currentProject.workflow,
-            edges: s.currentProject.workflow.edges.filter((e) => 
-              !agentsToRemove.includes(e.from) && !agentsToRemove.includes(e.to)
-            ),
+            edges: [...remainingEdges, ...newEdges],
           },
         },
       };
