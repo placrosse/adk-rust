@@ -83,7 +83,7 @@ export const useStore = create<StudioState>((set, get) => ({
   
   // Layout state with defaults
   layoutMode: 'free',
-  layoutDirection: 'TB',
+  layoutDirection: 'LR',  // Default to horizontal (left-to-right) layout
   snapToGrid: true,
   gridSize: 20,
   

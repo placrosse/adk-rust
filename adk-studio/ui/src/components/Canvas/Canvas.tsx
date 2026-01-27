@@ -743,9 +743,16 @@ export function Canvas() {
             color: 'var(--text-primary)'
           }}
         >
-          <AgentPalette onDragStart={onDragStart} onCreate={createAgent} />
+          <AgentPalette onDragStart={onDragStart} onCreate={(type) => {
+            createAgentWithUndo(type);
+            invalidateBuild('onAgentAdd');
+            setTimeout(() => applyLayout(), 100);
+          }} />
           <div className="my-2" />
-          <ActionPalette onDragStart={onActionDragStart} onCreate={createActionNode} />
+          <ActionPalette onDragStart={onActionDragStart} onCreate={(type) => {
+            createActionNode(type);
+            // Note: createActionNode already calls applyLayout internally
+          }} />
           <div className="my-2" />
           <ToolPalette 
             selectedNodeId={selectedNodeId} 
