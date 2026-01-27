@@ -12,10 +12,27 @@ import { memo } from 'react';
 /**
  * StartNode marks the beginning of a workflow.
  * Uses green accent color for positive/go indication.
+ * 
+ * Has both input (for optional trigger) and output handles:
+ * - Input: Trigger node can connect TO START
+ * - Output: START connects to first agent/action node
  */
 export const StartNode = memo(function StartNode() {
   return (
     <div className="node-base" style={{ minWidth: 'auto' }}>
+      {/* Input handle for trigger node connection */}
+      <Handle
+        type="target"
+        position={Position.Top}
+        id="top"
+        className="node-handle"
+      />
+      <Handle
+        type="target"
+        position={Position.Left}
+        id="left"
+        className="node-handle"
+      />
       <div className="node-header node-header-start">
         <span className="node-icon">▶</span>
         <span className="node-label">START</span>

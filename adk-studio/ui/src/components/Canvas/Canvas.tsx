@@ -530,20 +530,40 @@ export function Canvas() {
     // Add the action node
     addActionNode(id, nodeConfig);
     
-    // Connect to workflow edges (same logic as agents)
-    // Find edge going to END and insert this node before it
-    const edgeToEnd = currentProject.workflow.edges.find(e => e.to === 'END');
-    if (edgeToEnd) {
-      // Remove the existing edge to END
-      removeProjectEdge(edgeToEnd.from, 'END');
-      // Connect previous node to this new node
-      addProjectEdge(edgeToEnd.from, id);
+    // Special handling for trigger nodes:
+    // - Only one trigger allowed per workflow
+    // - Trigger connects TO START (not from START like other nodes)
+    // - Visual flow: [Trigger] → START → agents → END
+    if (type === 'trigger') {
+      // Check if a trigger already exists
+      const existingTrigger = Object.values(currentProject.actionNodes || {}).find(
+        (node) => node.type === 'trigger'
+      );
+      if (existingTrigger && existingTrigger.id !== id) {
+        // Remove the newly added trigger - only one allowed
+        useStore.getState().removeActionNode(id);
+        alert('Only one trigger node is allowed per workflow. Remove the existing trigger first.');
+        return;
+      }
+      
+      // Connect trigger TO START (trigger is the entry point)
+      addProjectEdge(id, 'START');
     } else {
-      // No existing edges to END, connect from START
-      addProjectEdge('START', id);
+      // Connect to workflow edges (same logic as agents)
+      // Find edge going to END and insert this node before it
+      const edgeToEnd = currentProject.workflow.edges.find(e => e.to === 'END');
+      if (edgeToEnd) {
+        // Remove the existing edge to END
+        removeProjectEdge(edgeToEnd.from, 'END');
+        // Connect previous node to this new node
+        addProjectEdge(edgeToEnd.from, id);
+      } else {
+        // No existing edges to END, connect from START
+        addProjectEdge('START', id);
+      }
+      // Connect this node to END
+      addProjectEdge(id, 'END');
     }
-    // Connect this node to END
-    addProjectEdge(id, 'END');
     
     selectActionNode(id);
     invalidateBuild('onAgentAdd'); // Action nodes use same trigger as agents
