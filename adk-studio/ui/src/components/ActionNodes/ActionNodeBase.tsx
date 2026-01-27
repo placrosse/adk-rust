@@ -136,7 +136,9 @@ export const ActionNodeBase = memo(function ActionNodeBase({
   outputPorts = 1,
   inputPortIds,
   outputPortIds,
-  showTooltip = true,
+  // Tooltips disabled by default on canvas nodes due to ReactFlow transform issues
+  // Enable explicitly for sidebar palette items
+  showTooltip = false,
 }: ActionNodeBaseProps) {
   const color = ACTION_NODE_COLORS[type];
   const icon = ACTION_NODE_ICONS[type];
