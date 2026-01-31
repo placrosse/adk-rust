@@ -1,4 +1,4 @@
-use adk_studio::{AppState, FileStorage, api_routes, embedded};
+use adk_studio::{AppState, FileStorage, api_routes, embedded, start_scheduler};
 use axum::{Router, extract::Path as AxumPath, routing::get};
 use std::net::SocketAddr;
 use std::path::PathBuf;
@@ -60,6 +60,12 @@ async fn main() -> anyhow::Result<()> {
 
     let storage = FileStorage::new(projects_dir.clone()).await?;
     let state = AppState::new(storage);
+
+    // Start the schedule trigger service in the background
+    let scheduler_state = state.clone();
+    tokio::spawn(async move {
+        start_scheduler(scheduler_state).await;
+    });
 
     let cors = CorsLayer::new().allow_origin(Any).allow_methods(Any).allow_headers(Any);
 

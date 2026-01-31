@@ -3,6 +3,7 @@ pub mod graph_runner;
 mod handlers;
 mod routes;
 pub mod runner;
+pub mod scheduler;
 pub mod sse;
 pub mod state;
 
@@ -13,4 +14,5 @@ pub use graph_runner::{
 };
 pub use routes::api_routes;
 pub use runner::{ActionError, ActionNodeEvent, ActionResult, WorkflowExecutor};
+pub use scheduler::{start_scheduler, stop_scheduler, get_project_schedules, ScheduledJobInfo};
 pub use state::AppState;

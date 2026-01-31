@@ -489,7 +489,7 @@ pub struct WebhookTriggerResponse {
 /// Get the binary path for a project based on its name.
 /// 
 /// The binary is built to: `{temp_dir}/adk-studio-builds/_shared_target/debug/{project_name}`
-fn get_project_binary_path(project_name: &str) -> String {
+pub fn get_project_binary_path(project_name: &str) -> String {
     let project_name = project_name.to_lowercase().replace(' ', "_");
     let shared_target = std::env::temp_dir().join("adk-studio-builds").join("_shared_target");
     let binary = shared_target.join("debug").join(&project_name);
@@ -497,7 +497,7 @@ fn get_project_binary_path(project_name: &str) -> String {
 }
 
 /// Check if a project has been built (binary exists).
-fn is_project_built(project_name: &str) -> bool {
+pub fn is_project_built(project_name: &str) -> bool {
     let binary_path = get_project_binary_path(project_name);
     std::path::Path::new(&binary_path).exists()
 }
@@ -1095,6 +1095,8 @@ pub async fn get_webhook_payload(session_id: &str) -> Option<WebhookPayload> {
 }
 
 /// Check if a session has a pending webhook payload.
+/// Check if a webhook payload exists for a session
+#[allow(dead_code)]
 pub async fn has_webhook_payload(session_id: &str) -> bool {
     let payloads = WEBHOOK_PAYLOADS.read().await;
     payloads.contains_key(session_id)
