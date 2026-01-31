@@ -150,6 +150,8 @@ interface Props {
   autoSendPrompt?: string | null;
   /** Callback when autoSendPrompt has been processed */
   onAutoSendComplete?: () => void;
+  /** Callback to expose cancel function to parent (for Stop button in toolbar) */
+  onCancelReady?: (cancelFn: () => void) => void;
 }
 
 /** Validate workflow and return current state */
@@ -195,6 +197,7 @@ export function TestConsole({
   onInterruptChange,
   autoSendPrompt,
   onAutoSendComplete,
+  onCancelReady,
 }: Props) {
   const { currentProject } = useStore();
   const [messages, setMessages] = useState<Message[]>([]);
@@ -474,11 +477,16 @@ export function TestConsole({
     setLastError(null);
   };
 
-  const handleCancel = () => {
+  const handleCancel = useCallback(() => {
     cancel();
     onFlowPhase?.('idle');
     setRunStatus('idle');
-  };
+  }, [cancel, onFlowPhase]);
+
+  // Expose cancel function to parent (for Stop button in toolbar)
+  useEffect(() => {
+    onCancelReady?.(handleCancel);
+  }, [handleCancel, onCancelReady]);
 
   // v2.0: Clear history (Requirement 13.6)
   const handleClearHistory = () => {

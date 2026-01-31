@@ -127,6 +127,9 @@ export function Canvas() {
   
   // Auto-send prompt state (for Run button to trigger workflow with default prompt)
   const [autoSendPrompt, setAutoSendPrompt] = useState<string | null>(null);
+  
+  // Cancel function ref (exposed by TestConsole for Stop button)
+  const cancelFnRef = useRef<(() => void) | null>(null);
 
   // Execution state (local for now, will be moved to useExecution in later tasks)
   const [flowPhase, setFlowPhase] = useState<FlowPhase>('idle');
@@ -969,8 +972,10 @@ export function Canvas() {
               }, 100);
             }}
             onStop={() => {
-              // Stop is handled by TestConsole's cancel function
-              // This is a visual indicator - actual stop is in console
+              // Call the cancel function exposed by TestConsole
+              if (cancelFnRef.current) {
+                cancelFnRef.current();
+              }
             }}
           />
         </div>
@@ -1053,6 +1058,7 @@ export function Canvas() {
             onInterruptChange={handleInterruptChange}
             autoSendPrompt={autoSendPrompt}
             onAutoSendComplete={() => setAutoSendPrompt(null)}
+            onCancelReady={(fn) => { cancelFnRef.current = fn; }}
           />
         </div>
       )}
