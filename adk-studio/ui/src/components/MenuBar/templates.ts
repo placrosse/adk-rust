@@ -28,13 +28,13 @@ export const TEMPLATES: Template[] = [
     id: 'simple_chat',
     name: 'Simple Chat Agent',
     icon: '💬',
-    description: 'A basic conversational agent',
+    description: 'A basic conversational agent with web search',
     agents: {
       'chat_agent': {
         type: 'llm',
         model: 'gemini-2.0-flash',
-        instruction: 'You are a helpful, friendly assistant. Answer questions clearly and concisely. Be conversational but informative.',
-        tools: [],
+        instruction: 'You are a helpful, friendly assistant. Answer questions clearly and concisely. Use Google Search when you need current information or facts you\'re unsure about. Be conversational but informative.',
+        tools: ['google_search'],
         sub_agents: [],
         position: { x: 0, y: 0 },  // Will be set by auto-layout
       }
