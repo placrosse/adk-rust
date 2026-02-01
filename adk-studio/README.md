@@ -74,6 +74,58 @@ Action nodes are non-LLM programmatic nodes for deterministic workflow operation
 | **Code** | 💻 | Execute custom JavaScript/TypeScript in sandbox |
 | **Database** | 🗄️ | Perform database operations (PostgreSQL, MySQL, MongoDB, Redis) |
 
+#### Trigger Types
+
+The Trigger node supports four trigger types for starting workflows:
+
+| Type | Description | Configuration |
+|------|-------------|---------------|
+| **Manual** | User-initiated via UI | Input label, default prompt |
+| **Webhook** | HTTP endpoint (POST/GET) | Path, method, authentication |
+| **Schedule** | Cron-based timing | Cron expression, timezone, default prompt |
+| **Event** | External system events | Source, event type, JSONPath filter |
+
+##### Webhook Triggers
+
+```bash
+# Trigger via webhook (async - returns session ID)
+curl -X POST "http://localhost:6000/api/projects/{id}/webhook/my-path" \
+  -H "Content-Type: application/json" \
+  -d '{"message": "Hello!"}'
+
+# Trigger via webhook (sync - waits for response)
+curl -X POST "http://localhost:6000/api/projects/{id}/webhook-exec/my-path" \
+  -H "Content-Type: application/json" \
+  -d '{"message": "Hello!"}'
+```
+
+##### Schedule Triggers
+
+Schedule triggers use standard 5-field cron expressions:
+- `* * * * *` - Every minute
+- `0 9 * * *` - Daily at 9 AM
+- `0 0 * * 0` - Weekly on Sunday at midnight
+
+##### Event Triggers
+
+Event triggers match on `source` and `eventType` with optional JSONPath filtering:
+
+```bash
+# Send an event to trigger a workflow
+curl -X POST "http://localhost:6000/api/projects/{id}/events" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "source": "payment-service",
+    "eventType": "payment.completed",
+    "data": {
+      "orderId": "12345",
+      "status": "active"
+    }
+  }'
+```
+
+Event filter example: `$.data.status == 'active'` only triggers when status is "active".
+
 #### Action Node Configuration
 
 All action nodes share standard properties:
@@ -228,6 +280,12 @@ adk-studio/
 | `/api/projects/:id/codegen` | POST | Generate Rust code |
 | `/api/projects/:id/build` | POST | Compile project |
 | `/api/projects/:id/run` | POST | Run built executable |
+| `/api/projects/:id/stream` | GET | SSE stream for chat |
+| `/api/projects/:id/webhook/*path` | POST/GET | Webhook trigger (async) |
+| `/api/projects/:id/webhook-exec/*path` | POST | Webhook trigger (sync) |
+| `/api/projects/:id/webhook-events` | GET | SSE stream for webhook notifications |
+| `/api/projects/:id/events` | POST | Event trigger |
+| `/api/sessions/:id/resume` | POST | Resume interrupted workflow (HITL) |
 | `/api/chat` | POST | Send chat message (SSE stream) |
 
 ## Environment Variables

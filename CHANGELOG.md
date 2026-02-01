@@ -5,6 +5,47 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.3] - 2026-02-01
+
+### ⭐ Highlights
+- **Workflow Triggers**: Complete trigger system for ADK Studio workflows
+- **Webhook Support**: External systems can trigger workflows via HTTP endpoints
+- **Schedule Triggers**: Cron-based scheduled workflow execution
+- **Event Triggers**: Filtered event-driven workflow execution with JSONPath support
+
+### Added
+- **adk-studio**: Webhook trigger endpoints
+  - `POST /api/projects/{id}/webhooks` - Async webhook trigger (returns immediately)
+  - `POST /api/projects/{id}/webhooks/sync` - Sync webhook trigger (waits for completion)
+  - `GET /api/projects/{id}/webhooks` - Webhook trigger via GET request
+  - Webhook payloads stored and passed to workflow execution
+  - SSE notifications for webhook events to UI
+- **adk-studio**: Schedule trigger service
+  - Cron-based scheduling with configurable expressions
+  - `last_executed` tracking for schedule state
+  - `defaultPrompt` field for schedule-triggered workflows
+  - Background scheduler service with automatic trigger detection
+- **adk-studio**: Event trigger endpoints
+  - `POST /api/projects/{id}/events` - Event trigger with source/eventType matching
+  - JSONPath filter support (e.g., `$.data.status == 'active'`)
+  - Filter operates on full event payload (source, eventType, data)
+  - Event payloads passed to workflow execution
+- **adk-studio UI**: Trigger-aware Run button
+  - Detects trigger type and uses appropriate default prompt
+  - Manual trigger: uses `defaultInput`
+  - Webhook trigger: uses `defaultPayload`
+  - Schedule trigger: uses `defaultPrompt`
+  - Event trigger: uses `defaultPayload`
+- **adk-studio UI**: Webhook event notifications
+  - `useWebhookEvents` hook for SSE webhook notifications
+  - Auto-trigger workflow execution on webhook receipt
+  - Visual indicators for webhook/event triggers in console
+
+### Fixed
+- **adk-studio**: Run button now correctly uses trigger-specific default prompts
+- **adk-studio**: `sendingRef` now properly resets on cancel, allowing re-runs
+- **adk-studio**: Cron parsing now uses 6-field format (with seconds) for `cron` crate compatibility
+
 ## [0.2.2] - 2026-01-24
 
 ### ⭐ Highlights
@@ -535,7 +576,8 @@ Initial release - Published to crates.io.
 - Tokio async runtime
 - Google API key for Gemini
 
-[Unreleased]: https://github.com/zavora-ai/adk-rust/compare/v0.2.2...HEAD
+[Unreleased]: https://github.com/zavora-ai/adk-rust/compare/v0.2.3...HEAD
+[0.2.3]: https://github.com/zavora-ai/adk-rust/compare/v0.2.2...v0.2.3
 [0.2.2]: https://github.com/zavora-ai/adk-rust/compare/v0.2.1...v0.2.2
 [0.2.1]: https://github.com/zavora-ai/adk-rust/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/zavora-ai/adk-rust/compare/v0.1.9...v0.2.0
