@@ -118,6 +118,12 @@ Integrate Gemini-related pull requests without breaking existing ADK-Rust behavi
 - Service account convenience constructors now infer `project_id` from JSON and set Vertex config (`us-central1` default).
 - Vertex unsupported operations now return operation-specific `GoogleCloudUnsupported` errors for file/cache APIs.
 - Added unit tests for service-account `project_id` extraction logic.
+- Added Vertex enum interop handling for SDK integer-encoded enums (`finishReason`, safety enums, modality).
+- Fixed Vertex `embedContent` request construction to avoid SDK transport oneof conflict by binding model in URL and sending model-less body payload.
+
+### Completed now (Phase 2)
+
+- PR #28 websocket upgrade (`tokio-tungstenite 0.26`, rustls migration) cherry-picked and validated.
 
 ### Verification run
 
@@ -125,8 +131,12 @@ Integrate Gemini-related pull requests without breaking existing ADK-Rust behavi
 - `cargo check --manifest-path examples/Cargo.toml --example quickstart` (pass)
 - `cargo check --manifest-path examples/Cargo.toml --example graph_gemini` (pass)
 - `cargo test -p adk-model --tests --features gemini --no-run` (pass)
+- `cargo test -p adk-realtime --all-features` (pass)
+- `cargo check --manifest-path examples/Cargo.toml --features realtime-openai --example realtime_basic --example realtime_vad --example realtime_tools --example realtime_handoff --example eval_realtime` (pass)
+- Live Vertex smoke with ADC:
+  - `generateContent` (pass)
+  - `embedContent` reaches Vertex and authenticates; current tested publisher embedding models are rejected in `us-central1` for this project (`INVALID_ARGUMENT`, model not supported).
 
 ### Still pending from roadmap
 
-- PR #28 independent merge and validation
 - PR #30 replacement PR with compatibility-safe retry design

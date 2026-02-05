@@ -26,7 +26,7 @@
 
 #![allow(clippy::enum_variant_names)]
 
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Serialize, de};
 
 /// Role of a message in a conversation
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -247,7 +247,7 @@ impl Message {
 }
 
 /// Content modality type - specifies the format of model output
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, PartialEq)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum Modality {
     /// Default value.
@@ -263,6 +263,48 @@ pub enum Modality {
     /// Indicates document content (PDFs, etc.)
     Document,
     /// Unknown or future modality types
-    #[serde(other)]
     Unknown,
+}
+
+impl Modality {
+    fn from_wire_str(value: &str) -> Self {
+        match value {
+            "MODALITY_UNSPECIFIED" => Self::ModalityUnspecified,
+            "TEXT" => Self::Text,
+            "IMAGE" => Self::Image,
+            "AUDIO" => Self::Audio,
+            "VIDEO" => Self::Video,
+            "DOCUMENT" => Self::Document,
+            _ => Self::Unknown,
+        }
+    }
+
+    fn from_wire_number(value: i64) -> Self {
+        match value {
+            0 => Self::ModalityUnspecified,
+            1 => Self::Text,
+            2 => Self::Image,
+            3 => Self::Video,
+            4 => Self::Audio,
+            5 => Self::Document,
+            _ => Self::Unknown,
+        }
+    }
+}
+
+impl<'de> Deserialize<'de> for Modality {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        let value = serde_json::Value::deserialize(deserializer)?;
+        match value {
+            serde_json::Value::String(s) => Ok(Self::from_wire_str(&s)),
+            serde_json::Value::Number(n) => n
+                .as_i64()
+                .map(Self::from_wire_number)
+                .ok_or_else(|| de::Error::custom("modality must be an integer-compatible number")),
+            _ => Err(de::Error::custom("modality must be a string or integer")),
+        }
+    }
 }

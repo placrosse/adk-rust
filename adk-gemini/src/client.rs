@@ -171,6 +171,14 @@ pub enum Error {
         source: google_cloud_auth::build_errors::Error,
     },
 
+    #[snafu(display("failed to obtain google cloud auth headers"))]
+    GoogleCloudCredentialHeaders {
+        source: google_cloud_auth::errors::CredentialsError,
+    },
+
+    #[snafu(display("google cloud credentials returned NotModified without cached headers"))]
+    GoogleCloudCredentialHeadersUnavailable,
+
     #[snafu(display("failed to parse google cloud credentials JSON"))]
     GoogleCloudCredentialParse {
         source: serde_json::Error,
@@ -221,7 +229,9 @@ pub enum Error {
     #[snafu(display("api key is required for this configuration"))]
     MissingApiKey,
 
-    #[snafu(display("operation '{operation}' is not supported with the google cloud sdk backend (PredictionService currently exposes generateContent/embedContent only)"))]
+    #[snafu(display(
+        "operation '{operation}' is not supported with the google cloud sdk backend (PredictionService currently exposes generateContent/embedContent only)"
+    ))]
     GoogleCloudUnsupported {
         operation: &'static str,
     },
@@ -267,6 +277,8 @@ struct RestClient {
 #[derive(Debug)]
 struct VertexClient {
     prediction: PredictionService,
+    credentials: Credentials,
+    endpoint: String,
 }
 
 #[derive(Debug)]
@@ -302,8 +314,16 @@ impl GeminiClient {
         })
     }
 
-    fn with_vertex<M: Into<Model>>(model: M, prediction: PredictionService) -> Self {
-        Self { model: model.into(), backend: GeminiBackend::Vertex(VertexClient { prediction }) }
+    fn with_vertex<M: Into<Model>>(
+        model: M,
+        prediction: PredictionService,
+        credentials: Credentials,
+        endpoint: String,
+    ) -> Self {
+        Self {
+            model: model.into(),
+            backend: GeminiBackend::Vertex(VertexClient { prediction, credentials, endpoint }),
+        }
     }
 
     /// Check the response status code and return an error if it is not successful
@@ -560,18 +580,61 @@ impl GeminiClient {
         request: EmbedContentRequest,
     ) -> Result<ContentEmbeddingResponse, Error> {
         let vertex = self.vertex_client("embedContent")?;
-        let request = EmbedContentRequest { model: self.model.clone(), ..request };
-        let request_value =
-            serde_json::to_value(&request).context(GoogleCloudRequestSerializeSnafu)?;
-        let request: google_cloud_aiplatform_v1::model::EmbedContentRequest =
-            serde_json::from_value(request_value).context(GoogleCloudRequestDeserializeSnafu)?;
-        let response = vertex
-            .prediction
-            .embed_content()
-            .with_request(request)
+        let content_value =
+            serde_json::to_value(&request.content).context(GoogleCloudRequestSerializeSnafu)?;
+        let content: google_cloud_aiplatform_v1::model::Content =
+            serde_json::from_value(content_value).context(GoogleCloudRequestDeserializeSnafu)?;
+
+        let mut vertex_request =
+            google_cloud_aiplatform_v1::model::EmbedContentRequest::new().set_content(content);
+
+        if let Some(title) = request.title {
+            vertex_request = vertex_request.set_title(title);
+        }
+        if let Some(task_type) = request.task_type {
+            let task_type =
+                google_cloud_aiplatform_v1::model::embed_content_request::EmbeddingTaskType::from(
+                    task_type.as_ref(),
+                );
+            vertex_request = vertex_request.set_task_type(task_type);
+        }
+        if let Some(output_dimensionality) = request.output_dimensionality {
+            vertex_request = vertex_request.set_output_dimensionality(output_dimensionality);
+        }
+
+        // `EmbedContentRequest.model` participates in URI binding oneof semantics in the
+        // generated SDK transport. Sending `model` in both URI and body triggers
+        // INVALID_ARGUMENT, so we bind model in the URL and keep it out of the JSON payload.
+        let url = Url::parse(&format!(
+            "{}/v1/{}:embedContent",
+            vertex.endpoint.trim_end_matches('/'),
+            self.model
+        ))
+        .context(UrlParseSnafu)?;
+
+        let auth_headers = match vertex
+            .credentials
+            .headers(Default::default())
+            .await
+            .context(GoogleCloudCredentialHeadersSnafu)?
+        {
+            google_cloud_auth::credentials::CacheableResource::New { data, .. } => data,
+            google_cloud_auth::credentials::CacheableResource::NotModified => {
+                return GoogleCloudCredentialHeadersUnavailableSnafu.fail();
+            }
+        };
+
+        let response = Client::new()
+            .post(url.clone())
+            .headers(auth_headers)
+            .query(&[("$alt", "json;enum-encoding=int")])
+            .json(&vertex_request)
             .send()
             .await
-            .map_err(|source| Error::GoogleCloudRequest { source })?;
+            .map_err(|source| Error::PerformRequest { source, url })?;
+        let response = Self::check_response(response).await?;
+        let response: google_cloud_aiplatform_v1::model::EmbedContentResponse =
+            response.json().await.context(DecodeResponseSnafu)?;
         let response_value =
             serde_json::to_value(&response).context(GoogleCloudResponseSerializeSnafu)?;
         serde_json::from_value(response_value).context(GoogleCloudResponseDeserializeSnafu)
@@ -1170,9 +1233,17 @@ impl GeminiBuilder {
             };
             let credentials = google_cloud_auth.credentials()?;
             let endpoint = config.endpoint();
-            let prediction = build_vertex_prediction_service(endpoint, credentials)?;
+            let prediction =
+                build_vertex_prediction_service(endpoint.clone(), credentials.clone())?;
 
-            return Ok(Gemini { client: Arc::new(GeminiClient::with_vertex(model, prediction)) });
+            return Ok(Gemini {
+                client: Arc::new(GeminiClient::with_vertex(
+                    model,
+                    prediction,
+                    credentials,
+                    endpoint,
+                )),
+            });
         }
 
         let api_key = self.api_key.ok_or(Error::MissingApiKey)?;
@@ -1475,7 +1546,7 @@ impl Gemini {
 
 #[cfg(test)]
 mod client_tests {
-    use super::{extract_service_account_project_id, Error};
+    use super::{Error, extract_service_account_project_id};
 
     #[test]
     fn extract_service_account_project_id_reads_project_id() {
@@ -1496,13 +1567,15 @@ mod client_tests {
             "private_key_id": "key-id"
         }"#;
 
-        let err = extract_service_account_project_id(json).expect_err("missing project_id should fail");
+        let err =
+            extract_service_account_project_id(json).expect_err("missing project_id should fail");
         assert!(matches!(err, Error::MissingGoogleCloudProjectId));
     }
 
     #[test]
     fn extract_service_account_project_id_invalid_json_errors() {
-        let err = extract_service_account_project_id("not-json").expect_err("invalid json should fail");
+        let err =
+            extract_service_account_project_id("not-json").expect_err("invalid json should fail");
         assert!(matches!(err, Error::GoogleCloudCredentialParse { .. }));
     }
 }

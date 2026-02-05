@@ -1,4 +1,7 @@
-use crate::{FinishReason, FunctionCall, GenerationResponse, Model, Part};
+use crate::{
+    BlockReason, FinishReason, FunctionCall, GenerationResponse, HarmCategory, HarmProbability,
+    Modality, Model, Part,
+};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 
@@ -306,4 +309,22 @@ fn test_content_creation_with_thought_signature() {
     assert!(serialized_thought.contains("thoughtSignature"));
     assert!(serialized_thought.contains("thought_signature_456"));
     assert!(serialized_thought.contains("\"thought\":true"));
+}
+
+#[test]
+fn test_vertex_numeric_enum_deserialization() {
+    let finish_reason: FinishReason = serde_json::from_value(json!(1)).unwrap();
+    assert_eq!(finish_reason, FinishReason::Stop);
+
+    let block_reason: BlockReason = serde_json::from_value(json!(5)).unwrap();
+    assert_eq!(block_reason, BlockReason::ModelArmor);
+
+    let harm_category: HarmCategory = serde_json::from_value(json!(1)).unwrap();
+    assert_eq!(harm_category, HarmCategory::HateSpeech);
+
+    let harm_probability: HarmProbability = serde_json::from_value(json!(3)).unwrap();
+    assert_eq!(harm_probability, HarmProbability::Medium);
+
+    let modality: Modality = serde_json::from_value(json!(4)).unwrap();
+    assert_eq!(modality, Modality::Audio);
 }
