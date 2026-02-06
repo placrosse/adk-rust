@@ -14,7 +14,7 @@ readme = "README.md"
 
 [features]
 default = []
-sso = ["jsonwebtoken", "reqwest", "dashmap", "base64"]
+sso = ["reqwest", "dashmap", "base64"]
 
 [dependencies]
 adk-core.workspace = true
