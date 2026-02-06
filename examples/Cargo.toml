@@ -73,6 +73,22 @@ name = "structured_output"
 path = "structured_output/main.rs"
 
 [[example]]
+name = "roadmap_gemini_compat"
+path = "roadmap_gemini_compat/main.rs"
+
+[[example]]
+name = "roadmap_vertex_auth"
+path = "roadmap_vertex_auth/main.rs"
+
+[[example]]
+name = "roadmap_gemini_sdk"
+path = "roadmap_gemini_sdk/main.rs"
+
+[[example]]
+name = "roadmap_retry_matrix"
+path = "roadmap_retry_matrix/main.rs"
+
+[[example]]
 name = "openai_basic"
 path = "openai_basic/main.rs"
 required-features = ["openai"]
@@ -523,6 +539,7 @@ sso = ["adk-auth/sso"]
 adk-core.workspace = true
 adk-agent.workspace = true
 adk-model.workspace = true
+adk-gemini.workspace = true
 adk-tool.workspace = true
 adk-cli.workspace = true
 adk-artifact.workspace = true

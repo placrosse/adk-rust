@@ -199,6 +199,7 @@ dependencies = [
  "adk-cli",
  "adk-core",
  "adk-eval",
+ "adk-gemini",
  "adk-graph",
  "adk-guardrail",
  "adk-memory",

@@ -9,6 +9,10 @@ Each example is in its own directory with a `main.rs` file:
 ```
 examples/
 ├── quickstart/              # Simple weather agent
+├── roadmap_gemini_compat/   # Sync Gemini constructor + additive retry
+├── roadmap_vertex_auth/     # Vertex auth modes (API key / ADC / SA / WIF)
+├── roadmap_gemini_sdk/      # adk-gemini v1 + Vertex SDK surface
+├── roadmap_retry_matrix/    # Standardized retry across providers
 ├── function_tool/           # Custom function tool
 ├── multiple_tools/          # Agent composition
 ├── server/                  # REST API server
@@ -97,6 +101,48 @@ All examples can be run with:
 ```bash
 cargo run --example <example_name>
 ```
+
+## Roadmap Feature Examples
+
+These examples were added to showcase the Gemini/Vertex roadmap changes:
+
+### roadmap_gemini_compat
+Backward-compatible sync `GeminiModel::new` plus additive retry config.
+```bash
+cargo run --example roadmap_gemini_compat
+```
+Required: `GOOGLE_API_KEY` (or `GEMINI_API_KEY`).
+
+### roadmap_vertex_auth
+Vertex auth mode matrix through `GeminiModel` constructors:
+- `ROADMAP_VERTEX_MODE=api_key`
+- `ROADMAP_VERTEX_MODE=adc`
+- `ROADMAP_VERTEX_MODE=service_account`
+- `ROADMAP_VERTEX_MODE=wif`
+
+```bash
+cargo run --example roadmap_vertex_auth
+```
+
+### roadmap_gemini_sdk
+Direct `adk-gemini` usage for v1 helpers and Vertex SDK-backed paths.
+```bash
+cargo run --example roadmap_gemini_sdk
+```
+Mode is selected with `ROADMAP_SDK_MODE`:
+- `v1_api_key` (default)
+- `vertex_api_key`
+- `vertex_adc`
+- `vertex_service_account`
+- `vertex_wif`
+
+### roadmap_retry_matrix
+Shared retry policy applied across providers (Gemini, OpenAI, Anthropic, DeepSeek, Groq).
+```bash
+cargo run --example roadmap_retry_matrix
+cargo run --example roadmap_retry_matrix --features openai,anthropic,deepseek,groq
+```
+Optional live call selector: `ROADMAP_RUN_PROVIDER=gemini|openai|anthropic|deepseek|groq`
 
 ## Available Examples
 
@@ -453,6 +499,7 @@ Demonstrates: Custom rubrics, weighted criteria.
 | **Servers** | 3 | server, a2a, web |
 | **Workflows** | 4 | sequential, sequential_code, parallel, loop_workflow |
 | **Tools** | 2 | load_artifacts, mcp |
+| **Roadmap** | 4 | roadmap_gemini_compat, roadmap_vertex_auth, roadmap_gemini_sdk, roadmap_retry_matrix |
 | **Full-Stack** | 1 | research_paper |
 | **OpenAI** | 4+ | openai_basic, openai_tools, openai_multimodal, etc. |
 | **Anthropic** | 2 | anthropic_basic, anthropic_tools |
@@ -462,7 +509,7 @@ Demonstrates: Custom rubrics, weighted criteria.
 | **Graph** | 9 | graph_workflow, graph_react, graph_supervisor, etc. |
 | **Browser** | 5 | browser_basic, browser_agent, browser_interactive, etc. |
 | **Evaluation** | 11 | eval_basic, eval_trajectory, eval_semantic, etc. |
-| **Total** | **55+** | |
+| **Total** | **59+** | |
 
 ## Parity with Go ADK
 

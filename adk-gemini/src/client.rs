@@ -554,6 +554,7 @@ impl GeminiClient {
         request: GenerateContentRequest,
     ) -> Result<GenerationResponse, Error> {
         let vertex = self.vertex_client("generateContent")?;
+        let rest_request = request.clone();
         let mut request_value =
             serde_json::to_value(&request).context(GoogleCloudRequestSerializeSnafu)?;
         let model = self.model.to_string();
@@ -563,16 +564,71 @@ impl GeminiClient {
 
         let request: google_cloud_aiplatform_v1::model::GenerateContentRequest =
             serde_json::from_value(request_value).context(GoogleCloudRequestDeserializeSnafu)?;
-        let response = vertex
-            .prediction
-            .generate_content()
-            .with_request(request)
-            .send()
-            .await
-            .map_err(|source| Error::GoogleCloudRequest { source })?;
+        let response = match vertex.prediction.generate_content().with_request(request).send().await
+        {
+            Ok(response) => response,
+            Err(source) => {
+                if Self::is_vertex_transport_error_message(&source.to_string()) {
+                    tracing::warn!(
+                        error = %source,
+                        "Vertex SDK transport error on generateContent; falling back to REST"
+                    );
+                    return self.generate_content_vertex_rest(vertex, rest_request).await;
+                }
+                return Err(Error::GoogleCloudRequest { source });
+            }
+        };
         let response_value =
             serde_json::to_value(&response).context(GoogleCloudResponseSerializeSnafu)?;
         serde_json::from_value(response_value).context(GoogleCloudResponseDeserializeSnafu)
+    }
+
+    async fn generate_content_vertex_rest(
+        &self,
+        vertex: &VertexClient,
+        request: GenerateContentRequest,
+    ) -> Result<GenerationResponse, Error> {
+        let url = Url::parse(&format!(
+            "{}/v1/{}:generateContent",
+            vertex.endpoint.trim_end_matches('/'),
+            self.model
+        ))
+        .context(UrlParseSnafu)?;
+
+        let auth_headers = match vertex
+            .credentials
+            .headers(Default::default())
+            .await
+            .context(GoogleCloudCredentialHeadersSnafu)?
+        {
+            google_cloud_auth::credentials::CacheableResource::New { data, .. } => data,
+            google_cloud_auth::credentials::CacheableResource::NotModified => {
+                return GoogleCloudCredentialHeadersUnavailableSnafu.fail();
+            }
+        };
+
+        let response = Client::new()
+            .post(url.clone())
+            .headers(auth_headers)
+            .query(&[("$alt", "json;enum-encoding=int")])
+            .json(&request)
+            .send()
+            .await
+            .map_err(|source| Error::PerformRequest { source, url })?;
+        let response = Self::check_response(response).await?;
+        let response: google_cloud_aiplatform_v1::model::GenerateContentResponse =
+            response.json().await.context(DecodeResponseSnafu)?;
+        let response_value =
+            serde_json::to_value(&response).context(GoogleCloudResponseSerializeSnafu)?;
+        serde_json::from_value(response_value).context(GoogleCloudResponseDeserializeSnafu)
+    }
+
+    fn is_vertex_transport_error_message(message: &str) -> bool {
+        let normalized = message.to_ascii_lowercase();
+        normalized.contains("transport reports an error")
+            || normalized.contains("http2 error")
+            || normalized.contains("client error (sendrequest)")
+            || normalized.contains("stream error")
     }
 
     async fn embed_content_vertex(
@@ -1546,7 +1602,7 @@ impl Gemini {
 
 #[cfg(test)]
 mod client_tests {
-    use super::{Error, extract_service_account_project_id};
+    use super::{Error, GeminiClient, extract_service_account_project_id};
 
     #[test]
     fn extract_service_account_project_id_reads_project_id() {
@@ -1577,5 +1633,15 @@ mod client_tests {
         let err =
             extract_service_account_project_id("not-json").expect_err("invalid json should fail");
         assert!(matches!(err, Error::GoogleCloudCredentialParse { .. }));
+    }
+
+    #[test]
+    fn vertex_transport_error_detection_matches_http2_failure() {
+        assert!(GeminiClient::is_vertex_transport_error_message(
+            "the transport reports an error: client error (SendRequest): http2 error"
+        ));
+        assert!(!GeminiClient::is_vertex_transport_error_message(
+            "permission denied"
+        ));
     }
 }
