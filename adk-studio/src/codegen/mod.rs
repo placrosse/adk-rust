@@ -2977,6 +2977,367 @@ fn generate_action_node_function(
 
             code.push_str("    });\n\n");
         }
+        ActionNodeConfig::Email(config) => {
+            code.push_str(&format!("    // Action Node: {} (Email - {:?})\n", config.standard.name, config.mode));
+            code.push_str(&format!("    let {}_node = adk_graph::node::FunctionNode::new(\"{}\", |ctx| async move {{\n", node_id, node_id));
+
+            let output_key = if config.standard.mapping.output_key.is_empty() {
+                "emailResult"
+            } else {
+                &config.standard.mapping.output_key
+            };
+
+            match config.mode {
+                crate::codegen::action_node_types::EmailMode::Send => {
+                    if let (Some(smtp), Some(recipients), Some(content)) = (&config.smtp, &config.recipients, &config.content) {
+                        // Variable interpolation helper for subject and body
+                        code.push_str("        // Build email content with variable interpolation\n");
+
+                        // Subject interpolation
+                        let subject = &content.subject;
+                        if subject.contains("{{") {
+                            code.push_str(&format!(
+                                "        let mut subject = \"{}\".to_string();\n",
+                                subject.replace('"', "\\\"")
+                            ));
+                            code.push_str("        for (k, v) in ctx.state.iter() {\n");
+                            code.push_str("            let pattern = format!(\"{{{{{}}}}}\", k);\n");
+                            code.push_str("            if let Some(s) = v.as_str() {\n");
+                            code.push_str("                subject = subject.replace(&pattern, s);\n");
+                            code.push_str("            } else {\n");
+                            code.push_str("                subject = subject.replace(&pattern, &v.to_string());\n");
+                            code.push_str("            }\n");
+                            code.push_str("        }\n");
+                        } else {
+                            code.push_str(&format!(
+                                "        let subject = \"{}\".to_string();\n",
+                                subject.replace('"', "\\\"")
+                            ));
+                        }
+
+                        // Body interpolation
+                        let body = &content.body;
+                        if body.contains("{{") {
+                            code.push_str(&format!(
+                                "        let mut body = \"{}\".to_string();\n",
+                                body.replace('"', "\\\"").replace('\n', "\\n")
+                            ));
+                            code.push_str("        for (k, v) in ctx.state.iter() {\n");
+                            code.push_str("            let pattern = format!(\"{{{{{}}}}}\", k);\n");
+                            code.push_str("            if let Some(s) = v.as_str() {\n");
+                            code.push_str("                body = body.replace(&pattern, s);\n");
+                            code.push_str("            } else {\n");
+                            code.push_str("                body = body.replace(&pattern, &v.to_string());\n");
+                            code.push_str("            }\n");
+                            code.push_str("        }\n");
+                        } else {
+                            code.push_str(&format!(
+                                "        let body = \"{}\".to_string();\n",
+                                body.replace('"', "\\\"").replace('\n', "\\n")
+                            ));
+                        }
+
+                        // Build the email message
+                        let from_addr = if let Some(ref name) = smtp.from_name {
+                            format!("{} <{}>", name.replace('"', "\\\""), smtp.from_email.replace('"', "\\\""))
+                        } else {
+                            smtp.from_email.replace('"', "\\\"")
+                        };
+
+                        code.push_str(&format!(
+                            "        let from = \"{}\".parse::<lettre::message::Mailbox>()\n",
+                            from_addr
+                        ));
+                        code.push_str("            .map_err(|e| adk_graph::GraphError::NodeExecutionFailed { node: \"email\".into(), message: format!(\"Invalid from address: {}\", e) })?;\n");
+
+                        // To recipients
+                        code.push_str(&format!(
+                            "        let to_addrs = \"{}\".to_string();\n",
+                            recipients.to.replace('"', "\\\"")
+                        ));
+
+                        code.push_str("        let mut email_builder = lettre::Message::builder()\n");
+                        code.push_str("            .from(from)\n");
+                        code.push_str("            .subject(&subject);\n");
+
+                        // Add To recipients (comma-separated)
+                        code.push_str("        for addr in to_addrs.split(',').map(|s| s.trim()).filter(|s| !s.is_empty()) {\n");
+                        code.push_str("            if let Ok(mbox) = addr.parse::<lettre::message::Mailbox>() {\n");
+                        code.push_str("                email_builder = email_builder.to(mbox);\n");
+                        code.push_str("            }\n");
+                        code.push_str("        }\n");
+
+                        // CC recipients
+                        if let Some(ref cc) = recipients.cc {
+                            if !cc.is_empty() {
+                                code.push_str(&format!(
+                                    "        for addr in \"{}\".split(',').map(|s| s.trim()).filter(|s| !s.is_empty()) {{\n",
+                                    cc.replace('"', "\\\"")
+                                ));
+                                code.push_str("            if let Ok(mbox) = addr.parse::<lettre::message::Mailbox>() {\n");
+                                code.push_str("                email_builder = email_builder.cc(mbox);\n");
+                                code.push_str("            }\n");
+                                code.push_str("        }\n");
+                            }
+                        }
+
+                        // BCC recipients
+                        if let Some(ref bcc) = recipients.bcc {
+                            if !bcc.is_empty() {
+                                code.push_str(&format!(
+                                    "        for addr in \"{}\".split(',').map(|s| s.trim()).filter(|s| !s.is_empty()) {{\n",
+                                    bcc.replace('"', "\\\"")
+                                ));
+                                code.push_str("            if let Ok(mbox) = addr.parse::<lettre::message::Mailbox>() {\n");
+                                code.push_str("                email_builder = email_builder.bcc(mbox);\n");
+                                code.push_str("            }\n");
+                                code.push_str("        }\n");
+                            }
+                        }
+
+                        // Build message body based on type
+                        match content.body_type {
+                            crate::codegen::action_node_types::EmailBodyType::Html => {
+                                code.push_str("        let email = email_builder\n");
+                                code.push_str("            .header(lettre::message::header::ContentType::TEXT_HTML)\n");
+                                code.push_str("            .body(body.clone())\n");
+                                code.push_str("            .map_err(|e| adk_graph::GraphError::NodeExecutionFailed { node: \"email\".into(), message: format!(\"Failed to build email: {}\", e) })?;\n");
+                            }
+                            _ => {
+                                code.push_str("        let email = email_builder\n");
+                                code.push_str("            .header(lettre::message::header::ContentType::TEXT_PLAIN)\n");
+                                code.push_str("            .body(body.clone())\n");
+                                code.push_str("            .map_err(|e| adk_graph::GraphError::NodeExecutionFailed { node: \"email\".into(), message: format!(\"Failed to build email: {}\", e) })?;\n");
+                            }
+                        }
+
+                        // SMTP transport — connection string with variable interpolation for password
+                        let host = smtp.host.replace('"', "\\\"");
+                        let username = smtp.username.replace('"', "\\\"");
+                        let password = smtp.password.replace('"', "\\\"");
+
+                        // Support password from state via {{variable}}
+                        if password.contains("{{") {
+                            code.push_str(&format!(
+                                "        let mut smtp_password = \"{}\".to_string();\n",
+                                password
+                            ));
+                            code.push_str("        for (k, v) in ctx.state.iter() {\n");
+                            code.push_str("            let pattern = format!(\"{{{{{}}}}}\", k);\n");
+                            code.push_str("            if let Some(s) = v.as_str() {\n");
+                            code.push_str("                smtp_password = smtp_password.replace(&pattern, s);\n");
+                            code.push_str("            }\n");
+                            code.push_str("        }\n");
+                        } else {
+                            code.push_str(&format!(
+                                "        let smtp_password = \"{}\".to_string();\n",
+                                password
+                            ));
+                        }
+
+                        code.push_str("        use lettre::Transport;\n");
+
+                        if smtp.secure {
+                            code.push_str(&format!(
+                                "        let transport = lettre::SmtpTransport::relay(\"{}\")\n",
+                                host
+                            ));
+                            code.push_str("            .map_err(|e| adk_graph::GraphError::NodeExecutionFailed { node: \"email\".into(), message: format!(\"SMTP relay failed: {}\", e) })?\n");
+                            code.push_str(&format!(
+                                "            .port({})\n",
+                                smtp.port
+                            ));
+                            code.push_str(&format!(
+                                "            .credentials(lettre::transport::smtp::authentication::Credentials::new(\"{}\".to_string(), smtp_password))\n",
+                                username
+                            ));
+                            code.push_str("            .build();\n");
+                        } else {
+                            code.push_str(&format!(
+                                "        let transport = lettre::SmtpTransport::builder_dangerous(\"{}\")\n",
+                                host
+                            ));
+                            code.push_str(&format!(
+                                "            .port({})\n",
+                                smtp.port
+                            ));
+                            code.push_str(&format!(
+                                "            .credentials(lettre::transport::smtp::authentication::Credentials::new(\"{}\".to_string(), smtp_password))\n",
+                                username
+                            ));
+                            code.push_str("            .build();\n");
+                        }
+
+                        // Send the email
+                        code.push_str("        match transport.send(&email) {\n");
+                        code.push_str("            Ok(response) => {\n");
+                        code.push_str(&format!(
+                            "                Ok(NodeOutput::new().with_update(\"{}\", json!({{\n",
+                            output_key
+                        ));
+                        code.push_str("                    \"sent\": true,\n");
+                        code.push_str("                    \"message\": format!(\"Email sent successfully: {:?}\", response),\n");
+                        code.push_str(&format!(
+                            "                    \"to\": \"{}\",\n",
+                            recipients.to.replace('"', "\\\"")
+                        ));
+                        code.push_str("                    \"subject\": subject\n");
+                        code.push_str("                })))\n");
+                        code.push_str("            }\n");
+                        code.push_str("            Err(e) => {\n");
+                        code.push_str(&format!(
+                            "                Ok(NodeOutput::new().with_update(\"{}\", json!({{\n",
+                            output_key
+                        ));
+                        code.push_str("                    \"sent\": false,\n");
+                        code.push_str("                    \"error\": format!(\"Failed to send email: {}\", e)\n");
+                        code.push_str("                })))\n");
+                        code.push_str("            }\n");
+                        code.push_str("        }\n");
+                    } else {
+                        code.push_str(&format!(
+                            "        Ok(NodeOutput::new().with_update(\"{}\", json!({{ \"error\": true, \"message\": \"Email send mode requires smtp, recipients, and content configuration\" }})))\n",
+                            output_key
+                        ));
+                    }
+                }
+                crate::codegen::action_node_types::EmailMode::Monitor => {
+                    // IMAP monitoring — check for new emails matching filters
+                    if let Some(imap_cfg) = &config.imap {
+                        let host = imap_cfg.host.replace('"', "\\\"");
+                        let username = imap_cfg.username.replace('"', "\\\"");
+                        let password = imap_cfg.password.replace('"', "\\\"");
+                        let folder = imap_cfg.folder.replace('"', "\\\"");
+
+                        // Password interpolation
+                        if password.contains("{{") {
+                            code.push_str(&format!(
+                                "        let mut imap_password = \"{}\".to_string();\n",
+                                password
+                            ));
+                            code.push_str("        for (k, v) in ctx.state.iter() {\n");
+                            code.push_str("            let pattern = format!(\"{{{{{}}}}}\", k);\n");
+                            code.push_str("            if let Some(s) = v.as_str() {\n");
+                            code.push_str("                imap_password = imap_password.replace(&pattern, s);\n");
+                            code.push_str("            }\n");
+                            code.push_str("        }\n");
+                        } else {
+                            code.push_str(&format!(
+                                "        let imap_password = \"{}\".to_string();\n",
+                                password
+                            ));
+                        }
+
+                        // Connect to IMAP
+                        if imap_cfg.secure {
+                            code.push_str(&format!(
+                                "        let tls = native_tls::TlsConnector::builder().build()\n"
+                            ));
+                            code.push_str("            .map_err(|e| adk_graph::GraphError::NodeExecutionFailed { node: \"email\".into(), message: format!(\"TLS error: {}\", e) })?;\n");
+                            code.push_str(&format!(
+                                "        let client = imap::ClientBuilder::new(\"{}\", {}).native_tls(tls)\n",
+                                host, imap_cfg.port
+                            ));
+                            code.push_str("            .map_err(|e| adk_graph::GraphError::NodeExecutionFailed { node: \"email\".into(), message: format!(\"IMAP connection failed: {}\", e) })?;\n");
+                        } else {
+                            code.push_str(&format!(
+                                "        let client = imap::ClientBuilder::new(\"{}\", {}).connect()\n",
+                                host, imap_cfg.port
+                            ));
+                            code.push_str("            .map_err(|e| adk_graph::GraphError::NodeExecutionFailed { node: \"email\".into(), message: format!(\"IMAP connection failed: {}\", e) })?;\n");
+                        }
+
+                        // Login
+                        code.push_str(&format!(
+                            "        let mut session = client.login(\"{}\", &imap_password)\n",
+                            username
+                        ));
+                        code.push_str("            .map_err(|e| adk_graph::GraphError::NodeExecutionFailed { node: \"email\".into(), message: format!(\"IMAP login failed: {:?}\", e.0) })?;\n");
+
+                        // Select folder
+                        code.push_str(&format!(
+                            "        session.select(\"{}\")\n",
+                            folder
+                        ));
+                        code.push_str("            .map_err(|e| adk_graph::GraphError::NodeExecutionFailed { node: \"email\".into(), message: format!(\"Folder select failed: {}\", e) })?;\n");
+
+                        // Build search query from filters
+                        let mut search_criteria = Vec::new();
+                        if let Some(ref filters) = config.filters {
+                            if filters.unread_only {
+                                search_criteria.push("UNSEEN".to_string());
+                            }
+                            if let Some(ref from) = filters.from {
+                                if !from.is_empty() {
+                                    search_criteria.push(format!("FROM \\\"{}\\\"", from.replace('"', "\\\\\\\"")));
+                                }
+                            }
+                            if let Some(ref subject) = filters.subject {
+                                if !subject.is_empty() {
+                                    search_criteria.push(format!("SUBJECT \\\"{}\\\"", subject.replace('"', "\\\\\\\"")));
+                                }
+                            }
+                        }
+                        let search_str = if search_criteria.is_empty() {
+                            "ALL".to_string()
+                        } else {
+                            search_criteria.join(" ")
+                        };
+
+                        code.push_str(&format!(
+                            "        let messages = session.search(\"{}\")\n",
+                            search_str
+                        ));
+                        code.push_str("            .map_err(|e| adk_graph::GraphError::NodeExecutionFailed { node: \"email\".into(), message: format!(\"IMAP search failed: {}\", e) })?;\n");
+
+                        // Fetch message details
+                        code.push_str("        let mut emails: Vec<serde_json::Value> = Vec::new();\n");
+                        code.push_str("        if !messages.is_empty() {\n");
+                        code.push_str("            let seq_set: Vec<String> = messages.iter().map(|id| id.to_string()).collect();\n");
+                        code.push_str("            let fetch_range = seq_set.join(\",\");\n");
+                        code.push_str("            if let Ok(fetched) = session.fetch(&fetch_range, \"(RFC822.HEADER BODY[TEXT])\") {\n");
+                        code.push_str("                for msg in fetched.iter() {\n");
+                        code.push_str("                    let header = msg.header().map(|h| String::from_utf8_lossy(h).to_string()).unwrap_or_default();\n");
+                        code.push_str("                    let body_text = msg.text().map(|b| String::from_utf8_lossy(b).to_string()).unwrap_or_default();\n");
+                        code.push_str("                    // Parse basic headers\n");
+                        code.push_str("                    let from_line = header.lines().find(|l| l.starts_with(\"From:\")).map(|l| l[5..].trim().to_string()).unwrap_or_default();\n");
+                        code.push_str("                    let subject_line = header.lines().find(|l| l.starts_with(\"Subject:\")).map(|l| l[8..].trim().to_string()).unwrap_or_default();\n");
+                        code.push_str("                    let date_line = header.lines().find(|l| l.starts_with(\"Date:\")).map(|l| l[5..].trim().to_string()).unwrap_or_default();\n");
+                        code.push_str("                    emails.push(json!({\n");
+                        code.push_str("                        \"from\": from_line,\n");
+                        code.push_str("                        \"subject\": subject_line,\n");
+                        code.push_str("                        \"date\": date_line,\n");
+                        code.push_str("                        \"body\": body_text,\n");
+                        code.push_str("                        \"uid\": msg.message\n");
+                        code.push_str("                    }));\n");
+                        code.push_str("                }\n");
+                        code.push_str("            }\n");
+
+                        // Mark as read if configured
+                        if imap_cfg.mark_as_read {
+                            code.push_str("            // Mark fetched messages as read\n");
+                            code.push_str("            let _ = session.store(&fetch_range, \"+FLAGS (\\\\Seen)\");\n");
+                        }
+
+                        code.push_str("        }\n");
+                        code.push_str("        let _ = session.logout();\n");
+
+                        code.push_str("        let email_count = emails.len();\n");
+                        code.push_str(&format!(
+                            "        Ok(NodeOutput::new().with_update(\"{}\", json!({{ \"emails\": emails, \"count\": email_count }})))\n",
+                            output_key
+                        ));
+                    } else {
+                        code.push_str(&format!(
+                            "        Ok(NodeOutput::new().with_update(\"{}\", json!({{ \"error\": true, \"message\": \"Email monitor mode requires IMAP configuration\" }})))\n",
+                            output_key
+                        ));
+                    }
+                }
+            }
+
+            code.push_str("    });\n\n");
+        }
         // Other action node types can be added here
         _ => {
             // For unsupported action nodes, generate a pass-through node
@@ -3023,6 +3384,8 @@ fn generate_cargo_toml(project: &ProjectSchema) -> String {
     };
     let needs_lettre = code_uses("lettre::");
     let needs_base64 = code_uses("base64::");
+    let needs_imap = code_uses("imap::");
+    let needs_native_tls = code_uses("native_tls::");
 
     // Database dependencies based on action node db_type
     let (needs_sqlx_pg, needs_sqlx_mysql, needs_sqlx_sqlite, needs_mongodb, needs_redis) = {
@@ -3103,6 +3466,12 @@ uuid = {{ version = "1", features = ["v4"] }}
     }
     if needs_base64 {
         deps.push_str("base64 = \"0.21\"\n");
+    }
+    if needs_imap {
+        deps.push_str("imap = \"3\"\n");
+    }
+    if needs_native_tls {
+        deps.push_str("native-tls = \"0.2\"\n");
     }
 
     // Database dependencies
