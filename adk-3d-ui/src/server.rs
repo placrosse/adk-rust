@@ -217,6 +217,12 @@ async fn publish_plan_for_prompt(
     prompt: &str,
     reply_to: Option<u64>,
 ) {
+    let run_token = state
+        .sessions
+        .bump_run_token(session_id)
+        .await
+        .unwrap_or(0);
+
     let _ = state
         .sessions
         .set_last_prompt(session_id, prompt.to_string())
@@ -336,6 +342,7 @@ async fn publish_plan_for_prompt(
             state.clone(),
             session_id.to_string(),
             plan.nodes.iter().map(|n| n.id.clone()).collect(),
+            run_token,
         );
     }
 }
@@ -408,7 +415,12 @@ async fn publish_focus_patch_for_selection(
         .await;
 }
 
-fn spawn_live_status_patch_loop(state: AppState, session_id: String, node_ids: Vec<String>) {
+fn spawn_live_status_patch_loop(
+    state: AppState,
+    session_id: String,
+    node_ids: Vec<String>,
+    run_token: u64,
+) {
     tokio::spawn(async move {
         let phases = [
             ["healthy", "warning", "degraded"],
@@ -417,6 +429,10 @@ fn spawn_live_status_patch_loop(state: AppState, session_id: String, node_ids: V
         ];
 
         for phase in phases {
+            let current_token = state.sessions.current_run_token(&session_id).await.unwrap_or(0);
+            if current_token != run_token {
+                return;
+            }
             tokio::time::sleep(Duration::from_millis(900)).await;
             let mut ops = Vec::new();
             for (idx, node_id) in node_ids.iter().enumerate() {
@@ -440,6 +456,10 @@ fn spawn_live_status_patch_loop(state: AppState, session_id: String, node_ids: V
                 .await;
         }
 
+        let current_token = state.sessions.current_run_token(&session_id).await.unwrap_or(0);
+        if current_token != run_token {
+            return;
+        }
         let _ = state
             .sessions
             .publish(

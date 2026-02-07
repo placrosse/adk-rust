@@ -217,6 +217,10 @@
       let opsApplied = 0;
       let pendingActionId = null;
       let pendingActionRisk = null;
+      let lastEventAt = Date.now();
+      let reconnectAttempts = 0;
+      let reconnectTimer = null;
+      let watchdogTimer = null;
 
       const scene = new THREE.Scene();
       const camera = new THREE.PerspectiveCamera(58, 1, 0.1, 200);
@@ -261,6 +265,27 @@
         const timestamp = new Date().toISOString();
         const payload = data ? `\n${JSON.stringify(data, null, 2)}` : "";
         logEl.textContent = `[${timestamp}] ${line}${payload}\n\n` + logEl.textContent;
+      }
+
+      function setStatus(text) {
+        statusEl.textContent = text;
+      }
+
+      function markEvent() {
+        lastEventAt = Date.now();
+      }
+
+      function startWatchdog() {
+        if (watchdogTimer) {
+          clearInterval(watchdogTimer);
+        }
+        watchdogTimer = setInterval(() => {
+          const active = statusEl.textContent === "running" || statusEl.textContent === "streaming";
+          if (active && Date.now() - lastEventAt > 15000) {
+            setStatus("timeout");
+            log("stream.timeout", { message: "No SSE activity for 15s." });
+          }
+        }, 3000);
       }
 
       function setPendingAction(actionId, risk) {
@@ -718,22 +743,33 @@
         if (eventSource) {
           eventSource.close();
         }
-        statusEl.textContent = "streaming";
+        if (reconnectTimer) {
+          clearTimeout(reconnectTimer);
+          reconnectTimer = null;
+        }
+        setStatus("streaming");
+        markEvent();
         eventSource = new EventSource(`/api/3d/stream/${sessionId}`);
+        eventSource.onopen = () => {
+          reconnectAttempts = 0;
+          setStatus("streaming");
+          markEvent();
+        };
 
         for (const eventName of ["ui_ops", "toast", "done", "error", "ping", "log"]) {
           eventSource.addEventListener(eventName, (evt) => {
             try {
               const data = JSON.parse(evt.data);
+              markEvent();
               if (eventName === "ui_ops") {
                 const ops = parseOpsFromEnvelope(data);
                 applyOps(ops);
               }
               if (eventName === "done") {
-                statusEl.textContent = "done";
+                setStatus("done");
               }
               if (eventName === "error") {
-                statusEl.textContent = "error";
+                setStatus("error");
               }
               log(`sse.${eventName}`, data);
             } catch {
@@ -743,8 +779,22 @@
         }
 
         eventSource.onerror = () => {
-          statusEl.textContent = "disconnected";
+          setStatus("disconnected");
           log("sse.error", { message: "connection dropped" });
+          if (eventSource) {
+            eventSource.close();
+          }
+          if (reconnectAttempts >= 5) {
+            setStatus("failed");
+            log("sse.reconnect", { message: "max retries reached" });
+            return;
+          }
+          reconnectAttempts += 1;
+          const delayMs = Math.min(1200 * reconnectAttempts, 6000);
+          setStatus("reconnecting");
+          reconnectTimer = setTimeout(() => {
+            connectSse();
+          }, delayMs);
         };
       }
 
@@ -770,7 +820,8 @@
         if (!prompt) {
           return;
         }
-        statusEl.textContent = "running";
+        setStatus("running");
+        markEvent();
         runBtn.disabled = true;
         try {
           const res = await fetch(`/api/3d/run/${sessionId}`, {
@@ -788,6 +839,7 @@
       async function boot() {
         resize();
         requestAnimationFrame(animate);
+        startWatchdog();
         await createSession();
         connectSse();
       }
@@ -806,7 +858,7 @@
       });
 
       boot().catch((err) => {
-        statusEl.textContent = "error";
+        setStatus("error");
         log("boot.error", { message: String(err) });
       });
     </script>

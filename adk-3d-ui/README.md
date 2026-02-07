@@ -12,6 +12,7 @@ This currently includes:
 - Phase 2: prompt-intent planning with session context (last prompt/command/selection)
 - Phase 3 (vertical slice): DevOps-style workbench panel and live status patch loop
 - Phase 4: approval-gated action handling with audit trail and execute/reject outcomes
+- Phase 5 (partial): reconnect/watchdog hardening to reduce stuck streaming states
 
 ## Run
 
@@ -40,6 +41,7 @@ Optional environment variables:
 - `policy.rs` adds risk-tier tagging for action proposals.
 - `server.rs` applies command/select events back into scene patches and short live status updates.
 - `session.rs` stores pending actions and per-session action audit entries.
+- Client runtime includes SSE reconnect retries and inactivity timeout watchdog.
 - Frontend component kinds implemented in v1 runtime:
   - `group`
   - `text3d`

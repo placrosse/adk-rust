@@ -47,6 +47,7 @@ pub struct SessionContext {
     pub last_node_ids: Vec<String>,
     pub pending_action: Option<ProposedAction>,
     pub audit_log: Vec<ActionAuditEntry>,
+    pub run_token: u64,
 }
 
 #[derive(Debug)]
@@ -197,6 +198,20 @@ impl SessionManager {
             ctx.audit_log.drain(0..drain_to);
         }
         Some(())
+    }
+
+    pub async fn bump_run_token(&self, session_id: &str) -> Option<u64> {
+        let sessions = self.sessions.read().await;
+        let state = sessions.get(session_id)?;
+        let mut ctx = state.context.write().await;
+        ctx.run_token = ctx.run_token.saturating_add(1);
+        Some(ctx.run_token)
+    }
+
+    pub async fn current_run_token(&self, session_id: &str) -> Option<u64> {
+        let sessions = self.sessions.read().await;
+        let state = sessions.get(session_id)?;
+        Some(state.context.read().await.run_token)
     }
 }
 
