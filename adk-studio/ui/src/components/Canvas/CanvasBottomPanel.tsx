@@ -47,6 +47,9 @@ export interface CanvasBottomPanelProps {
 
   // Build action (for "Build Required" placeholder)
   onBuild: () => void;
+  
+  // Binary path detection from trigger notifications
+  onBinaryPathDetected?: (path: string) => void;
 }
 
 /**
@@ -81,7 +84,8 @@ export function CanvasBottomPanel({
   onThought,
   onSnapshotsChange,
   onInterruptChange,
-  onBuild,
+  onBuild: _onBuild,
+  onBinaryPathDetected,
 }: CanvasBottomPanelProps) {
   return (
     <>
@@ -97,8 +101,9 @@ export function CanvasBottomPanel({
         />
       )}
 
-      {/* Console Area */}
-      {showConsole && hasRunnableWorkflow && builtBinaryPath && (
+      {/* Console Area - renders when project has a runnable workflow */}
+      {/* Shows even without builtBinaryPath so it can receive schedule/webhook notifications */}
+      {showConsole && hasRunnableWorkflow && (
         <div className={consoleCollapsed ? '' : 'h-64'}>
           <TestConsole
             onFlowPhase={onFlowPhase}
@@ -114,23 +119,8 @@ export function CanvasBottomPanel({
             autoSendPrompt={autoSendPrompt}
             onAutoSendComplete={onAutoSendComplete}
             onCancelReady={onCancelReady}
+            onBinaryPathDetected={onBinaryPathDetected}
           />
-        </div>
-      )}
-      {showConsole && hasRunnableWorkflow && !builtBinaryPath && (
-        <div
-          className="h-32 border-t flex items-center justify-center"
-          style={{ backgroundColor: 'var(--surface-panel)', borderColor: 'var(--border-default)', color: 'var(--text-muted)' }}
-        >
-          <div className="text-center">
-            <div>Build the project first to test it</div>
-            <button
-              onClick={onBuild}
-              className="mt-2 px-4 py-1 bg-blue-600 hover:bg-blue-700 rounded text-white text-sm font-medium"
-            >
-              Build Project
-            </button>
-          </div>
         </div>
       )}
       {showConsole && !hasRunnableWorkflow && (

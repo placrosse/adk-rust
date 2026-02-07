@@ -206,6 +206,8 @@ interface Props {
   onAutoSendComplete?: () => void;
   /** Callback to expose cancel function to parent (for Stop button in toolbar) */
   onCancelReady?: (cancelFn: () => void) => void;
+  /** Callback when a trigger notification provides a binary path (schedule/webhook auto-detection) */
+  onBinaryPathDetected?: (path: string) => void;
 }
 
 /** Validate workflow and return current state */
@@ -252,6 +254,7 @@ export function TestConsole({
   autoSendPrompt,
   onAutoSendComplete,
   onCancelReady,
+  onBinaryPathDetected,
 }: Props) {
   const { currentProject, updateActionNode } = useStore();
   const [messages, setMessages] = useState<Message[]>([]);
@@ -286,10 +289,18 @@ export function TestConsole({
   
   // Webhook events: Subscribe to webhook notifications and auto-trigger workflow
   const handleWebhookReceived = useCallback((notification: WebhookNotification) => {
-    // Only process if we have a binary and are not already streaming
-    if (!binaryPath || isStreaming || sendingRef.current) {
+    // Determine the effective binary path: use prop or notification's binary_path
+    const effectiveBinaryPath = binaryPath || notification.binary_path;
+    
+    // If we don't have a binary path from either source, or already streaming, skip
+    if (!effectiveBinaryPath || isStreaming || sendingRef.current) {
       console.log('[TestConsole] Ignoring webhook - not ready or already streaming');
       return;
+    }
+    
+    // If the notification provided a binary path we didn't have, notify parent
+    if (!binaryPath && notification.binary_path) {
+      onBinaryPathDetected?.(notification.binary_path);
     }
     
     const isScheduleTrigger = notification.method === 'SCHEDULE';
@@ -351,14 +362,14 @@ export function TestConsole({
       },
       notification.session_id // Pass the session_id from the trigger
     );
-  }, [binaryPath, isStreaming, onFlowPhase, send]);
+  }, [binaryPath, isStreaming, onFlowPhase, send, onBinaryPathDetected]);
   
   // Subscribe to webhook events for this project
   const { isConnected: _webhookConnected } = useWebhookEvents(
     currentProject?.id ?? null,
     {
       onWebhook: handleWebhookReceived,
-      enabled: !!binaryPath, // Only connect when we have a binary
+      enabled: true, // Always subscribe - notifications include binary_path
     }
   );
   

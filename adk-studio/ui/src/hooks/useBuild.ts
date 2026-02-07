@@ -246,6 +246,11 @@ export function useBuild(
     }
   }, [building, isAutobuild]);
 
+  // Allow external code to set the binary path (e.g., from webhook notifications)
+  const setBinaryPath = useCallback((path: string | null) => {
+    setBuiltBinaryPath(path);
+  }, []);
+
   // Cleanup on unmount
   useEffect(() => {
     return () => {
@@ -275,6 +280,7 @@ export function useBuild(
     invalidateBuild,
     toggleAutobuild,
     showBuildProgress,
+    setBinaryPath,
     
     // Computed
     needsBuild: !builtBinaryPath,

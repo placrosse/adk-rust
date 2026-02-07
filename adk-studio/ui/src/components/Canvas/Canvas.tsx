@@ -52,7 +52,7 @@ export function Canvas() {
   const {
     building, buildOutput, builtBinaryPath, compiledCode, autobuildEnabled, isAutobuild,
     build: handleBuild, compile: handleCompile, clearBuildOutput, clearCompiledCode,
-    invalidateBuild, toggleAutobuild, showBuildProgress,
+    invalidateBuild, toggleAutobuild, showBuildProgress, setBinaryPath,
   } = useBuild(currentProject?.id, currentProject?.settings?.autobuildTriggers, currentProject?.settings?.autobuildEnabled, canBuild);
   const buildStatus: BuildStatus = building ? 'building'
     : buildOutput?.success ? 'success'
@@ -341,6 +341,7 @@ export function Canvas() {
         onSnapshotsChange={execution.handleSnapshotsChange}
         onInterruptChange={execution.handleInterruptChange}
         onBuild={handleBuild}
+        onBinaryPathDetected={setBinaryPath}
       />
 
       {/* Modals */}
