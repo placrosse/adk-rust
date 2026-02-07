@@ -29,6 +29,7 @@ adk-server.workspace = true
 adk-session.workspace = true
 adk-artifact.workspace = true
 adk-telemetry.workspace = true
+adk-skill.workspace = true
 clap = { version = "4.5", features = ["derive"] }
 rustyline = "14.0"
 tokio.workspace = true

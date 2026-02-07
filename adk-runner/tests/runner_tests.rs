@@ -2,9 +2,11 @@ use adk_core::{Agent, Content, EventStream, InvocationContext, Part, Result};
 use adk_plugin::{Plugin, PluginConfig, PluginManager};
 use adk_runner::{Runner, RunnerConfig};
 use adk_session::{Event, Events, GetRequest, Session, SessionService, State};
+use adk_skill::{SelectionPolicy, SkillInjector, SkillInjectorConfig};
 use async_trait::async_trait;
 use chrono::{DateTime, Utc};
 use futures::StreamExt;
+use std::fs;
 use std::sync::{Arc, Mutex};
 
 // Mock Agent
@@ -460,4 +462,114 @@ async fn test_plugin_error_propagates_from_on_user_message() {
 
     let first = stream.next().await.expect("expected stream item");
     assert!(first.is_err());
+}
+
+#[tokio::test]
+async fn test_skill_injector_plugin_mutates_user_prompt() {
+    let temp = tempfile::tempdir().unwrap();
+    let root = temp.path();
+    fs::create_dir_all(root.join(".skills")).unwrap();
+    fs::write(
+        root.join(".skills/search.md"),
+        "---\nname: search\ndescription: search repository code\ntags: [search, code]\n---\nUse `rg --files` then `rg <pattern>`.\n",
+    )
+    .unwrap();
+
+    let injector = SkillInjector::from_root(
+        root,
+        SkillInjectorConfig {
+            policy: SelectionPolicy { top_k: 1, min_score: 0.1, ..SelectionPolicy::default() },
+            max_injected_chars: 500,
+        },
+    )
+    .unwrap();
+
+    let plugin_manager = Arc::new(injector.build_plugin_manager("skills"));
+    let runner = Runner::new(RunnerConfig {
+        app_name: "test_app".to_string(),
+        agent: Arc::new(EchoUserContentAgent),
+        session_service: Arc::new(MockSessionService),
+        artifact_service: None,
+        memory_service: None,
+        plugin_manager: Some(plugin_manager),
+        run_config: None,
+    })
+    .unwrap();
+
+    let mut stream = runner
+        .run(
+            "user123".to_string(),
+            "session456".to_string(),
+            Content::new("user").with_text("Please search this repository quickly"),
+        )
+        .await
+        .unwrap();
+
+    let first = stream.next().await.unwrap().unwrap();
+    let text = first
+        .llm_response
+        .content
+        .unwrap()
+        .parts
+        .iter()
+        .find_map(|p| p.text())
+        .unwrap()
+        .to_string();
+
+    assert!(text.contains("agent-saw:[skill:search]"));
+    assert!(text.contains("Use `rg --files` then `rg <pattern>`."));
+}
+
+#[tokio::test]
+async fn test_runner_with_auto_skills_mutates_user_prompt() {
+    let temp = tempfile::tempdir().unwrap();
+    let root = temp.path();
+    fs::create_dir_all(root.join(".skills")).unwrap();
+    fs::write(
+        root.join(".skills/search.md"),
+        "---\nname: search\ndescription: search repository code\ntags: [search, code]\n---\nUse `rg` first.\n",
+    )
+    .unwrap();
+
+    let runner = Runner::new(RunnerConfig {
+        app_name: "test_app".to_string(),
+        agent: Arc::new(EchoUserContentAgent),
+        session_service: Arc::new(MockSessionService),
+        artifact_service: None,
+        memory_service: None,
+        plugin_manager: None,
+        run_config: None,
+    })
+    .unwrap()
+    .with_auto_skills(
+        root,
+        SkillInjectorConfig {
+            policy: SelectionPolicy { top_k: 1, min_score: 0.1, ..SelectionPolicy::default() },
+            max_injected_chars: 500,
+        },
+    )
+    .unwrap();
+
+    let mut stream = runner
+        .run(
+            "user123".to_string(),
+            "session456".to_string(),
+            Content::new("user").with_text("Please search this repository quickly"),
+        )
+        .await
+        .unwrap();
+
+    let first = stream.next().await.unwrap().unwrap();
+    let text = first
+        .llm_response
+        .content
+        .unwrap()
+        .parts
+        .iter()
+        .find_map(|p| p.text())
+        .unwrap()
+        .to_string();
+
+    assert!(text.contains("agent-saw:[skill:search]"));
+    assert!(text.contains("Use `rg` first."));
 }

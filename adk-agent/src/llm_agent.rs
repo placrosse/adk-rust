@@ -5,6 +5,7 @@ use adk_core::{
     InvocationContext, Llm, LlmRequest, LlmResponse, MemoryEntry, Part, ReadonlyContext, Result,
     Tool, ToolConfirmationDecision, ToolConfirmationPolicy, ToolConfirmationRequest, ToolContext,
 };
+use adk_skill::{SelectionPolicy, SkillIndex, load_skill_index, select_skill_prompt_block};
 use async_stream::stream;
 use async_trait::async_trait;
 use std::sync::{Arc, Mutex};
@@ -23,6 +24,9 @@ pub struct LlmAgent {
     instruction_provider: Option<Arc<InstructionProvider>>,
     global_instruction: Option<String>,
     global_instruction_provider: Option<Arc<GlobalInstructionProvider>>,
+    skills_index: Option<Arc<SkillIndex>>,
+    skill_policy: SelectionPolicy,
+    max_skill_chars: usize,
     #[allow(dead_code)] // Part of public API via builder
     input_schema: Option<serde_json::Value>,
     output_schema: Option<serde_json::Value>,
@@ -70,6 +74,9 @@ pub struct LlmAgentBuilder {
     instruction_provider: Option<Arc<InstructionProvider>>,
     global_instruction: Option<String>,
     global_instruction_provider: Option<Arc<GlobalInstructionProvider>>,
+    skills_index: Option<Arc<SkillIndex>>,
+    skill_policy: SelectionPolicy,
+    max_skill_chars: usize,
     input_schema: Option<serde_json::Value>,
     output_schema: Option<serde_json::Value>,
     disallow_transfer_to_parent: bool,
@@ -100,6 +107,9 @@ impl LlmAgentBuilder {
             instruction_provider: None,
             global_instruction: None,
             global_instruction_provider: None,
+            skills_index: None,
+            skill_policy: SelectionPolicy::default(),
+            max_skill_chars: 2000,
             input_schema: None,
             output_schema: None,
             disallow_transfer_to_parent: false,
@@ -148,6 +158,36 @@ impl LlmAgentBuilder {
 
     pub fn global_instruction_provider(mut self, provider: GlobalInstructionProvider) -> Self {
         self.global_instruction_provider = Some(Arc::new(provider));
+        self
+    }
+
+    /// Set a preloaded skills index for this agent.
+    pub fn with_skills(mut self, index: SkillIndex) -> Self {
+        self.skills_index = Some(Arc::new(index));
+        self
+    }
+
+    /// Auto-load skills from `.skills/` in the current working directory.
+    pub fn with_auto_skills(self) -> Result<Self> {
+        self.with_skills_from_root(".")
+    }
+
+    /// Auto-load skills from `.skills/` under a custom root directory.
+    pub fn with_skills_from_root(mut self, root: impl AsRef<std::path::Path>) -> Result<Self> {
+        let index = load_skill_index(root).map_err(|e| adk_core::AdkError::Agent(e.to_string()))?;
+        self.skills_index = Some(Arc::new(index));
+        Ok(self)
+    }
+
+    /// Customize skill selection behavior.
+    pub fn with_skill_policy(mut self, policy: SelectionPolicy) -> Self {
+        self.skill_policy = policy;
+        self
+    }
+
+    /// Limit injected skill content length.
+    pub fn with_skill_budget(mut self, max_chars: usize) -> Self {
+        self.max_skill_chars = max_chars;
         self
     }
 
@@ -284,6 +324,9 @@ impl LlmAgentBuilder {
             instruction_provider: self.instruction_provider,
             global_instruction: self.global_instruction,
             global_instruction_provider: self.global_instruction_provider,
+            skills_index: self.skills_index,
+            skill_policy: self.skill_policy,
+            max_skill_chars: self.max_skill_chars,
             input_schema: self.input_schema,
             output_schema: self.output_schema,
             disallow_transfer_to_parent: self.disallow_transfer_to_parent,
@@ -423,6 +466,9 @@ impl Agent for LlmAgent {
         let instruction_provider = self.instruction_provider.clone();
         let global_instruction = self.global_instruction.clone();
         let global_instruction_provider = self.global_instruction_provider.clone();
+        let skills_index = self.skills_index.clone();
+        let skill_policy = self.skill_policy.clone();
+        let max_skill_chars = self.max_skill_chars;
         let output_key = self.output_key.clone();
         let output_schema = self.output_schema.clone();
         let include_contents = self.include_contents;
@@ -482,6 +528,34 @@ impl Agent for LlmAgent {
 
             // ===== MAIN AGENT EXECUTION =====
             let mut conversation_history = Vec::new();
+
+            // ===== PROCESS SKILL CONTEXT =====
+            // If skills are configured, select the most relevant skill from user input
+            // and inject it as a compact instruction block before other prompts.
+            if let Some(index) = &skills_index {
+                let user_query = ctx
+                    .user_content()
+                    .parts
+                    .iter()
+                    .filter_map(|part| match part {
+                        Part::Text { text } => Some(text.as_str()),
+                        _ => None,
+                    })
+                    .collect::<Vec<_>>()
+                    .join("\n");
+
+                if let Some((_matched, skill_block)) = select_skill_prompt_block(
+                    index.as_ref(),
+                    &user_query,
+                    &skill_policy,
+                    max_skill_chars,
+                ) {
+                    conversation_history.push(Content {
+                        role: "user".to_string(),
+                        parts: vec![Part::Text { text: skill_block }],
+                    });
+                }
+            }
 
             // ===== PROCESS GLOBAL INSTRUCTION =====
             // GlobalInstruction provides tree-wide personality/identity

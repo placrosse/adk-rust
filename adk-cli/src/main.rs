@@ -2,6 +2,7 @@ mod cli;
 mod config;
 mod console;
 mod serve;
+mod skills;
 
 use anyhow::Result;
 use clap::Parser;
@@ -24,5 +25,6 @@ async fn main() -> Result<()> {
             println!("See examples for usage patterns.");
             Ok(())
         }
+        Commands::Skills { command } => skills::run(command),
     }
 }

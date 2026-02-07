@@ -3,6 +3,7 @@ use adk_artifact::ArtifactService;
 use adk_core::{Agent, Content, EventStream, Memory, Result, RunConfig};
 use adk_plugin::PluginManager;
 use adk_session::SessionService;
+use adk_skill::{SkillInjector, SkillInjectorConfig};
 use async_stream::stream;
 use std::sync::Arc;
 use tracing::Instrument;
@@ -27,6 +28,7 @@ pub struct Runner {
     artifact_service: Option<Arc<dyn ArtifactService>>,
     memory_service: Option<Arc<dyn Memory>>,
     plugin_manager: Option<Arc<PluginManager>>,
+    skill_injector: Option<Arc<SkillInjector>>,
     run_config: RunConfig,
 }
 
@@ -39,8 +41,28 @@ impl Runner {
             artifact_service: config.artifact_service,
             memory_service: config.memory_service,
             plugin_manager: config.plugin_manager,
+            skill_injector: None,
             run_config: config.run_config.unwrap_or_default(),
         })
+    }
+
+    /// Enable skill injection using a pre-built injector.
+    ///
+    /// Skill injection runs before plugin `on_user_message` callbacks.
+    pub fn with_skill_injector(mut self, injector: SkillInjector) -> Self {
+        self.skill_injector = Some(Arc::new(injector));
+        self
+    }
+
+    /// Enable skill injection by auto-loading `.skills/` from the given root path.
+    pub fn with_auto_skills(
+        mut self,
+        root: impl AsRef<std::path::Path>,
+        config: SkillInjectorConfig,
+    ) -> adk_skill::SkillResult<Self> {
+        let injector = SkillInjector::from_root(root, config)?;
+        self.skill_injector = Some(Arc::new(injector));
+        Ok(self)
     }
 
     pub async fn run(
@@ -55,6 +77,7 @@ impl Runner {
         let artifact_service = self.artifact_service.clone();
         let memory_service = self.memory_service.clone();
         let plugin_manager = self.plugin_manager.clone();
+        let skill_injector = self.skill_injector.clone();
         let run_config = self.run_config.clone();
 
         let s = stream! {
@@ -86,6 +109,21 @@ impl Runner {
             // Create invocation context with MutableSession
             let invocation_id = format!("inv-{}", uuid::Uuid::new_v4());
             let mut effective_user_content = user_content.clone();
+            let mut selected_skill_name = String::new();
+            let mut selected_skill_id = String::new();
+
+            if let Some(injector) = skill_injector.as_ref() {
+                if let Some(matched) = adk_skill::apply_skill_injection(
+                    &mut effective_user_content,
+                    injector.index(),
+                    injector.policy(),
+                    injector.max_injected_chars(),
+                ) {
+                    selected_skill_name = matched.skill.name;
+                    selected_skill_id = matched.skill.id;
+                }
+            }
+
             let mut invocation_ctx = InvocationContext::new(
                 invocation_id.clone(),
                 agent_to_run.clone(),
@@ -214,7 +252,9 @@ impl Runner {
                 "gcp.vertex.agent.session_id" = %session_id,
                 "gcp.vertex.agent.event_id" = %invocation_id, // Use invocation_id as event_id for agent spans
                 "gen_ai.conversation.id" = %session_id,
-                "agent.name" = %agent_to_run.name()
+                "agent.name" = %agent_to_run.name(),
+                "adk.skills.selected_name" = %selected_skill_name,
+                "adk.skills.selected_id" = %selected_skill_id
             );
 
             let mut agent_stream = match agent_to_run.run(ctx.clone()).instrument(agent_span).await {

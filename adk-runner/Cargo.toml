@@ -17,6 +17,7 @@ adk-core.workspace = true
 adk-artifact.workspace = true
 adk-session.workspace = true
 adk-plugin.workspace = true
+adk-skill.workspace = true
 async-trait.workspace = true
 tokio.workspace = true
 futures.workspace = true
@@ -27,3 +28,4 @@ tracing.workspace = true
 
 [dev-dependencies]
 chrono = "0.4"
+tempfile = "3"

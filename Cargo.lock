@@ -44,6 +44,7 @@ dependencies = [
  "adk-core",
  "adk-guardrail",
  "adk-model",
+ "adk-skill",
  "adk-telemetry",
  "adk-tool",
  "async-stream",
@@ -52,6 +53,7 @@ dependencies = [
  "futures",
  "serde",
  "serde_json",
+ "tempfile",
  "tokio",
  "tracing",
 ]
@@ -110,6 +112,7 @@ dependencies = [
  "adk-runner",
  "adk-server",
  "adk-session",
+ "adk-skill",
  "adk-telemetry",
  "anyhow",
  "async-trait",
@@ -392,11 +395,13 @@ dependencies = [
  "adk-core",
  "adk-plugin",
  "adk-session",
+ "adk-skill",
  "async-stream",
  "async-trait",
  "chrono",
  "futures",
  "serde_json",
+ "tempfile",
  "tokio",
  "tracing",
  "uuid 1.19.0",
@@ -417,6 +422,7 @@ dependencies = [
  "adk-runner",
  "adk-server",
  "adk-session",
+ "adk-skill",
  "adk-telemetry",
  "adk-tool",
  "adk-ui",
@@ -477,6 +483,22 @@ dependencies = [
  "sqlx",
  "tokio",
  "uuid 1.19.0",
+]
+
+[[package]]
+name = "adk-skill"
+version = "0.2.2"
+dependencies = [
+ "adk-core",
+ "adk-plugin",
+ "serde",
+ "serde_json",
+ "serde_yaml",
+ "sha2",
+ "tempfile",
+ "thiserror 2.0.18",
+ "tokio",
+ "walkdir",
 ]
 
 [[package]]

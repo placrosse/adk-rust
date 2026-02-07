@@ -17,6 +17,7 @@ adk-core.workspace = true
 adk-model.workspace = true
 adk-tool.workspace = true
 adk-telemetry.workspace = true
+adk-skill.workspace = true
 adk-guardrail = { workspace = true, optional = true }
 async-trait = { workspace = true }
 tokio = { workspace = true }
@@ -32,3 +33,4 @@ guardrails = ["adk-guardrail"]
 
 [dev-dependencies]
 dotenvy = "0.15"
+tempfile = "3"

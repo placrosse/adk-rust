@@ -21,6 +21,7 @@ full = [
     "agents",
     "models",
     "tools",
+    "skills",
     "sessions",
     "artifacts",
     "memory",
@@ -40,6 +41,7 @@ cli = ["dep:adk-cli", "runner", "server", "sessions", "telemetry"]
 agents = ["dep:adk-agent"]
 models = ["dep:adk-model"]
 tools = ["dep:adk-tool"]
+skills = ["dep:adk-skill"]
 sessions = ["dep:adk-session"]
 artifacts = ["dep:adk-artifact"]
 memory = ["dep:adk-memory"]
@@ -68,6 +70,7 @@ adk-core.workspace = true
 adk-agent = { workspace = true, optional = true }
 adk-model = { workspace = true, optional = true }
 adk-tool = { workspace = true, optional = true }
+adk-skill = { workspace = true, optional = true }
 adk-session = { workspace = true, optional = true }
 adk-artifact = { workspace = true, optional = true }
 adk-memory = { workspace = true, optional = true }

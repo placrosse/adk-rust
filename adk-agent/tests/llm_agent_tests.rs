@@ -1,9 +1,12 @@
 use adk_agent::LlmAgentBuilder;
-use adk_core::{Agent, Content, InvocationContext, Part, ReadonlyContext, RunConfig, ToolContext};
+use adk_core::{
+    Agent, Content, InvocationContext, LlmRequest, Part, ReadonlyContext, RunConfig, ToolContext,
+};
+use adk_skill::SelectionPolicy;
 use adk_tool::FunctionTool;
 use async_trait::async_trait;
 use serde_json::Value;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
 struct MockLlm {
     response_text: String,
@@ -26,6 +29,51 @@ impl adk_core::Llm for MockLlm {
         _request: adk_core::LlmRequest,
         _stream: bool,
     ) -> adk_core::Result<adk_core::LlmResponseStream> {
+        let text = self.response_text.clone();
+        let s = async_stream::stream! {
+            yield Ok(adk_core::LlmResponse {
+                content: Some(adk_core::Content {
+                    role: "model".to_string(),
+                    parts: vec![adk_core::Part::Text { text }],
+                }),
+                usage_metadata: None,
+                finish_reason: None,
+                citation_metadata: None,
+                partial: false,
+                turn_complete: true,
+                interrupted: false,
+                error_code: None,
+                error_message: None,
+            });
+        };
+        Ok(Box::pin(s))
+    }
+}
+
+struct SpyLlm {
+    response_text: String,
+    last_request: Arc<Mutex<Option<LlmRequest>>>,
+}
+
+impl SpyLlm {
+    fn new(response_text: &str) -> Self {
+        Self { response_text: response_text.to_string(), last_request: Arc::new(Mutex::new(None)) }
+    }
+}
+
+#[async_trait]
+impl adk_core::Llm for SpyLlm {
+    fn name(&self) -> &str {
+        "spy-llm"
+    }
+
+    async fn generate_content(
+        &self,
+        request: adk_core::LlmRequest,
+        _stream: bool,
+    ) -> adk_core::Result<adk_core::LlmResponseStream> {
+        *self.last_request.lock().unwrap() = Some(request);
+
         let text = self.response_text.clone();
         let s = async_stream::stream! {
             yield Ok(adk_core::LlmResponse {
@@ -368,4 +416,51 @@ fn test_llm_agent_builder_with_callbacks() {
     // Verify agent was created successfully
     assert_eq!(agent.name(), "test_agent");
     assert_eq!(agent.description(), "Test agent with callbacks");
+}
+
+#[tokio::test]
+async fn test_llm_agent_injects_skill_prompt_block() {
+    let temp = tempfile::tempdir().unwrap();
+    let root = temp.path();
+    std::fs::create_dir_all(root.join(".skills")).unwrap();
+    std::fs::write(
+        root.join(".skills/search.md"),
+        "---\nname: search\ndescription: Search source code\ntags: [code, search]\n---\nUse rg --files then rg <pattern>.\n",
+    )
+    .unwrap();
+
+    let model = SpyLlm::new("ok");
+    let captured = model.last_request.clone();
+
+    let builder = LlmAgentBuilder::new("skill_agent")
+        .description("Agent with skills")
+        .model(Arc::new(model))
+        .with_skills_from_root(root)
+        .unwrap()
+        .with_skill_policy(SelectionPolicy {
+            top_k: 1,
+            min_score: 0.1,
+            ..SelectionPolicy::default()
+        });
+
+    let agent = builder.build().unwrap();
+    let ctx = Arc::new(TestContext::new("Please search this repository"));
+    let mut stream = agent.run(ctx).await.unwrap();
+
+    use futures::StreamExt;
+    while let Some(result) = stream.next().await {
+        result.unwrap();
+    }
+
+    let request = captured.lock().unwrap().clone().expect("expected captured request");
+    let combined = request
+        .contents
+        .iter()
+        .flat_map(|c| c.parts.iter())
+        .filter_map(|p| p.text())
+        .collect::<Vec<_>>()
+        .join("\n");
+
+    assert!(combined.contains("[skill:search]"));
+    assert!(combined.contains("Use rg --files then rg <pattern>."));
 }

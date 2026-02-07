@@ -510,6 +510,21 @@ pub mod tool {
     pub use adk_tool::*;
 }
 
+/// AgentSkills parsing, indexing, and runtime injection helpers.
+///
+/// Provides:
+/// - Skill file discovery from `.skills/`
+/// - Frontmatter validation (`name`, `description`)
+/// - Lexical skill selection
+/// - Runner plugin helper for skill injection
+///
+/// Available with feature: `skills`
+#[cfg(feature = "skills")]
+#[cfg_attr(docsrs, doc(cfg(feature = "skills")))]
+pub mod skill {
+    pub use adk_skill::*;
+}
+
 /// Session management.
 ///
 /// Manage conversation context and state:
@@ -714,6 +729,10 @@ pub mod prelude {
     pub use crate::tool::{
         BasicToolset, ExitLoopTool, FunctionTool, GoogleSearchTool, LoadArtifactsTool, McpToolset,
     };
+
+    // Skills
+    #[cfg(feature = "skills")]
+    pub use crate::skill::{SelectionPolicy, SkillInjector, SkillInjectorConfig, load_skill_index};
 
     // Sessions
     #[cfg(feature = "sessions")]

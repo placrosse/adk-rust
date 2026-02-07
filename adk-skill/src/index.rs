@@ -1,0 +1,83 @@
+use crate::discovery::discover_skill_files;
+use crate::error::SkillResult;
+use crate::model::{SkillDocument, SkillIndex};
+use crate::parser::parse_skill_markdown;
+use sha2::{Digest, Sha256};
+use std::fs;
+use std::path::Path;
+use std::time::UNIX_EPOCH;
+
+pub fn load_skill_index(root: impl AsRef<Path>) -> SkillResult<SkillIndex> {
+    let mut skills = Vec::new();
+    for path in discover_skill_files(root)? {
+        let content = fs::read_to_string(&path)?;
+        let parsed = parse_skill_markdown(&path, &content)?;
+
+        let mut hasher = Sha256::new();
+        hasher.update(content.as_bytes());
+        let hash = format!("{:x}", hasher.finalize());
+
+        let last_modified = fs::metadata(&path)
+            .ok()
+            .and_then(|meta| meta.modified().ok())
+            .and_then(|ts| ts.duration_since(UNIX_EPOCH).ok())
+            .map(|d| d.as_secs() as i64);
+
+        let id = format!(
+            "{}-{}",
+            normalize_id(&parsed.name),
+            &hash.chars().take(12).collect::<String>()
+        );
+
+        skills.push(SkillDocument {
+            id,
+            name: parsed.name,
+            description: parsed.description,
+            tags: parsed.tags,
+            body: parsed.body,
+            path,
+            hash,
+            last_modified,
+        });
+    }
+
+    skills.sort_by(|a, b| a.name.cmp(&b.name).then_with(|| a.path.cmp(&b.path)));
+    Ok(SkillIndex::new(skills))
+}
+
+fn normalize_id(value: &str) -> String {
+    let mut out = String::new();
+    for c in value.chars() {
+        if c.is_ascii_alphanumeric() {
+            out.push(c.to_ascii_lowercase());
+        } else if c == ' ' || c == '-' || c == '_' {
+            out.push('-');
+        }
+    }
+    if out.is_empty() { "skill".to_string() } else { out }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::fs;
+
+    #[test]
+    fn loads_index_with_hash_and_summary_fields() {
+        let temp = tempfile::tempdir().unwrap();
+        let root = temp.path();
+        fs::create_dir_all(root.join(".skills")).unwrap();
+        fs::write(
+            root.join(".skills/search.md"),
+            "---\nname: search\ndescription: Search docs\n---\nUse rg first.",
+        )
+        .unwrap();
+
+        let index = load_skill_index(root).unwrap();
+        assert_eq!(index.len(), 1);
+        let skill = &index.skills()[0];
+        assert_eq!(skill.name, "search");
+        assert!(!skill.hash.is_empty());
+        assert!(skill.last_modified.is_some());
+    }
+}
