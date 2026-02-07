@@ -3,7 +3,11 @@ use axum::{
     extract::Query,
     http::StatusCode,
 };
-use adk_ui::{TOOL_ENVELOPE_VERSION, UI_DEFAULT_PROTOCOL, UI_PROTOCOL_CAPABILITIES};
+use adk_ui::{
+    McpAppsRenderOptions, TOOL_ENVELOPE_VERSION, UI_DEFAULT_PROTOCOL, UI_PROTOCOL_CAPABILITIES,
+    validate_mcp_apps_render_options,
+};
+use adk_ui::interop::mcp_apps::{McpUiPermissions, McpUiResourceCsp};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::HashMap;
@@ -109,95 +113,81 @@ fn validate_ui_resource_mime(mime_type: &str) -> Result<(), (StatusCode, String)
     Ok(())
 }
 
-fn is_allowed_domain(domain: &str) -> bool {
-    domain.starts_with("https://")
-        || domain.starts_with("http://localhost")
-        || domain.starts_with("http://127.0.0.1")
-}
-
-fn validate_domain_list(value: &Value, field_name: &str) -> Result<(), (StatusCode, String)> {
-    let list = value.as_array().ok_or_else(|| {
-        (
-            StatusCode::BAD_REQUEST,
-            format!("_meta.ui.csp.{} must be an array of domain strings", field_name),
-        )
-    })?;
-    for entry in list {
-        let domain = entry.as_str().ok_or_else(|| {
-            (
-                StatusCode::BAD_REQUEST,
-                format!("_meta.ui.csp.{} entries must be strings", field_name),
-            )
-        })?;
-        if !is_allowed_domain(domain) {
-            return Err((
-                StatusCode::BAD_REQUEST,
-                format!(
-                    "_meta.ui.csp.{} contains unsupported domain '{}'",
-                    field_name, domain
-                ),
-            ));
-        }
-    }
-    Ok(())
-}
-
-fn validate_ui_meta(meta: &Option<Value>) -> Result<(), (StatusCode, String)> {
+fn parse_ui_meta_options(meta: &Option<Value>) -> Result<McpAppsRenderOptions, (StatusCode, String)> {
     let Some(meta_value) = meta else {
-        return Ok(());
+        return Ok(McpAppsRenderOptions::default());
     };
     let meta_object = meta_value.as_object().ok_or_else(|| {
         (StatusCode::BAD_REQUEST, "_meta must be a JSON object".to_string())
     })?;
     let Some(ui_value) = meta_object.get("ui") else {
-        return Ok(());
+        return Ok(McpAppsRenderOptions::default());
     };
     let ui_object = ui_value.as_object().ok_or_else(|| {
         (StatusCode::BAD_REQUEST, "_meta.ui must be a JSON object".to_string())
     })?;
 
-    if let Some(domain_value) = ui_object.get("domain") {
-        let domain = domain_value.as_str().ok_or_else(|| {
-            (StatusCode::BAD_REQUEST, "_meta.ui.domain must be a string".to_string())
-        })?;
-        if !is_allowed_domain(domain) {
-            return Err((
-                StatusCode::BAD_REQUEST,
-                format!(
-                    "_meta.ui.domain '{}' is not allowed; use https:// or localhost URLs",
-                    domain
-                ),
-            ));
-        }
-    }
+    let domain = ui_object
+        .get("domain")
+        .map(|domain_value| {
+            domain_value.as_str().ok_or_else(|| {
+                (StatusCode::BAD_REQUEST, "_meta.ui.domain must be a string".to_string())
+            })
+        })
+        .transpose()?
+        .map(ToString::to_string);
 
-    if let Some(csp_value) = ui_object.get("csp") {
-        let csp_object = csp_value.as_object().ok_or_else(|| {
-            (StatusCode::BAD_REQUEST, "_meta.ui.csp must be an object".to_string())
-        })?;
-        for field in ["connectDomains", "resourceDomains", "frameDomains", "baseUriDomains"] {
-            if let Some(field_value) = csp_object.get(field) {
-                validate_domain_list(field_value, field)?;
-            }
-        }
-    }
+    let prefers_border = ui_object
+        .get("prefersBorder")
+        .map(|value| {
+            value.as_bool().ok_or_else(|| {
+                (StatusCode::BAD_REQUEST, "_meta.ui.prefersBorder must be a boolean".to_string())
+            })
+        })
+        .transpose()?;
 
-    if let Some(permissions_value) = ui_object.get("permissions") {
-        if !permissions_value.is_object() {
-            return Err((
-                StatusCode::BAD_REQUEST,
-                "_meta.ui.permissions must be an object".to_string(),
-            ));
-        }
-    }
+    let csp = ui_object
+        .get("csp")
+        .map(|value| {
+            serde_json::from_value::<McpUiResourceCsp>(value.clone()).map_err(|error| {
+                (
+                    StatusCode::BAD_REQUEST,
+                    format!("_meta.ui.csp must be an object with domain arrays: {}", error),
+                )
+            })
+        })
+        .transpose()?;
 
-    Ok(())
+    let permissions = ui_object
+        .get("permissions")
+        .map(|value| {
+            serde_json::from_value::<McpUiPermissions>(value.clone()).map_err(|error| {
+                (
+                    StatusCode::BAD_REQUEST,
+                    format!("_meta.ui.permissions must be an object: {}", error),
+                )
+            })
+        })
+        .transpose()?;
+
+    Ok(McpAppsRenderOptions {
+        domain,
+        prefers_border,
+        csp,
+        permissions,
+        ..Default::default()
+    })
 }
 
-fn extract_meta_domain(meta: &Option<Value>) -> Option<String> {
-    let meta_object = meta.as_ref()?.as_object()?;
-    let ui_object = meta_object.get("ui")?.as_object()?;
-    ui_object.get("domain")?.as_str().map(ToString::to_string)
+fn validate_ui_meta(meta: &Option<Value>) -> Result<McpAppsRenderOptions, (StatusCode, String)> {
+    let options = parse_ui_meta_options(meta)?;
+    validate_mcp_apps_render_options(&options).map_err(|error| {
+        (
+            StatusCode::BAD_REQUEST,
+            format!("Invalid _meta.ui options for mcp_apps: {}", error),
+        )
+    })?;
+    Ok(options)
 }
 
 /// GET /api/ui/capabilities
@@ -248,13 +238,13 @@ pub async fn register_ui_resource(
 ) -> Result<StatusCode, (StatusCode, String)> {
     validate_ui_resource_uri(&req.uri)?;
     validate_ui_resource_mime(&req.mime_type)?;
-    validate_ui_meta(&req.meta)?;
+    let ui_meta_options = validate_ui_meta(&req.meta)?;
 
     let uri = req.uri.clone();
     let name = req.name.clone();
     let mime_type = req.mime_type.clone();
     let meta = req.meta.clone();
-    let domain = extract_meta_domain(&meta).unwrap_or_else(|| "<none>".to_string());
+    let domain = ui_meta_options.domain.unwrap_or_else(|| "<none>".to_string());
 
     let entry = UiResourceEntry {
         resource: UiResource {
