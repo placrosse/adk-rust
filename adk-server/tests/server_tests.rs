@@ -161,3 +161,100 @@ async fn test_ui_capabilities() {
             .any(|entry| entry["protocol"] == "mcp_apps")
     );
 }
+
+#[tokio::test]
+async fn test_run_sse_compat_rejects_unknown_ui_protocol() {
+    let config =
+        adk_server::ServerConfig::new(Arc::new(MockAgentLoader), Arc::new(MockSessionService));
+    let app = create_app(config);
+
+    let body = serde_json::json!({
+        "appName": "test-app",
+        "userId": "user1",
+        "sessionId": "session1",
+        "newMessage": {
+            "role": "user",
+            "parts": [{ "text": "hello" }]
+        },
+        "uiProtocol": "unknown_protocol"
+    });
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri("/api/run_sse")
+                .header("content-type", "application/json")
+                .body(Body::from(serde_json::to_vec(&body).unwrap()))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(response.status(), StatusCode::BAD_REQUEST);
+    let body = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap();
+    let body_str = String::from_utf8(body.to_vec()).unwrap();
+    assert!(body_str.contains("Supported profiles"));
+    assert!(body_str.contains("adk_ui"));
+    assert!(body_str.contains("a2ui"));
+}
+
+#[tokio::test]
+async fn test_run_sse_compat_header_precedence_over_body_protocol() {
+    let config =
+        adk_server::ServerConfig::new(Arc::new(MockAgentLoader), Arc::new(MockSessionService));
+    let app = create_app(config);
+
+    let body = serde_json::json!({
+        "appName": "test-app",
+        "userId": "user1",
+        "sessionId": "session1",
+        "newMessage": {
+            "role": "user",
+            "parts": [{ "text": "hello" }]
+        },
+        "uiProtocol": "unknown_protocol"
+    });
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri("/api/run_sse")
+                .header("content-type", "application/json")
+                .header("x-adk-ui-protocol", "a2ui")
+                .body(Body::from(serde_json::to_vec(&body).unwrap()))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    // The header protocol takes precedence, so request proceeds past protocol validation.
+    assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+}
+
+#[tokio::test]
+async fn test_run_path_rejects_unknown_ui_protocol_header() {
+    let config =
+        adk_server::ServerConfig::new(Arc::new(MockAgentLoader), Arc::new(MockSessionService));
+    let app = create_app(config);
+
+    let body = serde_json::json!({
+        "new_message": "hello"
+    });
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri("/api/run/test-app/user1/session1")
+                .header("content-type", "application/json")
+                .header("x-adk-ui-protocol", "bad-profile")
+                .body(Body::from(serde_json::to_vec(&body).unwrap()))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(response.status(), StatusCode::BAD_REQUEST);
+}
