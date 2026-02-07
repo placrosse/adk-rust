@@ -3,6 +3,7 @@ mod llm_conditional_agent;
 mod loop_agent;
 mod parallel_agent;
 mod sequential_agent;
+mod skill_context;
 
 pub use conditional_agent::ConditionalAgent;
 pub use llm_conditional_agent::{LlmConditionalAgent, LlmConditionalAgentBuilder};

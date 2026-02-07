@@ -2,6 +2,7 @@ use crate::workflow::LoopAgent;
 use adk_core::{
     AfterAgentCallback, Agent, BeforeAgentCallback, EventStream, InvocationContext, Result,
 };
+use adk_skill::{SelectionPolicy, SkillIndex};
 use async_trait::async_trait;
 use std::sync::Arc;
 
@@ -27,6 +28,30 @@ impl SequentialAgent {
 
     pub fn after_callback(mut self, callback: AfterAgentCallback) -> Self {
         self.loop_agent = self.loop_agent.after_callback(callback);
+        self
+    }
+
+    pub fn with_skills(mut self, index: SkillIndex) -> Self {
+        self.loop_agent = self.loop_agent.with_skills(index);
+        self
+    }
+
+    pub fn with_auto_skills(self) -> Result<Self> {
+        self.with_skills_from_root(".")
+    }
+
+    pub fn with_skills_from_root(mut self, root: impl AsRef<std::path::Path>) -> Result<Self> {
+        self.loop_agent = self.loop_agent.with_skills_from_root(root)?;
+        Ok(self)
+    }
+
+    pub fn with_skill_policy(mut self, policy: SelectionPolicy) -> Self {
+        self.loop_agent = self.loop_agent.with_skill_policy(policy);
+        self
+    }
+
+    pub fn with_skill_budget(mut self, max_chars: usize) -> Self {
+        self.loop_agent = self.loop_agent.with_skill_budget(max_chars);
         self
     }
 }

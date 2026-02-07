@@ -1,6 +1,7 @@
 use adk_core::{
     AfterAgentCallback, Agent, BeforeAgentCallback, EventStream, InvocationContext, Result,
 };
+use adk_skill::{SelectionPolicy, SkillIndex, load_skill_index};
 use async_stream::stream;
 use async_trait::async_trait;
 use std::sync::Arc;
@@ -11,6 +12,9 @@ pub struct LoopAgent {
     description: String,
     sub_agents: Vec<Arc<dyn Agent>>,
     max_iterations: Option<u32>,
+    skills_index: Option<Arc<SkillIndex>>,
+    skill_policy: SelectionPolicy,
+    max_skill_chars: usize,
     before_callbacks: Vec<BeforeAgentCallback>,
     after_callbacks: Vec<AfterAgentCallback>,
 }
@@ -22,6 +26,9 @@ impl LoopAgent {
             description: String::new(),
             sub_agents,
             max_iterations: None,
+            skills_index: None,
+            skill_policy: SelectionPolicy::default(),
+            max_skill_chars: 2000,
             before_callbacks: Vec::new(),
             after_callbacks: Vec::new(),
         }
@@ -34,6 +41,31 @@ impl LoopAgent {
 
     pub fn with_max_iterations(mut self, max: u32) -> Self {
         self.max_iterations = Some(max);
+        self
+    }
+
+    pub fn with_skills(mut self, index: SkillIndex) -> Self {
+        self.skills_index = Some(Arc::new(index));
+        self
+    }
+
+    pub fn with_auto_skills(self) -> Result<Self> {
+        self.with_skills_from_root(".")
+    }
+
+    pub fn with_skills_from_root(mut self, root: impl AsRef<std::path::Path>) -> Result<Self> {
+        let index = load_skill_index(root).map_err(|e| adk_core::AdkError::Agent(e.to_string()))?;
+        self.skills_index = Some(Arc::new(index));
+        Ok(self)
+    }
+
+    pub fn with_skill_policy(mut self, policy: SelectionPolicy) -> Self {
+        self.skill_policy = policy;
+        self
+    }
+
+    pub fn with_skill_budget(mut self, max_chars: usize) -> Self {
+        self.max_skill_chars = max_chars;
         self
     }
 
@@ -65,6 +97,12 @@ impl Agent for LoopAgent {
     async fn run(&self, ctx: Arc<dyn InvocationContext>) -> Result<EventStream> {
         let sub_agents = self.sub_agents.clone();
         let max_iterations = self.max_iterations;
+        let run_ctx = super::skill_context::with_skill_injected_context(
+            ctx,
+            self.skills_index.as_ref(),
+            &self.skill_policy,
+            self.max_skill_chars,
+        );
 
         let s = stream! {
             use futures::StreamExt;
@@ -75,14 +113,14 @@ impl Agent for LoopAgent {
                 let mut should_exit = false;
 
                 for agent in &sub_agents {
-                    let mut stream = agent.run(ctx.clone()).await?;
+                    let mut stream = agent.run(run_ctx.clone()).await?;
 
                     while let Some(result) = stream.next().await {
                         match result {
                             Ok(event) => {
                                 // Append content to session history for sequential agent support
                                 if let Some(ref content) = event.llm_response.content {
-                                    ctx.session().append_to_history(content.clone());
+                                    run_ctx.session().append_to_history(content.clone());
                                 }
                                 if event.actions.escalate {
                                     should_exit = true;

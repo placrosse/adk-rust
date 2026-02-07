@@ -1,5 +1,10 @@
-use adk_agent::{ConditionalAgent, CustomAgentBuilder, LoopAgent, ParallelAgent, SequentialAgent};
-use adk_core::{Agent, Content, Event, InvocationContext, Part, ReadonlyContext, RunConfig};
+use adk_agent::{
+    ConditionalAgent, CustomAgentBuilder, LlmConditionalAgentBuilder, LoopAgent, ParallelAgent,
+    SequentialAgent,
+};
+use adk_core::{
+    Agent, Content, Event, InvocationContext, LlmRequest, Part, ReadonlyContext, RunConfig,
+};
 use async_trait::async_trait;
 use futures::stream;
 use std::sync::Arc;
@@ -92,6 +97,48 @@ impl InvocationContext for TestContext {
     fn end_invocation(&self) {}
     fn ended(&self) -> bool {
         false
+    }
+}
+
+struct MockRouterLlm {
+    response_text: String,
+}
+
+impl MockRouterLlm {
+    fn new(response_text: &str) -> Self {
+        Self { response_text: response_text.to_string() }
+    }
+}
+
+#[async_trait]
+impl adk_core::Llm for MockRouterLlm {
+    fn name(&self) -> &str {
+        "mock-router-llm"
+    }
+
+    async fn generate_content(
+        &self,
+        _request: LlmRequest,
+        _stream: bool,
+    ) -> adk_core::Result<adk_core::LlmResponseStream> {
+        let text = self.response_text.clone();
+        let s = async_stream::stream! {
+            yield Ok(adk_core::LlmResponse {
+                content: Some(adk_core::Content {
+                    role: "model".to_string(),
+                    parts: vec![adk_core::Part::Text { text }],
+                }),
+                usage_metadata: None,
+                finish_reason: None,
+                citation_metadata: None,
+                partial: false,
+                turn_complete: true,
+                interrupted: false,
+                error_code: None,
+                error_message: None,
+            });
+        };
+        Ok(Box::pin(s))
     }
 }
 
@@ -411,4 +458,207 @@ async fn test_conditional_agent_no_else() {
     use futures::StreamExt;
     let result = stream.next().await;
     assert!(result.is_none());
+}
+
+#[tokio::test]
+async fn test_sequential_agent_with_skills_injects_user_content() {
+    let temp = tempfile::tempdir().unwrap();
+    let root = temp.path();
+    std::fs::create_dir_all(root.join(".skills")).unwrap();
+    std::fs::write(
+        root.join(".skills/search.md"),
+        "---\nname: search\ndescription: Search repository code\ntags: [search, code]\n---\nUse rg first.\n",
+    )
+    .unwrap();
+
+    let echo_agent = CustomAgentBuilder::new("echo")
+        .handler(|ctx| async move {
+            let text = ctx
+                .user_content()
+                .parts
+                .iter()
+                .find_map(|p| p.text())
+                .unwrap_or_default()
+                .to_string();
+
+            let mut event = Event::new("test-invocation");
+            event.author = "echo".to_string();
+            event.llm_response.content = Some(Content::new("assistant").with_text(text));
+            Ok(Box::pin(stream::iter(vec![Ok(event)])) as adk_core::EventStream)
+        })
+        .build()
+        .unwrap();
+
+    let sequential = SequentialAgent::new("sequential", vec![Arc::new(echo_agent)])
+        .with_skills_from_root(root)
+        .unwrap();
+
+    let ctx = Arc::new(TestContext::new("please search this repo"));
+    let mut stream = sequential.run(ctx).await.unwrap();
+    use futures::StreamExt;
+    let event = stream.next().await.unwrap().unwrap();
+    let text = event
+        .llm_response
+        .content
+        .unwrap()
+        .parts
+        .iter()
+        .find_map(|p| p.text())
+        .unwrap()
+        .to_string();
+
+    assert!(text.contains("[skill:search]"));
+}
+
+#[tokio::test]
+async fn test_parallel_agent_with_skills_injects_user_content() {
+    let temp = tempfile::tempdir().unwrap();
+    let root = temp.path();
+    std::fs::create_dir_all(root.join(".skills")).unwrap();
+    std::fs::write(
+        root.join(".skills/search.md"),
+        "---\nname: search\ndescription: Search repository code\ntags: [search, code]\n---\nUse rg first.\n",
+    )
+    .unwrap();
+
+    let echo_agent = CustomAgentBuilder::new("echo")
+        .handler(|ctx| async move {
+            let text = ctx
+                .user_content()
+                .parts
+                .iter()
+                .find_map(|p| p.text())
+                .unwrap_or_default()
+                .to_string();
+            let mut event = Event::new("test-invocation");
+            event.author = "echo".to_string();
+            event.llm_response.content = Some(Content::new("assistant").with_text(text));
+            Ok(Box::pin(stream::iter(vec![Ok(event)])) as adk_core::EventStream)
+        })
+        .build()
+        .unwrap();
+
+    let parallel = ParallelAgent::new("parallel", vec![Arc::new(echo_agent)])
+        .with_skills_from_root(root)
+        .unwrap();
+
+    let ctx = Arc::new(TestContext::new("please search this repo"));
+    let mut stream = parallel.run(ctx).await.unwrap();
+    use futures::StreamExt;
+    let event = stream.next().await.unwrap().unwrap();
+    let text = event
+        .llm_response
+        .content
+        .unwrap()
+        .parts
+        .iter()
+        .find_map(|p| p.text())
+        .unwrap()
+        .to_string();
+
+    assert!(text.contains("[skill:search]"));
+}
+
+#[tokio::test]
+async fn test_conditional_agent_with_skills_injects_user_content() {
+    let temp = tempfile::tempdir().unwrap();
+    let root = temp.path();
+    std::fs::create_dir_all(root.join(".skills")).unwrap();
+    std::fs::write(
+        root.join(".skills/search.md"),
+        "---\nname: search\ndescription: Search repository code\ntags: [search, code]\n---\nUse rg first.\n",
+    )
+    .unwrap();
+
+    let if_agent = CustomAgentBuilder::new("if_agent")
+        .handler(|ctx| async move {
+            let text = ctx
+                .user_content()
+                .parts
+                .iter()
+                .find_map(|p| p.text())
+                .unwrap_or_default()
+                .to_string();
+            let mut event = Event::new("test-invocation");
+            event.author = "if_agent".to_string();
+            event.llm_response.content = Some(Content::new("assistant").with_text(text));
+            Ok(Box::pin(stream::iter(vec![Ok(event)])) as adk_core::EventStream)
+        })
+        .build()
+        .unwrap();
+
+    let conditional = ConditionalAgent::new("conditional", |_ctx| true, Arc::new(if_agent))
+        .with_skills_from_root(root)
+        .unwrap();
+
+    let ctx = Arc::new(TestContext::new("please search this repo"));
+    let mut stream = conditional.run(ctx).await.unwrap();
+    use futures::StreamExt;
+    let event = stream.next().await.unwrap().unwrap();
+    let text = event
+        .llm_response
+        .content
+        .unwrap()
+        .parts
+        .iter()
+        .find_map(|p| p.text())
+        .unwrap()
+        .to_string();
+
+    assert!(text.contains("[skill:search]"));
+}
+
+#[tokio::test]
+async fn test_llm_conditional_agent_with_skills_injects_user_content() {
+    let temp = tempfile::tempdir().unwrap();
+    let root = temp.path();
+    std::fs::create_dir_all(root.join(".skills")).unwrap();
+    std::fs::write(
+        root.join(".skills/search.md"),
+        "---\nname: search\ndescription: Search repository code\ntags: [search, code]\n---\nUse rg first.\n",
+    )
+    .unwrap();
+
+    let target_agent = CustomAgentBuilder::new("technical_agent")
+        .handler(|ctx| async move {
+            let text = ctx
+                .user_content()
+                .parts
+                .iter()
+                .find_map(|p| p.text())
+                .unwrap_or_default()
+                .to_string();
+            let mut event = Event::new("test-invocation");
+            event.author = "technical_agent".to_string();
+            event.llm_response.content = Some(Content::new("assistant").with_text(text));
+            Ok(Box::pin(stream::iter(vec![Ok(event)])) as adk_core::EventStream)
+        })
+        .build()
+        .unwrap();
+
+    let router =
+        LlmConditionalAgentBuilder::new("router", Arc::new(MockRouterLlm::new("technical")))
+            .with_skills_from_root(root)
+            .unwrap()
+            .instruction("Classify request")
+            .route("technical", Arc::new(target_agent))
+            .build()
+            .unwrap();
+
+    let ctx = Arc::new(TestContext::new("please search this repo"));
+    let mut stream = router.run(ctx).await.unwrap();
+    use futures::StreamExt;
+    let _routing = stream.next().await.unwrap().unwrap();
+    let target_event = stream.next().await.unwrap().unwrap();
+    let text = target_event
+        .llm_response
+        .content
+        .unwrap()
+        .parts
+        .iter()
+        .find_map(|p| p.text())
+        .unwrap()
+        .to_string();
+
+    assert!(text.contains("[skill:search]"));
 }

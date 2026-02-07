@@ -1,6 +1,7 @@
 use adk_core::{
     AfterAgentCallback, Agent, BeforeAgentCallback, EventStream, InvocationContext, Result,
 };
+use adk_skill::{SelectionPolicy, SkillIndex, load_skill_index};
 use async_stream::stream;
 use async_trait::async_trait;
 use std::sync::Arc;
@@ -10,6 +11,9 @@ pub struct ParallelAgent {
     name: String,
     description: String,
     sub_agents: Vec<Arc<dyn Agent>>,
+    skills_index: Option<Arc<SkillIndex>>,
+    skill_policy: SelectionPolicy,
+    max_skill_chars: usize,
     before_callbacks: Vec<BeforeAgentCallback>,
     after_callbacks: Vec<AfterAgentCallback>,
 }
@@ -20,6 +24,9 @@ impl ParallelAgent {
             name: name.into(),
             description: String::new(),
             sub_agents,
+            skills_index: None,
+            skill_policy: SelectionPolicy::default(),
+            max_skill_chars: 2000,
             before_callbacks: Vec::new(),
             after_callbacks: Vec::new(),
         }
@@ -37,6 +44,31 @@ impl ParallelAgent {
 
     pub fn after_callback(mut self, callback: AfterAgentCallback) -> Self {
         self.after_callbacks.push(callback);
+        self
+    }
+
+    pub fn with_skills(mut self, index: SkillIndex) -> Self {
+        self.skills_index = Some(Arc::new(index));
+        self
+    }
+
+    pub fn with_auto_skills(self) -> Result<Self> {
+        self.with_skills_from_root(".")
+    }
+
+    pub fn with_skills_from_root(mut self, root: impl AsRef<std::path::Path>) -> Result<Self> {
+        let index = load_skill_index(root).map_err(|e| adk_core::AdkError::Agent(e.to_string()))?;
+        self.skills_index = Some(Arc::new(index));
+        Ok(self)
+    }
+
+    pub fn with_skill_policy(mut self, policy: SelectionPolicy) -> Self {
+        self.skill_policy = policy;
+        self
+    }
+
+    pub fn with_skill_budget(mut self, max_chars: usize) -> Self {
+        self.max_skill_chars = max_chars;
         self
     }
 }
@@ -57,6 +89,12 @@ impl Agent for ParallelAgent {
 
     async fn run(&self, ctx: Arc<dyn InvocationContext>) -> Result<EventStream> {
         let sub_agents = self.sub_agents.clone();
+        let run_ctx = super::skill_context::with_skill_injected_context(
+            ctx,
+            self.skills_index.as_ref(),
+            &self.skill_policy,
+            self.max_skill_chars,
+        );
 
         let s = stream! {
             use futures::stream::{FuturesUnordered, StreamExt};
@@ -64,7 +102,7 @@ impl Agent for ParallelAgent {
             let mut futures = FuturesUnordered::new();
 
             for agent in sub_agents {
-                let ctx = ctx.clone();
+                let ctx = run_ctx.clone();
                 futures.push(async move {
                     agent.run(ctx).await
                 });
