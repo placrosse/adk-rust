@@ -108,11 +108,14 @@ impl ExecutionContext {
     /// - Same-name nodes (loop iterations): closed with current state diff
     /// - Different-name nodes: closed with their expected output keys or diff
     ///
-    /// This ensures that nodes like `set_topics` (which run once before a loop)
-    /// get their node_end emitted as soon as the next node starts, rather than
-    /// being deferred to `emit_pending_node_ends()` at the very end.
+    /// Action nodes whose expected output keys are NOT yet in `current_state`
+    /// are kept pending — they'll be resolved in `emit_pending_node_ends()`
+    /// when the Done event arrives with the full final state. This is necessary
+    /// because `adk-graph` v0.2.1 doesn't emit `updates` events for
+    /// FunctionNodes in Messages mode.
     fn node_start(&mut self, node: &str) -> Vec<String> {
         let mut events = Vec::new();
+        let mut still_pending = Vec::new();
 
         // Close ALL pending nodes before starting the new one.
         // Sort by step so they emit in chronological order.
@@ -120,6 +123,20 @@ impl ExecutionContext {
         pending.sort_by_key(|p| p.step);
 
         for prev in pending {
+            // If this is a known action node, check whether its output keys
+            // are already available in current_state. If not, defer it.
+            let has_captured = self.completed_outputs.contains_key(&prev.name);
+            if !has_captured {
+                if let Some(expected_keys) = self.action_node_output_keys.get(&prev.name) {
+                    let any_key_present = expected_keys.iter().any(|k| self.current_state.contains_key(k));
+                    if !any_key_present && !expected_keys.is_empty() {
+                        // Output not available yet — keep pending for emit_pending_node_ends()
+                        still_pending.push(prev);
+                        continue;
+                    }
+                }
+            }
+
             let duration_ms = self.recorded_durations.remove(&prev.name)
                 .unwrap_or_else(|| prev.start_time.elapsed().as_millis() as u64);
 
@@ -150,6 +167,9 @@ impl ExecutionContext {
             );
             events.push(end_event.to_json());
         }
+
+        // Re-add deferred action nodes back to pending
+        self.pending_agents.extend(still_pending);
 
         self.step += 1;
 
