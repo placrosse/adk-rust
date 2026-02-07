@@ -71,8 +71,8 @@ Action nodes are non-LLM programmatic nodes for deterministic workflow operation
 | **Loop** | 🔄 | Iterate over arrays or repeat operations |
 | **Merge** | 🔗 | Combine multiple branches back into single flow |
 | **Wait** | ⏱️ | Pause workflow for duration or condition |
-| **Code** | 💻 | Execute custom JavaScript/TypeScript in sandbox |
-| **Database** | 🗄️ | Perform database operations (PostgreSQL, MySQL, MongoDB, Redis) |
+| **Code** | 💻 | Execute custom JavaScript in sandboxed boa_engine runtime |
+| **Database** | 🗄️ | Database operations (PostgreSQL, MySQL, SQLite, MongoDB, Redis) |
 
 #### Trigger Types
 
@@ -249,6 +249,23 @@ All action nodes share standard properties:
 - **Compile** - Generate Rust project from visual design
 - **Build** - Compile to executable with real-time output
 - **Run** - Execute built agent directly
+- **Smart Build Button** - Send button transforms to Build when workflow changes need recompilation
+
+### Action Node Code Generation
+
+Action nodes generate production Rust code alongside LLM agents:
+
+| Node | Runtime | Details |
+|------|---------|---------|
+| **HTTP** | `reqwest` | All methods, auth (Bearer/Basic/API key), JSON/form/multipart body, JSONPath extraction |
+| **Database** | `sqlx` / `mongodb` / `redis` | PostgreSQL, MySQL, SQLite via sqlx; MongoDB via native driver; Redis GET/SET/DEL/HGET/HSET/LPUSH/LRANGE |
+| **Email** | `lettre` / `imap` | SMTP send with TLS + auth + To/CC/BCC; IMAP monitor with search filters + mark-as-read |
+| **Code** | `boa_engine` | Embedded JavaScript execution, graph state as `input` object, thread-isolated sandbox |
+| **Set** | native | Variable assignment with literal, expression, and secret values |
+| **Transform** | native | Map, filter, sort, reduce, flatten, group, pick, merge, template operations |
+| **Merge** | native | Combine parallel branches via waitAll, waitAny, or append strategies |
+
+All action nodes support `{{variable}}` interpolation in string fields and receive predecessor node outputs automatically. Dependencies are auto-detected and added to the generated `Cargo.toml`.
 
 ## Architecture
 

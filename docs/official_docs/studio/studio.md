@@ -156,6 +156,34 @@ Convert visual designs to production code:
 3. **Build** - Compile to executable with real-time output
 4. **Run** - Execute the built agent
 
+The Build button appears automatically when your workflow has changed since the last build.
+
+### Action Node Code Generation
+
+Action nodes compile to production Rust code alongside LLM agents. Dependencies are auto-detected and added to the generated `Cargo.toml`.
+
+| Node | Crate | What It Generates |
+|------|-------|-------------------|
+| **HTTP** | `reqwest` | Async HTTP requests with auth, headers, body, JSONPath extraction |
+| **Database** | `sqlx` / `mongodb` / `redis` | Connection pools, parameterized queries, Redis commands |
+| **Email** | `lettre` / `imap` | SMTP send with TLS/auth/CC/BCC; IMAP monitoring with search filters |
+| **Code** | `boa_engine` | Embedded JavaScript execution with graph state as `input` object |
+| **Set** | native | Variable assignment (literal, expression, secret) |
+| **Transform** | native | Map, filter, sort, reduce, flatten, group, pick, merge, template |
+| **Merge** | native | Branch combination (waitAll, waitAny, append) |
+
+All action nodes support `{{variable}}` interpolation and receive predecessor node outputs automatically.
+
+#### Supported Databases
+
+| Database | Driver | Features |
+|----------|--------|----------|
+| PostgreSQL | `sqlx` (postgres) | Async pool, parameterized queries, row-to-JSON mapping |
+| MySQL | `sqlx` (mysql) | Async pool, parameterized queries, row-to-JSON mapping |
+| SQLite | `sqlx` (sqlite) | Async pool, parameterized queries, row-to-JSON mapping |
+| MongoDB | `mongodb` | Native BSON driver, find/insert/update/delete operations |
+| Redis | `redis` | GET, SET, DEL, HGET, HSET, LPUSH, LRANGE commands |
+
 ## Architecture
 
 ```
@@ -255,6 +283,38 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 ```
+
+### Generated Code with Action Nodes
+
+When your workflow includes action nodes, the generated code uses `adk-graph` for workflow orchestration with `FunctionNode` closures:
+
+```rust
+use adk_graph::prelude::*;
+
+// HTTP action node → reqwest call
+let http_node = FunctionNode::new("fetch_data", |ctx| async move {
+    let client = reqwest::Client::new();
+    let resp = client.get("https://api.example.com/data")
+        .bearer_auth(&ctx.get("API_TOKEN").unwrap_or_default())
+        .send().await
+        .map_err(|e| GraphError::NodeExecutionFailed {
+            node: "fetch_data".into(),
+            message: e.to_string(),
+        })?;
+    let body: serde_json::Value = resp.json().await?;
+    Ok(NodeOutput::new().with_update("apiData", body))
+});
+
+// Code action node → boa_engine JS execution
+let code_node = FunctionNode::new("process", |ctx| async move {
+    let mut js_ctx = boa_engine::Context::default();
+    // Graph state injected as global `input` object
+    // User code executed in thread-isolated sandbox
+    Ok(NodeOutput::new().with_update("result", output))
+});
+```
+
+Auto-detected dependencies are added to the generated `Cargo.toml` (reqwest, sqlx, mongodb, redis, lettre, imap, boa_engine).
 
 ## Templates
 

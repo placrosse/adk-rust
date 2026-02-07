@@ -5,6 +5,63 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.4] - 2026-02-08
+
+### ⭐ Highlights
+- **Action Node Code Generation**: Full Rust codegen for HTTP, Database, Email, and Code action nodes
+- **Database Support**: PostgreSQL, MySQL, SQLite via sqlx; MongoDB and Redis via native drivers
+- **Email Automation**: SMTP send (lettre) and IMAP inbox monitoring with TLS and auth
+- **JavaScript Runtime**: Embedded boa_engine JS execution for Code action nodes
+- **Smart Build Button**: Send button transforms to Build when workflow changes require recompilation
+
+### Added
+- **adk-studio**: HTTP action node code generation
+  - All HTTP methods (GET, POST, PUT, PATCH, DELETE, HEAD, OPTIONS) via `reqwest`
+  - Authentication: None, Bearer token, Basic auth, API key (header/query)
+  - Request body: JSON, form-urlencoded, raw text, multipart form-data
+  - Response handling: JSON with optional JSONPath extraction, raw text, binary
+  - `{{variable}}` interpolation in URL, headers, body, and auth fields
+  - Custom headers and User-Agent configuration
+- **adk-studio**: Database action node code generation
+  - PostgreSQL, MySQL, SQLite support via `sqlx` with async connection pools
+  - MongoDB support via `mongodb` driver with BSON document queries
+  - Redis support via `redis` crate with GET, SET, DEL, HGET, HSET, LPUSH, LRANGE commands
+  - Parameterized queries with `{{variable}}` interpolation
+  - Connection string configuration per database type
+- **adk-studio**: Email action node code generation
+  - Send mode: SMTP via `lettre` with TLS/STARTTLS, authentication, To/CC/BCC
+  - HTML and plain text body support with `{{variable}}` interpolation
+  - Monitor mode: IMAP via `imap` + `native-tls` with folder selection
+  - IMAP search filters: UNSEEN, FROM, SUBJECT with header parsing
+  - Optional mark-as-read after processing
+- **adk-studio**: Code action node code generation
+  - JavaScript execution via `boa_engine` (pure Rust JS engine)
+  - Graph state injected as global `input` object
+  - User code wrapped in IIFE for return value capture
+  - Thread-isolated execution for sandboxing
+  - `js_value_to_json` helper for boa-to-serde conversion
+- **adk-studio**: Predecessor output injection for all action node types
+  - All action nodes now receive outputs from predecessor nodes in the graph
+  - Previously only Set, Transform, and Merge nodes had this capability
+- **adk-studio**: Smart Build button
+  - Send button transforms to Build when workflow has been modified since last build
+  - Automatically detects when recompilation is needed
+
+### Fixed
+- **adk-studio**: Replaced non-existent `NodeError::Other` with `GraphError::NodeExecutionFailed` in all generated code
+- **adk-studio**: Fixed sqlx type inference in database codegen by splitting fetch and map operations
+- **adk-studio**: Added missing `sqlx::Row` and `sqlx::Column` imports in database codegen
+- **adk-studio**: Fixed moved value error when capturing row count before consuming rows in JSON macro
+
+### Dependencies (Generated Projects)
+- `reqwest` — auto-detected for HTTP action nodes
+- `sqlx` — auto-detected per database type (postgres/mysql/sqlite features)
+- `mongodb` — auto-detected for MongoDB action nodes
+- `redis` — auto-detected for Redis action nodes
+- `lettre` — auto-detected for Email send nodes
+- `imap` + `native-tls` — auto-detected for Email monitor nodes
+- `boa_engine` — auto-detected for Code action nodes
+
 ## [0.2.3] - 2026-02-01
 
 ### ⭐ Highlights
@@ -576,7 +633,8 @@ Initial release - Published to crates.io.
 - Tokio async runtime
 - Google API key for Gemini
 
-[Unreleased]: https://github.com/zavora-ai/adk-rust/compare/v0.2.3...HEAD
+[Unreleased]: https://github.com/zavora-ai/adk-rust/compare/v0.2.4...HEAD
+[0.2.4]: https://github.com/zavora-ai/adk-rust/compare/v0.2.3...v0.2.4
 [0.2.3]: https://github.com/zavora-ai/adk-rust/compare/v0.2.2...v0.2.3
 [0.2.2]: https://github.com/zavora-ai/adk-rust/compare/v0.2.1...v0.2.2
 [0.2.1]: https://github.com/zavora-ai/adk-rust/compare/v0.2.0...v0.2.1
