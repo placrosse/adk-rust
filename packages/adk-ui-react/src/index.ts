@@ -45,3 +45,6 @@ export type {
 } from './a2ui/events';
 export { applyUiUpdate, applyUiUpdates } from './updates';
 export { applyProtocolPayload, parseProtocolPayload } from './protocols';
+export { UnifiedRenderStore } from './store';
+export { ProtocolClient, buildOutboundEvent, createProtocolClient } from './client';
+export type { OutboundEventOptions, ProtocolClientOptions, UiProtocol } from './client';

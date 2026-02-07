@@ -34,13 +34,17 @@ var index_exports = {};
 __export(index_exports, {
   A2uiStore: () => A2uiStore,
   A2uiSurfaceRenderer: () => A2uiSurfaceRenderer,
+  ProtocolClient: () => ProtocolClient,
   Renderer: () => Renderer,
   StreamingRenderer: () => StreamingRenderer,
+  UnifiedRenderStore: () => UnifiedRenderStore,
   applyParsedMessages: () => applyParsedMessages,
   applyProtocolPayload: () => applyProtocolPayload,
   applyUiUpdate: () => applyUiUpdate,
   applyUiUpdates: () => applyUiUpdates,
   buildActionEvent: () => buildActionEvent,
+  buildOutboundEvent: () => buildOutboundEvent,
+  createProtocolClient: () => createProtocolClient,
   isDataBinding: () => isDataBinding,
   isFunctionCall: () => isFunctionCall,
   parseJsonl: () => parseJsonl,
@@ -1780,17 +1784,149 @@ function applyProtocolPayload(store, payload) {
   }
   return parsed;
 }
+
+// src/store.ts
+function isRecord2(value) {
+  return typeof value === "object" && value !== null;
+}
+function isLegacyComponentArray(value) {
+  return Array.isArray(value) && value.every((entry) => isRecord2(entry) && typeof entry.type === "string");
+}
+function getUiTheme(value) {
+  if (value === "light" || value === "dark" || value === "system") {
+    return value;
+  }
+  return void 0;
+}
+function extractLegacyUiResponse(payload) {
+  if (!isRecord2(payload)) {
+    return null;
+  }
+  if (isLegacyComponentArray(payload.components)) {
+    return {
+      id: typeof payload.id === "string" ? payload.id : void 0,
+      theme: getUiTheme(payload.theme),
+      components: payload.components
+    };
+  }
+  if (isRecord2(payload.payload) && isLegacyComponentArray(payload.payload.components)) {
+    return {
+      id: typeof payload.payload.id === "string" ? payload.payload.id : void 0,
+      theme: getUiTheme(payload.payload.theme),
+      components: payload.payload.components
+    };
+  }
+  return null;
+}
+var UnifiedRenderStore = class {
+  constructor(a2uiStore = new A2uiStore()) {
+    __publicField(this, "a2uiStore");
+    __publicField(this, "legacyUiResponse", null);
+    this.a2uiStore = a2uiStore;
+  }
+  getA2uiStore() {
+    return this.a2uiStore;
+  }
+  getLegacyUiResponse() {
+    return this.legacyUiResponse;
+  }
+  clearLegacyUiResponse() {
+    this.legacyUiResponse = null;
+  }
+  applyPayload(payload) {
+    const parsed = applyProtocolPayload(this.a2uiStore, payload);
+    if (parsed.length > 0) {
+      return parsed;
+    }
+    const legacy = extractLegacyUiResponse(payload);
+    if (legacy) {
+      this.legacyUiResponse = legacy;
+    }
+    return [];
+  }
+};
+
+// src/client.ts
+var DEFAULT_SURFACE_ID = "main";
+function buildOutboundEvent(protocol, event, options = {}) {
+  const surfaceId = options.surfaceId ?? DEFAULT_SURFACE_ID;
+  switch (protocol) {
+    case "ag_ui":
+      return {
+        protocol: "ag_ui",
+        event: {
+          type: "CUSTOM",
+          name: "adk.ui.event",
+          threadId: options.threadId ?? `thread-${surfaceId}`,
+          runId: options.runId ?? `run-${surfaceId}`,
+          value: {
+            surfaceId,
+            event
+          }
+        }
+      };
+    case "mcp_apps":
+      return {
+        protocol: "mcp_apps",
+        method: "ui.event",
+        params: {
+          surfaceId,
+          event
+        }
+      };
+    case "a2ui":
+    case "adk_ui":
+    default:
+      return {
+        protocol,
+        event: {
+          surfaceId,
+          ...event
+        }
+      };
+  }
+}
+var ProtocolClient = class {
+  constructor(options = {}) {
+    __publicField(this, "protocol");
+    __publicField(this, "store");
+    this.protocol = options.protocol ?? "adk_ui";
+    this.store = options.store ?? new UnifiedRenderStore();
+  }
+  getProtocol() {
+    return this.protocol;
+  }
+  setProtocol(protocol) {
+    this.protocol = protocol;
+  }
+  getStore() {
+    return this.store;
+  }
+  applyPayload(payload) {
+    return this.store.applyPayload(payload);
+  }
+  buildOutboundEvent(event, options = {}) {
+    return buildOutboundEvent(this.protocol, event, options);
+  }
+};
+function createProtocolClient(options = {}) {
+  return new ProtocolClient(options);
+}
 // Annotate the CommonJS export names for ESM import in node:
 0 && (module.exports = {
   A2uiStore,
   A2uiSurfaceRenderer,
+  ProtocolClient,
   Renderer,
   StreamingRenderer,
+  UnifiedRenderStore,
   applyParsedMessages,
   applyProtocolPayload,
   applyUiUpdate,
   applyUiUpdates,
   buildActionEvent,
+  buildOutboundEvent,
+  createProtocolClient,
   isDataBinding,
   isFunctionCall,
   parseJsonl,

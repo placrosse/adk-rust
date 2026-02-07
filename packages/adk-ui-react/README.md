@@ -57,6 +57,41 @@ function AgentUI({ response }: { response: UiResponse }) {
 }
 ```
 
+## Tri-Protocol Client (A2UI / AG-UI / MCP Apps)
+
+Use the protocol client when your backend may return different UI protocols.
+
+```tsx
+import {
+  A2uiSurfaceRenderer,
+  UnifiedRenderStore,
+  createProtocolClient,
+} from '@zavora-ai/adk-ui-react';
+
+const store = new UnifiedRenderStore();
+const client = createProtocolClient({ protocol: 'adk_ui', store });
+
+// payload can be:
+// - A2UI JSONL string
+// - AG-UI envelope { protocol: "ag_ui", events: [...] }
+// - MCP Apps envelope { protocol: "mcp_apps", payload: {...} }
+// - legacy ADK-UI payload with `components`
+client.applyPayload(payload);
+
+const surface = store.getA2uiStore().getSurface('main');
+```
+
+Outbound events can also be generated per protocol:
+
+```ts
+import { buildOutboundEvent } from '@zavora-ai/adk-ui-react';
+
+const event = buildOutboundEvent('ag_ui', {
+  action: 'button_click',
+  action_id: 'approve',
+});
+```
+
 ## 🧩 Available Components
 
 | Category | Components |
