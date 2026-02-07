@@ -283,6 +283,7 @@ impl Llm for GroqClient {
                                                     }
                                                 }),
                                                 finish_reason,
+                                                citation_metadata: None,
                                                 partial: false,
                                                 turn_complete: true,
                                                 interrupted: false,
@@ -303,6 +304,7 @@ impl Llm for GroqClient {
                                                             }),
                                                             usage_metadata: None,
                                                             finish_reason: None,
+                                                            citation_metadata: None,
                                                             partial: true,
                                                             turn_complete: false,
                                                             interrupted: false,

@@ -184,6 +184,7 @@ pub fn from_openai_response(resp: &CreateChatCompletionResponse) -> LlmResponse 
         content,
         usage_metadata,
         finish_reason,
+        citation_metadata: None,
         partial: false,
         turn_complete: true,
         interrupted: false,
@@ -245,6 +246,7 @@ pub fn from_openai_chunk(chunk: &CreateChatCompletionStreamResponse) -> LlmRespo
         content,
         usage_metadata: None, // Streaming chunks don't have usage info
         finish_reason,
+        citation_metadata: None,
         partial: !is_final,
         turn_complete: is_final,
         interrupted: false,

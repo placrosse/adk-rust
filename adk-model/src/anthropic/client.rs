@@ -233,6 +233,7 @@ impl Llm for AnthropicClient {
                                         total_token_count: delta_event.usage.output_tokens,
                                     }),
                                     finish_reason,
+                                    citation_metadata: None,
                                     partial: false,
                                     turn_complete: true,
                                     interrupted: false,
