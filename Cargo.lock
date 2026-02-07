@@ -38,6 +38,26 @@ dependencies = [
 ]
 
 [[package]]
+name = "adk-3d-ui"
+version = "0.2.2"
+dependencies = [
+ "anyhow",
+ "async-stream",
+ "axum 0.8.8",
+ "chrono",
+ "reqwest 0.12.28",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.18",
+ "tokio",
+ "tokio-stream",
+ "tower-http",
+ "tracing",
+ "tracing-subscriber",
+ "uuid 1.19.0",
+]
+
+[[package]]
 name = "adk-agent"
 version = "0.2.2"
 dependencies = [
