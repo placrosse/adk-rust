@@ -15,8 +15,17 @@ export type Component =
     | { type: 'slider'; id?: string; name: string; label: string; min?: number; max?: number; step?: number; default_value?: number }
     | { type: 'textarea'; id?: string; name: string; label: string; placeholder?: string; rows?: number; required?: boolean; default_value?: string; error?: string }
     // Layouts
-    | { type: 'stack'; id?: string; direction: 'horizontal' | 'vertical'; children: Component[]; gap?: number }
-    | { type: 'grid'; id?: string; columns: number; children: Component[]; gap?: number }
+    | {
+          type: 'stack';
+          id?: string;
+          direction: 'horizontal' | 'vertical';
+          children: Component[];
+          gap?: number | string;
+          justify?: string;
+          align?: string;
+          wrap?: boolean;
+      }
+    | { type: 'grid'; id?: string; columns: number; children: Component[]; gap?: number | string }
     | { type: 'card'; id?: string; title?: string; description?: string; content: Component[]; footer?: Component[] }
     | { type: 'container'; id?: string; children: Component[]; padding?: number }
     | { type: 'divider'; id?: string }

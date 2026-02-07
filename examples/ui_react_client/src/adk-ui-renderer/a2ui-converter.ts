@@ -19,6 +19,52 @@ function extractText(textField: any): string {
   return '';
 }
 
+function normalizeGap(gap: any, spacing: any): number | string | undefined {
+  if (typeof gap === 'number' || typeof gap === 'string') {
+    return gap;
+  }
+
+  if (typeof spacing !== 'string') {
+    return undefined;
+  }
+
+  const token = spacing.trim().toLowerCase();
+  if (!token) {
+    return undefined;
+  }
+
+  const tokenMap: Record<string, string> = {
+    none: '0px',
+    xs: '4px',
+    sm: '8px',
+    small: '8px',
+    md: '12px',
+    medium: '12px',
+    lg: '16px',
+    large: '16px',
+    xl: '24px',
+    xlarge: '24px',
+    '2xl': '32px',
+  };
+
+  return tokenMap[token] ?? spacing;
+}
+
+function normalizeNestedEntries(entries: any): any[] {
+  if (!Array.isArray(entries)) {
+    return [];
+  }
+
+  return entries
+    .map((entry) => {
+      if (typeof entry === 'string') {
+        return entry;
+      }
+      return convertA2UIComponent(entry);
+    })
+    .filter((entry) => entry !== null && entry !== undefined);
+}
+
 export function convertA2UIComponent(a2ui: A2UIComponent): Component | null {
   const { id, component } = a2ui;
   
@@ -179,25 +225,16 @@ export function convertA2UIComponent(a2ui: A2UIComponent): Component | null {
         default_value: props.defaultValue,
       };
 
-    case 'Textarea':
-      return {
-        type: 'textarea',
-        id,
-        name: props.name || id,
-        label: props.label ? extractText(props.label) : '',
-        placeholder: props.placeholder ? extractText(props.placeholder) : undefined,
-        rows: props.rows,
-        required: props.required,
-        default_value: props.defaultValue ? extractText(props.defaultValue) : undefined,
-      };
-
     case 'Column':
       return {
         type: 'stack',
         id,
         direction: 'vertical',
         children: props.children || [],
-        gap: props.gap,
+        gap: normalizeGap(props.gap, props.spacing),
+        justify: props.justify,
+        align: props.align,
+        wrap: props.wrap,
       };
 
     case 'Row':
@@ -206,7 +243,10 @@ export function convertA2UIComponent(a2ui: A2UIComponent): Component | null {
         id,
         direction: 'horizontal',
         children: props.children || [],
-        gap: props.gap,
+        gap: normalizeGap(props.gap, props.spacing),
+        justify: props.justify,
+        align: props.align,
+        wrap: props.wrap,
       };
 
     case 'Grid':
@@ -215,7 +255,7 @@ export function convertA2UIComponent(a2ui: A2UIComponent): Component | null {
         id,
         columns: props.columns || 2,
         children: props.children || [],
-        gap: props.gap,
+        gap: normalizeGap(props.gap, props.spacing),
       };
 
     case 'Card':
@@ -224,15 +264,15 @@ export function convertA2UIComponent(a2ui: A2UIComponent): Component | null {
         id,
         title: props.title ? extractText(props.title) : undefined,
         description: props.description ? extractText(props.description) : undefined,
-        content: props.content?.map(convertA2UIComponent).filter(Boolean) || [],
-        footer: props.footer?.map(convertA2UIComponent).filter(Boolean),
+        content: normalizeNestedEntries(props.content) as any,
+        footer: normalizeNestedEntries(props.footer) as any,
       };
 
     case 'Container':
       return {
         type: 'container',
         id,
-        children: props.children?.map(convertA2UIComponent).filter(Boolean) || [],
+        children: normalizeNestedEntries(props.children) as any,
         padding: props.padding,
       };
 
@@ -253,6 +293,11 @@ export function convertA2UIComponent(a2ui: A2UIComponent): Component | null {
         page_size: props.pageSize,
         striped: props.striped,
       };
+
+    case 'TableColumn':
+      // Column definitions are consumed by the higher-level surface parser and
+      // hydrated into Table.columns there. They are not standalone render nodes.
+      return null;
 
     case 'List':
       return {
@@ -324,8 +369,8 @@ export function convertA2UIComponent(a2ui: A2UIComponent): Component | null {
         type: 'modal',
         id,
         title: extractText(props.title),
-        content: props.content?.map(convertA2UIComponent).filter(Boolean) || [],
-        footer: props.footer?.map(convertA2UIComponent).filter(Boolean),
+        content: normalizeNestedEntries(props.content) as any,
+        footer: normalizeNestedEntries(props.footer) as any,
         size: props.size as any,
         closable: props.closable,
       };
@@ -362,7 +407,7 @@ export function convertA2UIMessage(message: any): Component[] {
     if (firstComp?.component && typeof firstComp.component === 'object') {
       return message.components
         .map(convertA2UIComponent)
-        .filter((c): c is Component => c !== null);
+        .filter((c: Component | null): c is Component => c !== null);
     }
     
     // Already flat format

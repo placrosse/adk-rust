@@ -19,6 +19,51 @@ const IconMap: Record<string, React.ComponentType<any>> = {
     'calendar': Calendar,
 };
 
+function humanizeActionId(actionId: string): string {
+    const normalized = actionId
+        .replace(/[_-]+/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+    if (!normalized) {
+        return 'Run Action';
+    }
+    return normalized.replace(/\b\w/g, (char) => char.toUpperCase());
+}
+
+function resolveGap(gap: number | string | undefined): string {
+    if (typeof gap === 'number') {
+        const px = gap <= 12 ? gap * 4 : gap;
+        return `${Math.max(0, px)}px`;
+    }
+    if (typeof gap === 'string' && gap.trim().length > 0) {
+        return gap;
+    }
+    return '16px';
+}
+
+function mapFlexPosition(value: string | undefined): React.CSSProperties['justifyContent'] {
+    if (!value) return undefined;
+    const normalized = value.trim().toLowerCase();
+    if (normalized === 'start' || normalized === 'flex-start') return 'flex-start';
+    if (normalized === 'end' || normalized === 'flex-end') return 'flex-end';
+    if (normalized === 'center') return 'center';
+    if (normalized === 'between' || normalized === 'space-between') return 'space-between';
+    if (normalized === 'around' || normalized === 'space-around') return 'space-around';
+    if (normalized === 'evenly' || normalized === 'space-evenly') return 'space-evenly';
+    return undefined;
+}
+
+function mapFlexAlign(value: string | undefined): React.CSSProperties['alignItems'] {
+    if (!value) return undefined;
+    const normalized = value.trim().toLowerCase();
+    if (normalized === 'start' || normalized === 'flex-start') return 'flex-start';
+    if (normalized === 'end' || normalized === 'flex-end') return 'flex-end';
+    if (normalized === 'center') return 'center';
+    if (normalized === 'stretch') return 'stretch';
+    if (normalized === 'baseline') return 'baseline';
+    return undefined;
+}
+
 // Context for form handling
 interface FormContextValue {
     onAction?: (event: UiEvent) => void;
@@ -81,22 +126,23 @@ const ComponentRenderer: React.FC<{ component: Component }> = ({ component }) =>
                         component.variant === 'h4' ? 'h4' :
                             component.variant === 'code' ? 'code' : 'p';
             const classes = clsx({
-                'text-4xl font-bold mb-4 dark:text-white': component.variant === 'h1',
-                'text-3xl font-bold mb-3 dark:text-white': component.variant === 'h2',
-                'text-2xl font-bold mb-2 dark:text-white': component.variant === 'h3',
-                'text-xl font-bold mb-2 dark:text-white': component.variant === 'h4',
+                'text-4xl font-bold tracking-tight mb-4 text-slate-800 dark:text-white': component.variant === 'h1',
+                'text-3xl font-bold tracking-tight mb-3 text-slate-800 dark:text-white': component.variant === 'h2',
+                'text-2xl font-semibold tracking-tight mb-2 text-slate-800 dark:text-white': component.variant === 'h3',
+                'text-xl font-semibold mb-2 text-slate-800 dark:text-white': component.variant === 'h4',
                 'font-mono bg-gray-100 dark:bg-gray-800 p-1 rounded dark:text-gray-100': component.variant === 'code',
                 'text-sm text-gray-500 dark:text-gray-400': component.variant === 'caption',
             });
             return <Tag className={classes}>{component.content}</Tag>;
 
         case 'button':
-            const btnClasses = clsx('px-4 py-2 rounded font-medium transition-colors', {
-                'bg-blue-600 text-white hover:bg-blue-700': component.variant === 'primary' || !component.variant,
+            const buttonLabel = component.label?.trim() || humanizeActionId(component.action_id);
+            const btnClasses = clsx('inline-flex items-center justify-center px-4 py-2.5 rounded-lg font-semibold transition-colors border border-transparent', {
+                'bg-blue-600 text-white hover:bg-blue-700 shadow-sm': component.variant === 'primary' || !component.variant,
                 'bg-gray-200 text-gray-800 hover:bg-gray-300': component.variant === 'secondary',
-                'bg-red-600 text-white hover:bg-red-700': component.variant === 'danger',
-                'bg-transparent hover:bg-gray-100': component.variant === 'ghost',
-                'border border-gray-300 hover:bg-gray-50': component.variant === 'outline',
+                'bg-red-600 text-white hover:bg-red-700 shadow-sm': component.variant === 'danger',
+                'bg-transparent hover:bg-gray-100 text-gray-700': component.variant === 'ghost',
+                'border border-gray-300 hover:bg-gray-50 text-gray-700': component.variant === 'outline',
                 'opacity-50 cursor-not-allowed': component.disabled,
             });
             return (
@@ -106,7 +152,7 @@ const ComponentRenderer: React.FC<{ component: Component }> = ({ component }) =>
                     disabled={component.disabled}
                     onClick={() => handleButtonClick(component.action_id)}
                 >
-                    {component.label}
+                    {buttonLabel}
                 </button>
             );
 
@@ -178,11 +224,11 @@ const ComponentRenderer: React.FC<{ component: Component }> = ({ component }) =>
             );
 
             return hasInputs ? (
-                <form onSubmit={handleSubmit} className="bg-white dark:bg-gray-900 rounded-lg border dark:border-gray-700 shadow-sm overflow-hidden mb-4">
+                <form onSubmit={handleSubmit} className="bg-white/95 dark:bg-gray-900 rounded-xl border border-slate-200/80 dark:border-gray-700 shadow-sm overflow-hidden mb-4">
                     {cardContent}
                 </form>
             ) : (
-                <div className="bg-white dark:bg-gray-900 rounded-lg border dark:border-gray-700 shadow-sm overflow-hidden mb-4">
+                <div className="bg-white/95 dark:bg-gray-900 rounded-xl border border-slate-200/80 dark:border-gray-700 shadow-sm overflow-hidden mb-4">
                     {cardContent}
                 </div>
             );
@@ -192,9 +238,19 @@ const ComponentRenderer: React.FC<{ component: Component }> = ({ component }) =>
                 'flex-col': component.direction === 'vertical',
                 'flex-row': component.direction === 'horizontal',
             });
-            const gapValue = typeof component.gap === 'number' ? component.gap * 4 : 16;
+            const gapValue = resolveGap(component.gap);
+            const justify = mapFlexPosition(component.justify);
+            const align = mapFlexAlign(component.align);
+            const stackStyle: React.CSSProperties = {
+                gap: gapValue,
+                justifyContent: justify,
+                alignItems: align,
+            };
+            if (component.wrap) {
+                stackStyle.flexWrap = 'wrap';
+            }
             return (
-                <div className={stackClasses} style={{ gap: gapValue }}>
+                <div className={stackClasses} style={stackStyle}>
                     {component.children.map((child, i) => <ComponentRenderer key={i} component={child} />)}
                 </div>
             );
@@ -324,13 +380,17 @@ const ComponentRenderer: React.FC<{ component: Component }> = ({ component }) =>
             );
 
         case 'progress':
+            const normalizedProgress = Math.max(0, Math.min(100, component.value ?? 0));
             return (
                 <div className="mb-3">
-                    {component.label && <div className="text-sm text-gray-600 mb-1">{component.label}</div>}
-                    <div className="w-full bg-gray-200 rounded-full h-2.5">
+                    <div className="flex items-center justify-between mb-1">
+                        {component.label && <div className="text-sm text-gray-600 dark:text-gray-300">{component.label}</div>}
+                        <div className="text-xs font-medium text-gray-500 dark:text-gray-400">{normalizedProgress}%</div>
+                    </div>
+                    <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3 overflow-hidden">
                         <div
-                            className="bg-blue-600 h-2.5 rounded-full transition-all"
-                            style={{ width: `${component.value}%` }}
+                            className="bg-gradient-to-r from-cyan-500 to-blue-600 h-3 rounded-full transition-all"
+                            style={{ width: `${normalizedProgress}%` }}
                         />
                     </div>
                 </div>
@@ -440,10 +500,14 @@ const ComponentRenderer: React.FC<{ component: Component }> = ({ component }) =>
             );
 
         case 'grid':
+            const gridGap = resolveGap(component.gap);
             return (
                 <div
                     className="grid gap-4 mb-4"
-                    style={{ gridTemplateColumns: `repeat(${component.columns || 2}, 1fr)` }}
+                    style={{
+                        gridTemplateColumns: `repeat(${component.columns || 2}, minmax(0, 1fr))`,
+                        gap: gridGap,
+                    }}
                 >
                     {component.children.map((child, i) => <ComponentRenderer key={i} component={child} />)}
                 </div>
@@ -503,6 +567,47 @@ const ComponentRenderer: React.FC<{ component: Component }> = ({ component }) =>
             const [sortColumn, setSortColumn] = React.useState<string | null>(null);
             const [sortDirection, setSortDirection] = React.useState<'asc' | 'desc'>('asc');
             const [currentPage, setCurrentPage] = React.useState(0);
+            const dataRows = component.data || [];
+
+            const sampleRow = dataRows.length > 0 && typeof dataRows[0] === 'object' && dataRows[0] !== null
+                ? dataRows[0] as Record<string, unknown>
+                : null;
+            const sampleKeys = sampleRow ? Object.keys(sampleRow) : [];
+
+            const humanize = (value: string) =>
+                value
+                    .replace(/[_-]+/g, ' ')
+                    .replace(/\s+/g, ' ')
+                    .trim()
+                    .replace(/\b\w/g, (c) => c.toUpperCase());
+
+            const resolveAccessor = (columnRef: string, index: number) => {
+                const lowered = columnRef.toLowerCase();
+                const normalized = lowered.replace(/^col[-_]/, '').replace(/^column[-_]/, '');
+                const compact = normalized.replace(/[-_]/g, '');
+
+                const direct = sampleKeys.find((key) => key.toLowerCase() === lowered);
+                if (direct) return direct;
+
+                const normalizedMatch = sampleKeys.find((key) => key.toLowerCase() === normalized);
+                if (normalizedMatch) return normalizedMatch;
+
+                const compactMatch = sampleKeys.find((key) => key.toLowerCase().replace(/[-_]/g, '') === compact);
+                if (compactMatch) return compactMatch;
+
+                return sampleKeys[index] || columnRef;
+            };
+
+            const resolvedColumns = component.columns.map((col, index) => {
+                if (typeof col !== 'string') {
+                    return col;
+                }
+                const accessor = resolveAccessor(col, index);
+                return {
+                    header: humanize(accessor),
+                    accessor_key: accessor,
+                };
+            });
 
             const handleSort = (accessorKey: string) => {
                 if (!component.sortable) return;
@@ -514,7 +619,7 @@ const ComponentRenderer: React.FC<{ component: Component }> = ({ component }) =>
                 }
             };
 
-            let tableData = [...component.data];
+            let tableData = [...dataRows];
             if (sortColumn) {
                 tableData.sort((a, b) => {
                     const aVal = a[sortColumn] ?? '';
@@ -533,7 +638,7 @@ const ComponentRenderer: React.FC<{ component: Component }> = ({ component }) =>
                     <table className={clsx('min-w-full divide-y divide-gray-200 dark:divide-gray-700 border dark:border-gray-700 rounded-lg overflow-hidden')}>
                         <thead className="bg-gray-50 dark:bg-gray-800">
                             <tr>
-                                {component.columns.map((col, i) => (
+                                {resolvedColumns.map((col, i) => (
                                     <th
                                         key={i}
                                         onClick={() => handleSort(col.accessor_key)}
@@ -556,7 +661,7 @@ const ComponentRenderer: React.FC<{ component: Component }> = ({ component }) =>
                                     'hover:bg-gray-50 dark:hover:bg-gray-800',
                                     component.striped && ri % 2 === 1 && 'bg-gray-50 dark:bg-gray-800/50'
                                 )}>
-                                    {component.columns.map((col, ci) => (
+                                    {resolvedColumns.map((col, ci) => (
                                         <td key={ci} className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">
                                             {String(row[col.accessor_key] ?? '')}
                                         </td>
