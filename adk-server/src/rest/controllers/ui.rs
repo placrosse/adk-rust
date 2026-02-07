@@ -7,6 +7,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::HashMap;
 use std::sync::{OnceLock, RwLock};
+use tracing::{info, warn};
 
 #[derive(Debug, Clone, Serialize)]
 pub struct UiProtocolCapability {
@@ -192,6 +193,12 @@ fn validate_ui_meta(meta: &Option<Value>) -> Result<(), (StatusCode, String)> {
     Ok(())
 }
 
+fn extract_meta_domain(meta: &Option<Value>) -> Option<String> {
+    let meta_object = meta.as_ref()?.as_object()?;
+    let ui_object = meta_object.get("ui")?.as_object()?;
+    ui_object.get("domain")?.as_str().map(ToString::to_string)
+}
+
 /// GET /api/ui/capabilities
 pub async fn ui_capabilities() -> Json<UiCapabilities> {
     Json(UiCapabilities {
@@ -224,10 +231,11 @@ pub async fn ui_capabilities() -> Json<UiCapabilities> {
 
 /// GET /api/ui/resources
 pub async fn list_ui_resources() -> Json<UiResourceListResponse> {
-    let resources = resource_registry()
+    let resources: Vec<UiResource> = resource_registry()
         .read()
         .map(|registry| registry.values().map(|entry| entry.resource.clone()).collect())
         .unwrap_or_default();
+    info!(resource_count = resources.len(), "ui resource list requested");
     Json(UiResourceListResponse { resources })
 }
 
@@ -240,8 +248,10 @@ pub async fn read_ui_resource(
         .read()
         .map_err(|_| (StatusCode::INTERNAL_SERVER_ERROR, "resource registry poisoned".to_string()))?;
     let Some(entry) = guard.get(&query.uri) else {
+        warn!(uri = %query.uri, "ui resource read failed: not found");
         return Err((StatusCode::NOT_FOUND, format!("resource not found: {}", query.uri)));
     };
+    info!(uri = %query.uri, "ui resource read");
     Ok(Json(UiResourceReadResponse { contents: vec![entry.content.clone()] }))
 }
 
@@ -253,27 +263,40 @@ pub async fn register_ui_resource(
     validate_ui_resource_mime(&req.mime_type)?;
     validate_ui_meta(&req.meta)?;
 
+    let uri = req.uri.clone();
+    let name = req.name.clone();
+    let mime_type = req.mime_type.clone();
+    let meta = req.meta.clone();
+    let domain = extract_meta_domain(&meta).unwrap_or_else(|| "<none>".to_string());
+
     let entry = UiResourceEntry {
         resource: UiResource {
-            uri: req.uri.clone(),
-            name: req.name.clone(),
+            uri: uri.clone(),
+            name: name.clone(),
             description: req.description.clone(),
-            mime_type: req.mime_type.clone(),
-            meta: req.meta.clone(),
+            mime_type: mime_type.clone(),
+            meta: meta.clone(),
         },
         content: UiResourceContent {
-            uri: req.uri.clone(),
-            mime_type: req.mime_type,
+            uri: uri.clone(),
+            mime_type: mime_type.clone(),
             text: Some(req.text),
             blob: None,
-            meta: req.meta,
+            meta,
         },
     };
 
     resource_registry()
         .write()
         .map_err(|_| (StatusCode::INTERNAL_SERVER_ERROR, "resource registry poisoned".to_string()))?
-        .insert(req.uri, entry);
+        .insert(uri.clone(), entry);
+    info!(
+        uri = %uri,
+        name = %name,
+        mime_type = %mime_type,
+        ui_domain = %domain,
+        "ui resource registered"
+    );
 
     Ok(StatusCode::CREATED)
 }
