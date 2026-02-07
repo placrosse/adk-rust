@@ -114,20 +114,33 @@ let update = UiUpdate::replace(
 
 ## Protocol Outputs
 
-All render tools support protocol-aware output selection.
-
-Protocol behavior:
-
-- `render_screen` / `render_page`: default to `a2ui`
-- legacy render tools (`render_form`, `render_card`, `render_alert`, etc.): default to legacy `adk_ui` payloads unless `protocol` is set
+All 13 tools support protocol-aware output selection through the `protocol` argument.
 
 Supported protocol values:
 
-- `a2ui` (default): A2UI JSONL payloads
-- `ag_ui`: AG-UI event stream (wrapped as `RUN_STARTED` -> `CUSTOM` -> `RUN_FINISHED`)
-- `mcp_apps`: MCP Apps payload with `ui://` resource + `_meta.ui.resourceUri` linkage
+- `a2ui`
+- `ag_ui`
+- `mcp_apps`
 
-Example tool args:
+### Output Matrix
+
+| Tool | Default (`protocol` omitted) | `protocol="a2ui"` | `protocol="ag_ui"` | `protocol="mcp_apps"` |
+|------|-------------------------------|-------------------|--------------------|-----------------------|
+| `render_screen` | A2UI surface payload object (`jsonl`, `components`, `data_model`) | Same A2UI payload object | AG-UI adapter payload (`events`) | MCP Apps adapter payload (`resource`, `_meta.ui.resourceUri`) |
+| `render_page` | A2UI JSONL string | A2UI JSONL string | AG-UI adapter payload (`events`) | MCP Apps adapter payload (`resource`, `_meta.ui.resourceUri`) |
+| `render_kit` | Kit artifact JSON (`catalog`, `tokens`, `templates`, `theme_css`) | Wrapped payload `{ protocol, surface_id, payload }` | Wrapped payload `{ protocol, surface_id, payload }` | Wrapped payload `{ protocol, surface_id, payload }` |
+| `render_form` | Legacy `UiResponse` JSON (`components`) | Protocol envelope (`protocol`, `version`, `surface_id`, `jsonl`) | Protocol envelope (`payload.events`) | Protocol envelope (`payload.payload.resource`) |
+| `render_card` | Legacy `UiResponse` JSON (`components`) | Protocol envelope (`protocol`, `version`, `surface_id`, `jsonl`) | Protocol envelope (`payload.events`) | Protocol envelope (`payload.payload.resource`) |
+| `render_alert` | Legacy `UiResponse` JSON (`components`) | Protocol envelope (`protocol`, `version`, `surface_id`, `jsonl`) | Protocol envelope (`payload.events`) | Protocol envelope (`payload.payload.resource`) |
+| `render_confirm` | Legacy `UiResponse` JSON (`components`) | Protocol envelope (`protocol`, `version`, `surface_id`, `jsonl`) | Protocol envelope (`payload.events`) | Protocol envelope (`payload.payload.resource`) |
+| `render_table` | Legacy `UiResponse` JSON (`components`) | Protocol envelope (`protocol`, `version`, `surface_id`, `jsonl`) | Protocol envelope (`payload.events`) | Protocol envelope (`payload.payload.resource`) |
+| `render_chart` | Legacy `UiResponse` JSON (`components`) | Protocol envelope (`protocol`, `version`, `surface_id`, `jsonl`) | Protocol envelope (`payload.events`) | Protocol envelope (`payload.payload.resource`) |
+| `render_layout` | Legacy `UiResponse` JSON (`components`) | Protocol envelope (`protocol`, `version`, `surface_id`, `jsonl`) | Protocol envelope (`payload.events`) | Protocol envelope (`payload.payload.resource`) |
+| `render_progress` | Legacy `UiResponse` JSON (`components`) | Protocol envelope (`protocol`, `version`, `surface_id`, `jsonl`) | Protocol envelope (`payload.events`) | Protocol envelope (`payload.payload.resource`) |
+| `render_modal` | Legacy `UiResponse` JSON (`components`) | Protocol envelope (`protocol`, `version`, `surface_id`, `jsonl`) | Protocol envelope (`payload.events`) | Protocol envelope (`payload.payload.resource`) |
+| `render_toast` | Legacy `UiResponse` JSON (`components`) | Protocol envelope (`protocol`, `version`, `surface_id`, `jsonl`) | Protocol envelope (`payload.events`) | Protocol envelope (`payload.payload.resource`) |
+
+Example args:
 
 ```json
 {
@@ -138,20 +151,9 @@ Example tool args:
 }
 ```
 
-Protocol responses are emitted with a standard envelope shape:
+`adk-ui` now includes matrix coverage tests for all `13 x 3` tool/protocol combinations in `adk-ui/tests/tool_protocol_matrix_tests.rs`.
 
-```json
-{
-  "protocol": "a2ui",
-  "version": "1.0",
-  "surface_id": "main",
-  "components": [],
-  "data_model": {},
-  "jsonl": "..."
-}
-```
-
-For `ag_ui` the payload includes `events`; for `mcp_apps` it includes `payload`.
+Migration guidance for legacy/default outputs is documented in `adk-ui/docs/PROTOCOL_MIGRATION.md`.
 
 ## Interop Adapters
 

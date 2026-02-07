@@ -81,6 +81,13 @@ client.applyPayload(payload);
 const surface = store.getA2uiStore().getSurface('main');
 ```
 
+Supported inbound payload patterns:
+
+- A2UI: JSONL string or `{ protocol: "a2ui", jsonl, components, ... }`
+- AG-UI: `{ protocol: "ag_ui", events: [...] }` or envelope payload with `payload.events`
+- MCP Apps: `{ protocol: "mcp_apps", payload: { resource, ... } }`
+- Legacy ADK-UI: `{ components: [...] }`
+
 Outbound events can also be generated per protocol:
 
 ```ts
@@ -91,6 +98,12 @@ const event = buildOutboundEvent('ag_ui', {
   action_id: 'approve',
 });
 ```
+
+Common pattern with server runtime negotiation:
+
+1. Set runtime profile on requests with `uiProtocol` or `x-adk-ui-protocol`.
+2. Feed response payloads into `client.applyPayload(...)`.
+3. Render with `A2uiSurfaceRenderer` from the unified store.
 
 ## 🧩 Available Components
 

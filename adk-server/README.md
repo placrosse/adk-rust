@@ -130,6 +130,47 @@ Supported runtime profile values:
 - `ag_ui`
 - `mcp_apps`
 
+Example runtime request:
+
+```bash
+curl -X POST "http://localhost:8080/api/run_sse" \
+  -H "content-type: application/json" \
+  -H "x-adk-ui-protocol: ag_ui" \
+  -d '{
+    "appName": "assistant",
+    "userId": "user1",
+    "sessionId": "session1",
+    "newMessage": {
+      "parts": [{ "text": "Render a dashboard." }],
+      "role": "user"
+    }
+  }'
+```
+
+Protocol response behavior:
+
+- `adk_ui` profile: legacy runtime event payload shape
+- non-default profiles (`a2ui`, `ag_ui`, `mcp_apps`): profile-wrapped SSE payloads with protocol metadata
+
+MCP UI resource registration request shape:
+
+```json
+{
+  "uri": "ui://demo/dashboard",
+  "mimeType": "text/html+skybridge",
+  "text": "<html>...</html>",
+  "meta": {
+    "openai/outputTemplate": "ui://demo/dashboard"
+  }
+}
+```
+
+Resource registration enforces:
+
+- `ui://` URI scheme
+- supported MIME type contracts
+- metadata domain/CSP validation
+
 ### A2A Endpoints
 
 | Endpoint | Method | Description |
