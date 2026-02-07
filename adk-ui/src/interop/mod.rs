@@ -14,6 +14,6 @@ pub use ag_ui::{
 };
 pub use mcp_apps::{
     MCP_APPS_HTML_MIME_TYPE, McpAppsRenderOptions, McpAppsSurfacePayload, McpToolVisibility,
-    surface_to_mcp_apps_payload,
+    surface_to_mcp_apps_payload, validate_mcp_apps_render_options,
 };
 pub use surface::{UiProtocol, UiSurface};

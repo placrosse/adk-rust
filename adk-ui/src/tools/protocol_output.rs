@@ -2,7 +2,7 @@ use crate::a2ui::{column, stable_id, stable_indexed_id, text};
 use crate::catalog_registry::CatalogRegistry;
 use crate::interop::{
     AgUiEvent, McpAppsRenderOptions, McpAppsSurfacePayload, UiProtocol, UiSurface,
-    surface_to_event_stream, surface_to_mcp_apps_payload,
+    surface_to_event_stream, surface_to_mcp_apps_payload, validate_mcp_apps_render_options,
 };
 use crate::model::{ToolEnvelope, ToolEnvelopeProtocol};
 use crate::schema::{Component, UiResponse};
@@ -80,7 +80,7 @@ impl SurfaceProtocolOptions {
     }
 
     pub fn parse_mcp_options(&self) -> Result<McpAppsRenderOptions, adk_core::AdkError> {
-        match &self.mcp_apps {
+        let options = match &self.mcp_apps {
             Some(value) => serde_json::from_value::<McpAppsRenderOptions>(value.clone()).map_err(
                 |error| {
                     adk_core::AdkError::Tool(format!(
@@ -90,7 +90,9 @@ impl SurfaceProtocolOptions {
                 },
             ),
             None => Ok(McpAppsRenderOptions::default()),
-        }
+        }?;
+        validate_mcp_apps_render_options(&options)?;
+        Ok(options)
     }
 }
 
@@ -214,6 +216,7 @@ pub(crate) fn render_ui_response_with_protocol(
                     })?,
                 None => McpAppsRenderOptions::default(),
             };
+            validate_mcp_apps_render_options(&mcp_options)?;
             let payload = surface_to_mcp_apps_payload(&surface, mcp_options);
             let envelope = ToolEnvelope::new(
                 ToolEnvelopeProtocol::McpApps,
@@ -256,5 +259,23 @@ mod tests {
         assert_eq!(value["protocol"], "mcp_apps");
         assert_eq!(value["version"], "1.0");
         assert!(value["payload"]["resource"]["uri"].as_str().unwrap().starts_with("ui://"));
+    }
+
+    #[test]
+    fn legacy_mcp_apps_rejects_invalid_domain_option() {
+        let ui = UiResponse::new(vec![Component::Text(Text {
+            id: None,
+            content: "Hello".to_string(),
+            variant: TextVariant::Body,
+        })]);
+        let options = LegacyProtocolOptions {
+            protocol: Some(UiProtocol::McpApps),
+            mcp_apps: Some(json!({
+                "domain": "ftp://example.com"
+            })),
+            ..Default::default()
+        };
+        let value = render_ui_response_with_protocol(ui, &options, "main");
+        assert!(value.is_err());
     }
 }

@@ -1,5 +1,6 @@
 use super::{
-    McpAppsRenderOptions, UiProtocol, UiSurface, surface_to_event_stream, surface_to_mcp_apps_payload,
+    McpAppsRenderOptions, UiProtocol, UiSurface, surface_to_event_stream,
+    surface_to_mcp_apps_payload, validate_mcp_apps_render_options,
 };
 use serde_json::{Value, json};
 
@@ -88,6 +89,7 @@ impl UiProtocolAdapter for McpAppsAdapter {
     }
 
     fn from_canonical(&self, surface: &UiSurface) -> Result<Value, adk_core::AdkError> {
+        validate_mcp_apps_render_options(&self.options)?;
         let payload = surface_to_mcp_apps_payload(surface, self.options.clone());
         Ok(json!({
             "protocol": "mcp_apps",
@@ -133,5 +135,15 @@ mod tests {
         let payload = adapter.from_canonical(&test_surface()).expect("mcp payload");
         assert_eq!(payload["protocol"], "mcp_apps");
         assert!(payload["payload"]["resource"]["uri"].as_str().unwrap().starts_with("ui://"));
+    }
+
+    #[test]
+    fn mcp_apps_adapter_rejects_invalid_domain_options() {
+        let adapter = McpAppsAdapter::new(McpAppsRenderOptions {
+            domain: Some("ftp://example.com".to_string()),
+            ..Default::default()
+        });
+        let result = adapter.from_canonical(&test_surface());
+        assert!(result.is_err());
     }
 }

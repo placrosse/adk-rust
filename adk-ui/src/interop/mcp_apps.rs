@@ -137,6 +137,50 @@ pub struct McpAppsRenderOptions {
     pub visibility: Option<Vec<McpToolVisibility>>,
 }
 
+fn is_allowed_domain(domain: &str) -> bool {
+    domain.starts_with("https://")
+        || domain.starts_with("http://localhost")
+        || domain.starts_with("http://127.0.0.1")
+}
+
+fn validate_domain_list(domains: Option<&Vec<String>>, field: &str) -> Result<(), adk_core::AdkError> {
+    let Some(domains) = domains else {
+        return Ok(());
+    };
+
+    for domain in domains {
+        if !is_allowed_domain(domain) {
+            return Err(adk_core::AdkError::Tool(format!(
+                "Invalid mcp_apps option '{}': unsupported domain '{}'",
+                field, domain
+            )));
+        }
+    }
+    Ok(())
+}
+
+pub fn validate_mcp_apps_render_options(
+    options: &McpAppsRenderOptions,
+) -> Result<(), adk_core::AdkError> {
+    if let Some(domain) = options.domain.as_deref() {
+        if !is_allowed_domain(domain) {
+            return Err(adk_core::AdkError::Tool(format!(
+                "Invalid mcp_apps option 'domain': unsupported domain '{}'",
+                domain
+            )));
+        }
+    }
+
+    if let Some(csp) = &options.csp {
+        validate_domain_list(csp.connect_domains.as_ref(), "csp.connect_domains")?;
+        validate_domain_list(csp.resource_domains.as_ref(), "csp.resource_domains")?;
+        validate_domain_list(csp.frame_domains.as_ref(), "csp.frame_domains")?;
+        validate_domain_list(csp.base_uri_domains.as_ref(), "csp.base_uri_domains")?;
+    }
+
+    Ok(())
+}
+
 fn sanitize_resource_token(raw: &str) -> String {
     let mut out = String::with_capacity(raw.len());
     for ch in raw.chars() {
@@ -271,5 +315,31 @@ mod tests {
         let html = payload.resource_read_response.contents[0].text.as_ref().unwrap();
         assert!(html.contains("ADK UI Surface Payload"));
         assert!(html.contains("adk-ui-surface"));
+    }
+
+    #[test]
+    fn validate_options_rejects_invalid_domain() {
+        let options = McpAppsRenderOptions {
+            domain: Some("ftp://example.com".to_string()),
+            ..Default::default()
+        };
+        let result = validate_mcp_apps_render_options(&options);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn validate_options_rejects_invalid_csp_domain() {
+        let options = McpAppsRenderOptions {
+            csp: Some(McpUiResourceCsp {
+                connect_domains: Some(vec![
+                    "https://example.com".to_string(),
+                    "javascript:alert(1)".to_string(),
+                ]),
+                ..Default::default()
+            }),
+            ..Default::default()
+        };
+        let result = validate_mcp_apps_render_options(&options);
+        assert!(result.is_err());
     }
 }
