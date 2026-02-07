@@ -107,6 +107,91 @@ fn validate_ui_resource_mime(mime_type: &str) -> Result<(), (StatusCode, String)
     Ok(())
 }
 
+fn is_allowed_domain(domain: &str) -> bool {
+    domain.starts_with("https://")
+        || domain.starts_with("http://localhost")
+        || domain.starts_with("http://127.0.0.1")
+}
+
+fn validate_domain_list(value: &Value, field_name: &str) -> Result<(), (StatusCode, String)> {
+    let list = value.as_array().ok_or_else(|| {
+        (
+            StatusCode::BAD_REQUEST,
+            format!("_meta.ui.csp.{} must be an array of domain strings", field_name),
+        )
+    })?;
+    for entry in list {
+        let domain = entry.as_str().ok_or_else(|| {
+            (
+                StatusCode::BAD_REQUEST,
+                format!("_meta.ui.csp.{} entries must be strings", field_name),
+            )
+        })?;
+        if !is_allowed_domain(domain) {
+            return Err((
+                StatusCode::BAD_REQUEST,
+                format!(
+                    "_meta.ui.csp.{} contains unsupported domain '{}'",
+                    field_name, domain
+                ),
+            ));
+        }
+    }
+    Ok(())
+}
+
+fn validate_ui_meta(meta: &Option<Value>) -> Result<(), (StatusCode, String)> {
+    let Some(meta_value) = meta else {
+        return Ok(());
+    };
+    let meta_object = meta_value.as_object().ok_or_else(|| {
+        (StatusCode::BAD_REQUEST, "_meta must be a JSON object".to_string())
+    })?;
+    let Some(ui_value) = meta_object.get("ui") else {
+        return Ok(());
+    };
+    let ui_object = ui_value.as_object().ok_or_else(|| {
+        (StatusCode::BAD_REQUEST, "_meta.ui must be a JSON object".to_string())
+    })?;
+
+    if let Some(domain_value) = ui_object.get("domain") {
+        let domain = domain_value.as_str().ok_or_else(|| {
+            (StatusCode::BAD_REQUEST, "_meta.ui.domain must be a string".to_string())
+        })?;
+        if !is_allowed_domain(domain) {
+            return Err((
+                StatusCode::BAD_REQUEST,
+                format!(
+                    "_meta.ui.domain '{}' is not allowed; use https:// or localhost URLs",
+                    domain
+                ),
+            ));
+        }
+    }
+
+    if let Some(csp_value) = ui_object.get("csp") {
+        let csp_object = csp_value.as_object().ok_or_else(|| {
+            (StatusCode::BAD_REQUEST, "_meta.ui.csp must be an object".to_string())
+        })?;
+        for field in ["connectDomains", "resourceDomains", "frameDomains", "baseUriDomains"] {
+            if let Some(field_value) = csp_object.get(field) {
+                validate_domain_list(field_value, field)?;
+            }
+        }
+    }
+
+    if let Some(permissions_value) = ui_object.get("permissions") {
+        if !permissions_value.is_object() {
+            return Err((
+                StatusCode::BAD_REQUEST,
+                "_meta.ui.permissions must be an object".to_string(),
+            ));
+        }
+    }
+
+    Ok(())
+}
+
 /// GET /api/ui/capabilities
 pub async fn ui_capabilities() -> Json<UiCapabilities> {
     Json(UiCapabilities {
@@ -166,6 +251,7 @@ pub async fn register_ui_resource(
 ) -> Result<StatusCode, (StatusCode, String)> {
     validate_ui_resource_uri(&req.uri)?;
     validate_ui_resource_mime(&req.mime_type)?;
+    validate_ui_meta(&req.meta)?;
 
     let entry = UiResourceEntry {
         resource: UiResource {

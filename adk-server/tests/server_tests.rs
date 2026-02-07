@@ -497,3 +497,71 @@ async fn test_ui_resources_reject_invalid_uri() {
         .unwrap();
     assert_eq!(register_response.status(), StatusCode::BAD_REQUEST);
 }
+
+#[tokio::test]
+async fn test_ui_resources_reject_invalid_meta_domain() {
+    let config =
+        adk_server::ServerConfig::new(Arc::new(MockAgentLoader), Arc::new(MockSessionService));
+    let app = create_app(config);
+
+    let register_body = serde_json::json!({
+        "uri": "ui://tests/surface-invalid-domain",
+        "name": "test-surface",
+        "mimeType": "text/html;profile=mcp-app",
+        "text": "<html><body>surface</body></html>",
+        "_meta": {
+            "ui": {
+                "domain": "ftp://example.com"
+            }
+        }
+    });
+
+    let register_response = app
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri("/api/ui/resources/register")
+                .header("content-type", "application/json")
+                .body(Body::from(serde_json::to_vec(&register_body).unwrap()))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(register_response.status(), StatusCode::BAD_REQUEST);
+}
+
+#[tokio::test]
+async fn test_ui_resources_reject_invalid_csp_domains() {
+    let config =
+        adk_server::ServerConfig::new(Arc::new(MockAgentLoader), Arc::new(MockSessionService));
+    let app = create_app(config);
+
+    let register_body = serde_json::json!({
+        "uri": "ui://tests/surface-invalid-csp",
+        "name": "test-surface",
+        "mimeType": "text/html;profile=mcp-app",
+        "text": "<html><body>surface</body></html>",
+        "_meta": {
+            "ui": {
+                "csp": {
+                    "connectDomains": ["https://example.com", "javascript:alert(1)"]
+                }
+            }
+        }
+    });
+
+    let register_response = app
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri("/api/ui/resources/register")
+                .header("content-type", "application/json")
+                .body(Body::from(serde_json::to_vec(&register_body).unwrap()))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(register_response.status(), StatusCode::BAD_REQUEST);
+}
