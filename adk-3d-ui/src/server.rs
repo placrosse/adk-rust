@@ -226,6 +226,11 @@ async fn publish_plan_for_prompt(
     prompt: &str,
     reply_to: Option<u64>,
 ) {
+    let _ = state
+        .sessions
+        .set_last_prompt(session_id, prompt.to_string())
+        .await;
+
     let context = state
         .sessions
         .get_context(session_id)
@@ -234,10 +239,6 @@ async fn publish_plan_for_prompt(
     let planning_context = planning_context_from_session(&context);
     let plan = build_scene_plan(prompt, &planning_context);
 
-    let _ = state
-        .sessions
-        .set_last_prompt(session_id, prompt.to_string())
-        .await;
     let _ = state
         .sessions
         .update_plan_state(
@@ -313,6 +314,14 @@ async fn publish_plan_for_prompt(
             }),
         )
         .await;
+
+    if !plan.nodes.is_empty() {
+        spawn_live_status_patch_loop(
+            state.clone(),
+            session_id.to_string(),
+            plan.nodes.iter().map(|n| n.id.clone()).collect(),
+        );
+    }
 }
 
 fn planning_context_from_session(context: &SessionContext) -> PlanningContext {
@@ -346,26 +355,25 @@ async fn publish_focus_patch_for_selection(
     }
 
     let mut panel_props = UiProps::new();
-    panel_props.insert("title".to_string(), json!("Focus"));
+    panel_props.insert(
+        "title".to_string(),
+        json!(format!("Service Workbench: {selected_id}")),
+    );
     panel_props.insert(
         "subtitle".to_string(),
-        json!(format!("Selected node: {selected_id}")),
+        json!(format!(
+            "Selected node: {selected_id}. Investigate logs, traces, and deployment diffs."
+        )),
     );
-    panel_props.insert("x".to_string(), json!(0.0));
-    panel_props.insert("y".to_string(), json!(-1.75));
-    panel_props.insert("z".to_string(), json!(-4.9));
-    panel_props.insert("w".to_string(), json!(4.8));
-    panel_props.insert("h".to_string(), json!(1.2));
-
     ops.push(UiOp::Patch(UiPatchOp {
-        id: "focus-panel".to_string(),
+        id: "workbench-panel".to_string(),
         props: panel_props.clone(),
     }));
 
     if !context.last_node_ids.is_empty() {
         let create_if_missing = serde_json::json!({
             "op": "create",
-            "id": "focus-panel",
+            "id": "workbench-panel",
             "kind": "panel3d",
             "parent": "root",
             "props": panel_props,
@@ -382,4 +390,49 @@ async fn publish_focus_patch_for_selection(
             SsePayload::UiOps(UiOpsPayload { reply_to, ops }),
         )
         .await;
+}
+
+fn spawn_live_status_patch_loop(state: AppState, session_id: String, node_ids: Vec<String>) {
+    tokio::spawn(async move {
+        let phases = [
+            ["healthy", "warning", "degraded"],
+            ["warning", "degraded", "critical"],
+            ["degraded", "healthy", "warning"],
+        ];
+
+        for phase in phases {
+            tokio::time::sleep(Duration::from_millis(900)).await;
+            let mut ops = Vec::new();
+            for (idx, node_id) in node_ids.iter().enumerate() {
+                let mut props = UiProps::new();
+                let status = phase[idx % phase.len()];
+                props.insert("status".to_string(), json!(status));
+                ops.push(UiOp::Patch(UiPatchOp {
+                    id: node_id.clone(),
+                    props,
+                }));
+            }
+            let _ = state
+                .sessions
+                .publish(
+                    &session_id,
+                    SsePayload::UiOps(UiOpsPayload {
+                        reply_to: None,
+                        ops,
+                    }),
+                )
+                .await;
+        }
+
+        let _ = state
+            .sessions
+            .publish(
+                &session_id,
+                SsePayload::Toast(ToastPayload {
+                    level: ToastLevel::Info,
+                    message: "Live status patch loop completed.".to_string(),
+                }),
+            )
+            .await;
+    });
 }

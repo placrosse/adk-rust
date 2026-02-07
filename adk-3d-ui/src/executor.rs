@@ -44,6 +44,20 @@ pub fn scene_plan_to_ops(plan: &ScenePlan, reply_to: Option<u64>) -> UiOpsPayloa
         })),
     }));
 
+    ops.push(UiOp::Create(UiCreateOp {
+        id: "command-bar".to_string(),
+        kind: "command_bar".to_string(),
+        parent: Some("root".to_string()),
+        props: props(json!({
+            "label": "Command palette: type natural language updates in the left panel",
+            "x": 0.0,
+            "y": -2.35,
+            "z": -4.8,
+            "w": 6.5,
+            "h": 0.58
+        })),
+    }));
+
     for node in &plan.nodes {
         ops.push(UiOp::Create(UiCreateOp {
             id: node.id.clone(),
@@ -59,6 +73,35 @@ pub fn scene_plan_to_ops(plan: &ScenePlan, reply_to: Option<u64>) -> UiOpsPayloa
             })),
         }));
     }
+
+    if plan.nodes.len() > 1 {
+        let points: Vec<_> = plan
+            .nodes
+            .iter()
+            .map(|node| json!({"x": node.x, "y": node.y, "z": node.z}))
+            .collect();
+        ops.push(UiOp::Create(UiCreateOp {
+            id: "service-trail".to_string(),
+            kind: "trail".to_string(),
+            parent: Some("root".to_string()),
+            props: props(json!({ "points": points })),
+        }));
+    }
+
+    ops.push(UiOp::Create(UiCreateOp {
+        id: "workbench-panel".to_string(),
+        kind: "panel3d".to_string(),
+        parent: Some("root".to_string()),
+        props: props(json!({
+            "x": 0.0,
+            "y": -1.5,
+            "z": -5.2,
+            "w": 5.0,
+            "h": 1.4,
+            "title": plan.workbench_title,
+            "subtitle": plan.workbench_summary
+        })),
+    }));
 
     if let Some(action) = &plan.action {
         ops.push(UiOp::Create(UiCreateOp {

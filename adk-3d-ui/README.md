@@ -9,6 +9,8 @@ This currently includes:
 
 - Phase 0: protocol and server contract skeleton
 - Phase 1: embedded Three.js runtime with incremental `create/patch/remove` op application
+- Phase 2: prompt-intent planning with session context (last prompt/command/selection)
+- Phase 3 (vertical slice): DevOps-style workbench panel and live status patch loop
 
 ## Run
 
@@ -35,6 +37,7 @@ Optional environment variables:
 - The frontend is currently an embedded static page (`ui/index.html`).
 - `planner.rs` and `executor.rs` provide the initial prompt->ops pipeline.
 - `policy.rs` adds risk-tier tagging for action proposals.
+- `server.rs` applies command/select events back into scene patches and short live status updates.
 - Frontend component kinds implemented in v1 runtime:
   - `group`
   - `text3d`

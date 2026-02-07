@@ -49,6 +49,8 @@ pub struct ScenePlan {
     pub intent: PromptIntent,
     pub title: String,
     pub subtitle: String,
+    pub workbench_title: String,
+    pub workbench_summary: String,
     pub prompt_echo: String,
     pub nodes: Vec<OrbNode>,
     pub action: Option<ProposedAction>,
@@ -129,32 +131,104 @@ pub fn build_scene_plan(prompt: &str, context: &PlanningContext) -> ScenePlan {
         )
     };
 
-    let mut nodes = vec![
-        OrbNode {
-            id: "service-payments".to_string(),
-            label: "Payments".to_string(),
-            status: "degraded".to_string(),
-            x: -2.4,
-            y: 0.6,
-            z: -6.0,
-        },
-        OrbNode {
-            id: "service-checkout".to_string(),
-            label: "Checkout".to_string(),
-            status: "healthy".to_string(),
-            x: 0.0,
-            y: 1.2,
-            z: -5.0,
-        },
-        OrbNode {
-            id: "service-identity".to_string(),
-            label: "Identity".to_string(),
-            status: "warning".to_string(),
-            x: 2.4,
-            y: 0.5,
-            z: -6.3,
-        },
-    ];
+    let mut nodes = match intent.domain {
+        IntentDomain::Inventory => vec![
+            OrbNode {
+                id: "sku-a123".to_string(),
+                label: "SKU A123".to_string(),
+                status: "warning".to_string(),
+                x: -2.4,
+                y: 0.6,
+                z: -6.0,
+            },
+            OrbNode {
+                id: "sku-b456".to_string(),
+                label: "SKU B456".to_string(),
+                status: "critical".to_string(),
+                x: 0.0,
+                y: 1.2,
+                z: -5.0,
+            },
+            OrbNode {
+                id: "sku-c777".to_string(),
+                label: "SKU C777".to_string(),
+                status: "healthy".to_string(),
+                x: 2.4,
+                y: 0.5,
+                z: -6.3,
+            },
+        ],
+        IntentDomain::Incident => vec![
+            OrbNode {
+                id: "service-payments".to_string(),
+                label: "Payments".to_string(),
+                status: "critical".to_string(),
+                x: -2.4,
+                y: 0.6,
+                z: -6.0,
+            },
+            OrbNode {
+                id: "service-checkout".to_string(),
+                label: "Checkout".to_string(),
+                status: "degraded".to_string(),
+                x: 0.0,
+                y: 1.2,
+                z: -5.0,
+            },
+            OrbNode {
+                id: "service-identity".to_string(),
+                label: "Identity".to_string(),
+                status: "warning".to_string(),
+                x: 2.4,
+                y: 0.5,
+                z: -6.3,
+            },
+        ],
+        IntentDomain::Greeting => vec![
+            OrbNode {
+                id: "hello-left".to_string(),
+                label: "HELLO".to_string(),
+                status: "healthy".to_string(),
+                x: -1.6,
+                y: 0.9,
+                z: -5.6,
+            },
+            OrbNode {
+                id: "hello-right".to_string(),
+                label: "WORLD".to_string(),
+                status: "healthy".to_string(),
+                x: 1.6,
+                y: 0.9,
+                z: -5.6,
+            },
+        ],
+        IntentDomain::Ops => vec![
+            OrbNode {
+                id: "service-payments".to_string(),
+                label: "Payments".to_string(),
+                status: "degraded".to_string(),
+                x: -2.4,
+                y: 0.6,
+                z: -6.0,
+            },
+            OrbNode {
+                id: "service-checkout".to_string(),
+                label: "Checkout".to_string(),
+                status: "healthy".to_string(),
+                x: 0.0,
+                y: 1.2,
+                z: -5.0,
+            },
+            OrbNode {
+                id: "service-identity".to_string(),
+                label: "Identity".to_string(),
+                status: "warning".to_string(),
+                x: 2.4,
+                y: 0.5,
+                z: -6.3,
+            },
+        ],
+    };
 
     let selected_or_intent = intent.focus_hint.clone().or_else(|| context.selected_id.clone());
     if let Some(focus_id) = selected_or_intent {
@@ -195,10 +269,30 @@ pub fn build_scene_plan(prompt: &str, context: &PlanningContext) -> ScenePlan {
         subtitle
     };
 
+    let subtitle = match intent.urgency {
+        IntentUrgency::High => format!("{subtitle} | Urgency: high"),
+        IntentUrgency::Medium => format!("{subtitle} | Urgency: medium"),
+        IntentUrgency::Low => subtitle,
+    };
+
+    let workbench_title = if let Some(selected) = &context.selected_id {
+        format!("Service Workbench: {selected}")
+    } else {
+        "Service Workbench".to_string()
+    };
+
+    let workbench_summary = if let Some(last_prompt) = &context.last_prompt {
+        format!("Last request: {last_prompt}")
+    } else {
+        "Select a node to inspect deployment and incident context.".to_string()
+    };
+
     ScenePlan {
         intent,
         title,
         subtitle,
+        workbench_title,
+        workbench_summary,
         prompt_echo: normalized.to_string(),
         nodes,
         action,
