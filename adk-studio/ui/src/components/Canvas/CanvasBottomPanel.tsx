@@ -84,7 +84,7 @@ export function CanvasBottomPanel({
   onThought,
   onSnapshotsChange,
   onInterruptChange,
-  onBuild: _onBuild,
+  onBuild,
   onBinaryPathDetected,
 }: CanvasBottomPanelProps) {
   return (
@@ -120,6 +120,7 @@ export function CanvasBottomPanel({
             onAutoSendComplete={onAutoSendComplete}
             onCancelReady={onCancelReady}
             onBinaryPathDetected={onBinaryPathDetected}
+            onBuild={onBuild}
           />
         </div>
       )}

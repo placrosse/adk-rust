@@ -208,6 +208,8 @@ interface Props {
   onCancelReady?: (cancelFn: () => void) => void;
   /** Callback when a trigger notification provides a binary path (schedule/webhook auto-detection) */
   onBinaryPathDetected?: (path: string) => void;
+  /** Callback to trigger a build from the console (Send→Build button) */
+  onBuild?: () => void;
 }
 
 /** Validate workflow and return current state */
@@ -255,6 +257,7 @@ export function TestConsole({
   onAutoSendComplete,
   onCancelReady,
   onBinaryPathDetected,
+  onBuild,
 }: Props) {
   const { currentProject, updateActionNode } = useStore();
   const [messages, setMessages] = useState<Message[]>([]);
@@ -281,6 +284,9 @@ export function TestConsole({
     interrupt,
     setInterrupt,
     setFlowPhase,
+    // Edge animation: queue of node_start events
+    nodeStartQueueRef,
+    nodeStartTick,
   } = useSSE(currentProject?.id ?? null, binaryPath);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const eventsEndRef = useRef<HTMLDivElement>(null);
@@ -456,9 +462,23 @@ export function TestConsole({
   useEffect(() => {
     if (currentAgent) {
       lastAgentRef.current = currentAgent;
-      onActiveAgent?.(currentAgent);
     }
-  }, [currentAgent, onActiveAgent]);
+  }, [currentAgent]);
+
+  // Drain the node start queue into onActiveAgent.
+  // This ensures every node_start event (including rapid-fire action nodes
+  // that complete in <1ms) gets forwarded to the animation queue, even when
+  // React batches the currentAgent state updates.
+  useEffect(() => {
+    const queue = nodeStartQueueRef.current;
+    if (queue.length === 0) return;
+    // Drain all queued nodes
+    const nodes = queue.splice(0, queue.length);
+    for (const node of nodes) {
+      lastAgentRef.current = node;
+      onActiveAgent?.(node);
+    }
+  }, [nodeStartTick, onActiveAgent, nodeStartQueueRef]);
 
   // v2.0: Auto-scroll to latest output during execution (Requirement 13.7)
   useEffect(() => {
@@ -492,6 +512,20 @@ export function TestConsole({
       onActiveAgent?.(null);
     }
   }, [streamingText, isStreaming, onFlowPhase, onActiveAgent]);
+
+  // When streamingText is cleared during execution (node_start clears it),
+  // reset flowPhase to 'input' so edge animations fire for the next node.
+  // Without this, the parent's flowPhase stays 'output' from the previous
+  // LLM response, suppressing edge animations for subsequent loop iterations.
+  const prevStreamingTextRef = useRef('');
+  useEffect(() => {
+    const wasStreaming = prevStreamingTextRef.current.length > 0;
+    prevStreamingTextRef.current = streamingText;
+    // Transition: had text → no text, but still streaming = new node started
+    if (wasStreaming && !streamingText && isStreaming) {
+      onFlowPhase?.('input');
+    }
+  }, [streamingText, isStreaming, onFlowPhase]);
 
   // v2.0: Track run status based on streaming state and events
   useEffect(() => {
@@ -1138,23 +1172,41 @@ export function TestConsole({
                   disabled={isDisabled}
                 />
                 <button
-                  onClick={sendMessage}
-                  disabled={isDisabled || !input.trim()}
+                  onClick={() => {
+                    // If workflow needs building and we have a build callback, trigger build
+                    if (workflowState === 'not_built' && onBuild) {
+                      onBuild();
+                      return;
+                    }
+                    sendMessage();
+                  }}
+                  disabled={
+                    // Build button: disabled only while actively building
+                    workflowState === 'not_built'
+                      ? buildStatus === 'building'
+                      // Send/Resume button: disabled when input is empty or streaming
+                      : isDisabled || !input.trim()
+                  }
                   className="px-4 py-2 rounded text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                   style={{ 
-                    // HITL: Use warning color for button when responding to interrupt
-                    backgroundColor: interrupt ? 'var(--accent-warning)' : 'var(--accent-primary)', 
+                    backgroundColor: workflowState === 'not_built'
+                      ? (buildStatus === 'building' ? 'var(--accent-warning)' : 'var(--accent-primary)')
+                      : interrupt ? 'var(--accent-warning)' : 'var(--accent-primary)', 
                     color: 'white' 
                   }}
                   title={
-                    inputContext.disabled 
-                      ? inputContext.placeholder 
-                      : interrupt 
-                        ? 'Send response to resume workflow'
-                        : 'Send message'
+                    workflowState === 'not_built'
+                      ? (buildStatus === 'building' ? 'Building...' : 'Build your workflow')
+                      : inputContext.disabled 
+                        ? inputContext.placeholder 
+                        : interrupt 
+                          ? 'Send response to resume workflow'
+                          : 'Send message'
                   }
                 >
-                  {interrupt ? 'Resume' : 'Send'}
+                  {workflowState === 'not_built'
+                    ? (buildStatus === 'building' ? '⏳ Building...' : '🔨 Build')
+                    : interrupt ? 'Resume' : 'Send'}
                 </button>
               </div>
             </>
