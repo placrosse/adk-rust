@@ -271,12 +271,12 @@ impl Tool for RenderPageTool {
                     params.protocol_options.resolved_ag_ui_thread_id(&params.surface_id);
                 let run_id = params.protocol_options.resolved_ag_ui_run_id(&params.surface_id);
                 let adapter = AgUiAdapter::new(thread_id, run_id);
-                adapter.from_canonical(&surface)
+                adapter.to_protocol_payload(&surface)
             }
             UiProtocol::McpApps => {
                 let options = params.protocol_options.parse_mcp_options()?;
                 let adapter = McpAppsAdapter::new(options);
-                adapter.from_canonical(&surface)
+                adapter.to_protocol_payload(&surface)
             }
         }
     }

@@ -1108,7 +1108,7 @@ fn find_webhook_trigger(
     use crate::codegen::action_nodes::{ActionNodeConfig, TriggerType};
 
     // Check action nodes for trigger nodes with webhook type
-    for (_node_id, node) in &project.action_nodes {
+    for node in project.action_nodes.values() {
         if let ActionNodeConfig::Trigger(trigger_config) = node {
             if trigger_config.trigger_type == TriggerType::Webhook {
                 if let Some(webhook) = &trigger_config.webhook {
@@ -1195,7 +1195,7 @@ fn validate_webhook_auth(
                 }
             }
         }
-        "none" | _ => Ok(()),
+        _ => Ok(()),
     }
 }
 
@@ -1366,7 +1366,7 @@ fn find_event_trigger(
     use crate::codegen::action_nodes::{ActionNodeConfig, TriggerType};
 
     // Check action nodes for trigger nodes with event type
-    for (_node_id, node) in &project.action_nodes {
+    for node in project.action_nodes.values() {
         if let ActionNodeConfig::Trigger(trigger_config) = node {
             if trigger_config.trigger_type == TriggerType::Event {
                 if let Some(event) = &trigger_config.event {

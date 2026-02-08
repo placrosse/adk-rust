@@ -595,7 +595,8 @@ anthropic = ["adk-model/anthropic"]
 deepseek = ["adk-model/deepseek"]
 ollama = ["adk-model/ollama"]
 groq = ["adk-model/groq"]
-mistralrs = ["dep:adk-mistralrs"]
+# mistralrs feature removed from examples to prevent --all-features from pulling in GPU deps
+# Build mistralrs examples explicitly: cargo build -p adk-mistralrs
 realtime-openai = ["adk-realtime/openai"]
 realtime-gemini = ["adk-realtime/gemini"]
 browser = ["dep:adk-browser", "dep:reqwest"]
@@ -622,9 +623,8 @@ adk-ui.workspace = true
 adk-auth.workspace = true
 adk-browser = { workspace = true, optional = true }
 adk-guardrail = { workspace = true, optional = true }
-# adk-mistralrs is excluded from workspace to prevent --all-features failures
-# It must be built explicitly: cargo build -p adk-mistralrs
-adk-mistralrs = { path = "../adk-mistralrs", optional = true }
+# adk-mistralrs is excluded from workspace — build explicitly: cargo build -p adk-mistralrs
+# adk-mistralrs = { path = "../adk-mistralrs", optional = true }
 tokio.workspace = true
 reqwest = { workspace = true, optional = true }
 base64 = "0.22"

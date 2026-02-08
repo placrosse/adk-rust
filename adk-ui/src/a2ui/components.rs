@@ -1,7 +1,7 @@
 use serde_json::{Value, json};
 
 /// Helper functions to create A2UI v0.9 components using the flat catalog shape.
-
+///
 /// Create a Text component
 pub fn text(id: &str, text: &str, variant: Option<&str>) -> Value {
     let mut component = json!({

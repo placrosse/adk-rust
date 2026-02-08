@@ -10,6 +10,9 @@ use adk_core::{
 use std::future::Future;
 use std::pin::Pin;
 
+/// Type alias for async cleanup functions.
+pub type CloseFn = Box<dyn Fn() -> Pin<Box<dyn Future<Output = ()> + Send>> + Send + Sync>;
+
 /// Configuration for creating a Plugin.
 ///
 /// All callbacks are optional - only set the ones you need.
@@ -65,7 +68,7 @@ pub struct PluginConfig {
     pub on_tool_error: Option<OnToolErrorCallback>,
 
     /// Cleanup function called when plugin is closed
-    pub close_fn: Option<Box<dyn Fn() -> Pin<Box<dyn Future<Output = ()> + Send>> + Send + Sync>>,
+    pub close_fn: Option<CloseFn>,
 }
 
 impl Default for PluginConfig {

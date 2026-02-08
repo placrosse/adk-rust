@@ -29,7 +29,7 @@ async fn main() -> Result<()> {
 
     let mut builder = LlmAgentBuilder::new("ui_working_appointment")
         .description("Appointment scheduling agent with working UI flows")
-        .instruction(&format!(
+        .instruction(format!(
             "{}
 
 {}",

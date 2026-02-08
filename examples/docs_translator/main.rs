@@ -193,8 +193,8 @@ async fn translate_language(
     
     // Simple translator agent (no loop - we'll chunk instead)
     let translator = LlmAgentBuilder::new("translator")
-        .description(&format!("Translates documentation to {}", lang_name))
-        .instruction(&format!(
+        .description(format!("Translates documentation to {}", lang_name))
+        .instruction(format!(
             "{}\n\n## TARGET LANGUAGE\nTranslate to: {} ({})",
             TRANSLATOR_INSTRUCTION, lang_name, lang_code
         ))

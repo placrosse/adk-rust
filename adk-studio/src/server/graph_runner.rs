@@ -257,6 +257,7 @@ impl GraphInterruptHandler {
     ///
     /// ## Requirements
     /// Validates: Requirements 3.1, 5.2
+    #[allow(clippy::too_many_arguments)]
     pub async fn handle_interrupt(
         &self,
         session_id: &str,
@@ -303,7 +304,7 @@ impl GraphInterruptHandler {
     ///
     /// Note: This method is only available when using adk-graph directly.
     /// For SSE-based interrupt handling, use handle_interrupt() instead.
-    #[allow(dead_code)]
+    #[allow(dead_code, clippy::too_many_arguments)]
     pub async fn handle_graph_interrupt_direct(
         &self,
         session_id: &str,
@@ -325,7 +326,7 @@ impl GraphInterruptHandler {
                 let node = interrupt_message.clone();
                 (node.clone(), format!("Interrupt after '{}'", node), Value::Null)
             }
-            "dynamic" | _ => {
+            _ => {
                 // For dynamic interrupts, we need to determine the node_id
                 // from the checkpoint or use a default
                 let node_id = "dynamic".to_string();

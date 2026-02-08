@@ -73,7 +73,7 @@ impl WorkerAgentBuilder {
 
         let mut builder = LlmAgentBuilder::new("ralph_worker")
             .description("Executes individual PRD tasks")
-            .instruction(&instruction)
+            .instruction(instruction)
             .model(Arc::new(model));
 
         for tool in self.tools {

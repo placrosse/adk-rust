@@ -27,7 +27,7 @@ async fn main() -> Result<()> {
 
     let mut builder = LlmAgentBuilder::new("ui_working_events")
         .description("Event RSVP agent with working UI flows")
-        .instruction(&format!(
+        .instruction(format!(
             "{}
 
 {}",

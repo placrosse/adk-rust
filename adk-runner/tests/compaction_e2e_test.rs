@@ -4,8 +4,8 @@
 //! compacted history is used by subsequent invocations.
 
 use adk_core::{
-    Agent, BaseEventsSummarizer, Content, Event, EventActions, EventCompaction,
-    EventStream, EventsCompactionConfig, InvocationContext, Part, Result,
+    Agent, BaseEventsSummarizer, Content, Event, EventActions, EventCompaction, EventStream,
+    EventsCompactionConfig, InvocationContext, Part, Result,
 };
 use adk_runner::{Runner, RunnerConfig};
 use adk_session::{InMemorySessionService, SessionService};
@@ -72,10 +72,7 @@ impl BaseEventsSummarizer for DeterministicSummarizer {
         }
 
         let num_events = events.len();
-        let summary_text = format!(
-            "[Compaction #{}: summarized {} events]",
-            n, num_events
-        );
+        let summary_text = format!("[Compaction #{}: summarized {} events]", n, num_events);
 
         let summary_content = Content::new("model").with_text(&summary_text);
         let start_timestamp = events.first().unwrap().timestamp;
@@ -136,26 +133,26 @@ async fn test_e2e_compaction_with_inmemory_session() {
 
     // Invocation 1
     let content1 = Content::new("user").with_text("Hello");
-    let mut stream = runner
-        .run("user-1".to_string(), "sess-e2e".to_string(), content1)
-        .await
-        .unwrap();
+    let mut stream =
+        runner.run("user-1".to_string(), "sess-e2e".to_string(), content1).await.unwrap();
     while let Some(r) = stream.next().await {
         assert!(r.is_ok(), "Invocation 1 failed: {:?}", r.err());
     }
 
     // Invocation 2 — should trigger compaction (interval=2)
     let content2 = Content::new("user").with_text("How are you?");
-    let mut stream = runner
-        .run("user-1".to_string(), "sess-e2e".to_string(), content2)
-        .await
-        .unwrap();
+    let mut stream =
+        runner.run("user-1".to_string(), "sess-e2e".to_string(), content2).await.unwrap();
     while let Some(r) = stream.next().await {
         assert!(r.is_ok(), "Invocation 2 failed: {:?}", r.err());
     }
 
     // Verify compaction was triggered
-    assert_eq!(summarizer.call_count(), 1, "Summarizer should have been called once after 2 invocations");
+    assert_eq!(
+        summarizer.call_count(),
+        1,
+        "Summarizer should have been called once after 2 invocations"
+    );
 
     // Verify the compaction event was persisted in the session
     let session = session_service
@@ -170,10 +167,8 @@ async fn test_e2e_compaction_with_inmemory_session() {
         .unwrap();
 
     let events = session.events().all();
-    let compaction_events: Vec<_> = events
-        .iter()
-        .filter(|e| e.actions.compaction.is_some())
-        .collect();
+    let compaction_events: Vec<_> =
+        events.iter().filter(|e| e.actions.compaction.is_some()).collect();
 
     assert_eq!(
         compaction_events.len(),
@@ -203,10 +198,7 @@ fn test_event_compaction_serde_roundtrip() {
         compacted_content: Content::new("model").with_text("Summary of conversation"),
     };
 
-    let actions = EventActions {
-        compaction: Some(compaction.clone()),
-        ..Default::default()
-    };
+    let actions = EventActions { compaction: Some(compaction.clone()), ..Default::default() };
 
     let json = serde_json::to_string(&actions).unwrap();
     let deserialized: EventActions = serde_json::from_str(&json).unwrap();

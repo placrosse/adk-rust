@@ -7,7 +7,7 @@ use serde_json::{Value, json};
 /// Shared interface for converting canonical UI surfaces into protocol payloads.
 pub trait UiProtocolAdapter {
     fn protocol(&self) -> UiProtocol;
-    fn from_canonical(&self, surface: &UiSurface) -> Result<Value, adk_core::AdkError>;
+    fn to_protocol_payload(&self, surface: &UiSurface) -> Result<Value, adk_core::AdkError>;
 
     fn validate(&self, _payload: &Value) -> Result<(), adk_core::AdkError> {
         Ok(())
@@ -22,7 +22,7 @@ impl UiProtocolAdapter for A2uiAdapter {
         UiProtocol::A2ui
     }
 
-    fn from_canonical(&self, surface: &UiSurface) -> Result<Value, adk_core::AdkError> {
+    fn to_protocol_payload(&self, surface: &UiSurface) -> Result<Value, adk_core::AdkError> {
         let jsonl = surface.to_a2ui_jsonl().map_err(|error| {
             adk_core::AdkError::Tool(format!("Failed to encode A2UI JSONL: {}", error))
         })?;
@@ -62,7 +62,7 @@ impl UiProtocolAdapter for AgUiAdapter {
         UiProtocol::AgUi
     }
 
-    fn from_canonical(&self, surface: &UiSurface) -> Result<Value, adk_core::AdkError> {
+    fn to_protocol_payload(&self, surface: &UiSurface) -> Result<Value, adk_core::AdkError> {
         let events = surface_to_event_stream(surface, self.thread_id.clone(), self.run_id.clone());
         Ok(json!({
             "protocol": "ag_ui",
@@ -88,7 +88,7 @@ impl UiProtocolAdapter for McpAppsAdapter {
         UiProtocol::McpApps
     }
 
-    fn from_canonical(&self, surface: &UiSurface) -> Result<Value, adk_core::AdkError> {
+    fn to_protocol_payload(&self, surface: &UiSurface) -> Result<Value, adk_core::AdkError> {
         validate_mcp_apps_render_options(&self.options)?;
         let payload = surface_to_mcp_apps_payload(surface, self.options.clone());
         Ok(json!({
@@ -115,7 +115,7 @@ mod tests {
     #[test]
     fn a2ui_adapter_emits_jsonl_payload() {
         let adapter = A2uiAdapter;
-        let payload = adapter.from_canonical(&test_surface()).expect("a2ui payload");
+        let payload = adapter.to_protocol_payload(&test_surface()).expect("a2ui payload");
         adapter.validate(&payload).expect("a2ui validate");
         assert_eq!(payload["protocol"], "a2ui");
         assert!(payload["jsonl"].as_str().unwrap().contains("createSurface"));
@@ -124,7 +124,7 @@ mod tests {
     #[test]
     fn ag_ui_adapter_emits_event_stream_payload() {
         let adapter = AgUiAdapter::new("thread-main", "run-main");
-        let payload = adapter.from_canonical(&test_surface()).expect("ag ui payload");
+        let payload = adapter.to_protocol_payload(&test_surface()).expect("ag ui payload");
         assert_eq!(payload["protocol"], "ag_ui");
         assert_eq!(payload["events"][0]["type"], "RUN_STARTED");
     }
@@ -132,7 +132,7 @@ mod tests {
     #[test]
     fn mcp_apps_adapter_emits_resource_payload() {
         let adapter = McpAppsAdapter::new(McpAppsRenderOptions::default());
-        let payload = adapter.from_canonical(&test_surface()).expect("mcp payload");
+        let payload = adapter.to_protocol_payload(&test_surface()).expect("mcp payload");
         assert_eq!(payload["protocol"], "mcp_apps");
         assert!(payload["payload"]["resource"]["uri"].as_str().unwrap().starts_with("ui://"));
     }
@@ -143,7 +143,7 @@ mod tests {
             domain: Some("ftp://example.com".to_string()),
             ..Default::default()
         });
-        let result = adapter.from_canonical(&test_surface());
+        let result = adapter.to_protocol_payload(&test_surface());
         assert!(result.is_err());
     }
 }

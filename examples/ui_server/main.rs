@@ -100,7 +100,7 @@ fn build_ui_agent(
 ) -> Result<Arc<dyn Agent>> {
     let mut builder = LlmAgentBuilder::new(name)
         .description(description)
-        .instruction(&full_instruction(instruction))
+        .instruction(full_instruction(instruction))
         .model(Arc::new(GeminiModel::new(api_key, model_name)?));
 
     for tool in ui_tools.iter().cloned() {

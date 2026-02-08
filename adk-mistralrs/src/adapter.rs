@@ -46,10 +46,11 @@ use adk_core::{
 };
 use async_trait::async_trait;
 use futures::stream;
+use mistralrs::core::Ordering;
 use mistralrs::{
-    AutoDeviceMapParams, DeviceMapSetting, IsqType, LoraModelBuilder, Ordering,
-    PagedAttentionMetaBuilder, RequestBuilder, Response, TextMessageRole, TextMessages,
-    TextModelBuilder, Topology, XLoraModelBuilder,
+    AutoDeviceMapParams, DeviceMapSetting, IsqType, LoraModelBuilder, PagedAttentionMetaBuilder,
+    RequestBuilder, Response, TextMessageRole, TextMessages, TextModelBuilder, Topology,
+    XLoraModelBuilder,
 };
 use tokio::sync::RwLock;
 use tracing::{debug, info, instrument, warn};
@@ -521,6 +522,7 @@ impl MistralRsAdapterModel {
             interrupted: false,
             error_code: None,
             error_message: None,
+            citation_metadata: None,
         }
     }
 }
@@ -580,6 +582,7 @@ impl Llm for MistralRsAdapterModel {
                                                 partial: true,
                                                 turn_complete: false,
                                                 interrupted: false,
+                                                citation_metadata: None,
                                                 error_code: None,
                                                 error_message: None,
                                             };
@@ -603,6 +606,7 @@ impl Llm for MistralRsAdapterModel {
                                         interrupted: false,
                                         error_code: None,
                                         error_message: None,
+                                        citation_metadata: None,
                                     };
                                     yield Ok(response);
                                 }

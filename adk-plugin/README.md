@@ -8,7 +8,7 @@ Plugin system for ADK-Rust agents.
 
 ## Overview
 
-`adk-plugin` provides a plugin architecture for extending ADK agent behavior through callbacks at various lifecycle points. This is similar to adk-go's plugin package.
+`adk-plugin` provides a plugin architecture for extending ADK agent behavior through callbacks at various lifecycle points. 
 
 ## Features
 

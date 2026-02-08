@@ -103,10 +103,7 @@ impl BaseEventsSummarizer for LlmEventSummarizer {
         let compaction =
             EventCompaction { start_timestamp, end_timestamp, compacted_content: summary };
 
-        let actions = EventActions {
-            compaction: Some(compaction),
-            ..Default::default()
-        };
+        let actions = EventActions { compaction: Some(compaction), ..Default::default() };
 
         let mut event = Event::new(Event::new("compaction").invocation_id);
         event.author = "system".to_string();

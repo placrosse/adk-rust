@@ -46,6 +46,12 @@ pub struct SchedulerState {
     last_executed: HashMap<String, DateTime<Utc>>,
 }
 
+impl Default for SchedulerState {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl SchedulerState {
     pub fn new() -> Self {
         Self { jobs: HashMap::new(), running: false, last_executed: HashMap::new() }
@@ -63,7 +69,7 @@ fn get_next_run(cron_expr: &str, _timezone: &str) -> Option<DateTime<Utc>> {
     // The cron crate expects 6 or 7 fields (with seconds)
     // Standard cron has 5 fields: minute hour day month weekday
     // Convert 5-field to 6-field by prepending "0" for seconds
-    let parts: Vec<&str> = cron_expr.trim().split_whitespace().collect();
+    let parts: Vec<&str> = cron_expr.split_whitespace().collect();
     let cron_with_seconds =
         if parts.len() == 5 { format!("0 {}", cron_expr) } else { cron_expr.to_string() };
 
@@ -336,7 +342,7 @@ pub async fn start_scheduler(state: AppState) {
                     scheduler.last_executed.insert(job_key, now);
                 }
 
-                execute_job(&job).await;
+                execute_job(job).await;
             }
         }
 

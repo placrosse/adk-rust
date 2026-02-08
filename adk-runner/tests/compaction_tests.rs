@@ -1,8 +1,8 @@
 //! Tests for context compaction integration in the runner.
 
 use adk_core::{
-    Agent, BaseEventsSummarizer, Content, Event, EventActions, EventCompaction,
-    EventStream, EventsCompactionConfig, InvocationContext, Part, Result,
+    Agent, BaseEventsSummarizer, Content, Event, EventActions, EventCompaction, EventStream,
+    EventsCompactionConfig, InvocationContext, Part, Result,
 };
 use adk_runner::{MutableSession, Runner, RunnerConfig};
 use adk_session::{Events, GetRequest, Session, SessionService, State};
@@ -47,22 +47,36 @@ struct MockEvents {
 }
 
 impl Events for MockEvents {
-    fn all(&self) -> Vec<Event> { self.events.clone() }
-    fn len(&self) -> usize { self.events.len() }
-    fn at(&self, index: usize) -> Option<&Event> { self.events.get(index) }
+    fn all(&self) -> Vec<Event> {
+        self.events.clone()
+    }
+    fn len(&self) -> usize {
+        self.events.len()
+    }
+    fn at(&self, index: usize) -> Option<&Event> {
+        self.events.get(index)
+    }
 }
 
 struct MockState;
 
 impl adk_session::ReadonlyState for MockState {
-    fn get(&self, _key: &str) -> Option<serde_json::Value> { None }
-    fn all(&self) -> HashMap<String, serde_json::Value> { HashMap::new() }
+    fn get(&self, _key: &str) -> Option<serde_json::Value> {
+        None
+    }
+    fn all(&self) -> HashMap<String, serde_json::Value> {
+        HashMap::new()
+    }
 }
 
 impl State for MockState {
-    fn get(&self, _key: &str) -> Option<serde_json::Value> { None }
+    fn get(&self, _key: &str) -> Option<serde_json::Value> {
+        None
+    }
     fn set(&mut self, _key: String, _value: serde_json::Value) {}
-    fn all(&self) -> HashMap<String, serde_json::Value> { HashMap::new() }
+    fn all(&self) -> HashMap<String, serde_json::Value> {
+        HashMap::new()
+    }
 }
 
 struct MockSession {
@@ -74,12 +88,24 @@ struct MockSession {
 }
 
 impl Session for MockSession {
-    fn id(&self) -> &str { &self.id }
-    fn app_name(&self) -> &str { &self.app_name }
-    fn user_id(&self) -> &str { &self.user_id }
-    fn state(&self) -> &dyn State { &self.state }
-    fn events(&self) -> &dyn Events { &self.events }
-    fn last_update_time(&self) -> chrono::DateTime<chrono::Utc> { Utc::now() }
+    fn id(&self) -> &str {
+        &self.id
+    }
+    fn app_name(&self) -> &str {
+        &self.app_name
+    }
+    fn user_id(&self) -> &str {
+        &self.user_id
+    }
+    fn state(&self) -> &dyn State {
+        &self.state
+    }
+    fn events(&self) -> &dyn Events {
+        &self.events
+    }
+    fn last_update_time(&self) -> chrono::DateTime<chrono::Utc> {
+        Utc::now()
+    }
 }
 
 /// Session service that tracks appended events for verification.
@@ -228,8 +254,13 @@ fn test_conversation_history_respects_compaction() {
         user_id: "user-1".to_string(),
         events: MockEvents {
             events: vec![
-                old_event_1, old_event_2, old_event_3, old_event_4,
-                compaction_event, new_event_1, new_event_2,
+                old_event_1,
+                old_event_2,
+                old_event_3,
+                old_event_4,
+                compaction_event,
+                new_event_1,
+                new_event_2,
             ],
         },
         state: MockState,
@@ -317,10 +348,7 @@ async fn test_runner_triggers_compaction_at_interval() {
     .unwrap();
 
     let content = Content::new("user").with_text("Hello");
-    let mut stream = runner
-        .run("user-1".to_string(), "sess-1".to_string(), content)
-        .await
-        .unwrap();
+    let mut stream = runner.run("user-1".to_string(), "sess-1".to_string(), content).await.unwrap();
 
     // Drain the stream
     while let Some(result) = stream.next().await {
@@ -332,16 +360,10 @@ async fn test_runner_triggers_compaction_at_interval() {
 
     // Check that a compaction event was appended to the session
     let appended = session_service.appended_events();
-    let compaction_events: Vec<_> = appended
-        .iter()
-        .filter(|e| e.actions.compaction.is_some())
-        .collect();
+    let compaction_events: Vec<_> =
+        appended.iter().filter(|e| e.actions.compaction.is_some()).collect();
 
-    assert_eq!(
-        compaction_events.len(),
-        1,
-        "Expected exactly one compaction event to be persisted"
-    );
+    assert_eq!(compaction_events.len(), 1, "Expected exactly one compaction event to be persisted");
 
     let compaction = compaction_events[0].actions.compaction.as_ref().unwrap();
     let summary_text = match &compaction.compacted_content.parts[0] {
@@ -381,10 +403,7 @@ async fn test_runner_no_compaction_before_interval() {
     .unwrap();
 
     let content = Content::new("user").with_text("Hello");
-    let mut stream = runner
-        .run("user-1".to_string(), "sess-1".to_string(), content)
-        .await
-        .unwrap();
+    let mut stream = runner.run("user-1".to_string(), "sess-1".to_string(), content).await.unwrap();
 
     while let Some(result) = stream.next().await {
         assert!(result.is_ok());

@@ -45,7 +45,7 @@ pub fn generate_error_handling_wrapper(node_id: &str, props: &StandardProperties
     match props.error_handling.mode {
         ErrorMode::Stop => {
             // Default behavior - errors propagate up
-            code.push_str(&format!("    // Error handling: stop on error\n"));
+            code.push_str("    // Error handling: stop on error\n");
         }
         ErrorMode::Continue => {
             code.push_str(&format!(
@@ -235,8 +235,8 @@ impl ActionNodeCodeGen for TriggerNodeConfig {
                         schedule.cron, schedule.timezone
                     ));
                     code.push_str("    // Note: Cron job is set up externally\n");
-                    code.push_str(&format!("    Ok(serde_json::json!({{\n"));
-                    code.push_str(&format!("        \"trigger\": \"schedule\",\n"));
+                    code.push_str("    Ok(serde_json::json!({\n");
+                    code.push_str("        \"trigger\": \"schedule\",\n");
                     code.push_str(&format!("        \"cron\": \"{}\",\n", schedule.cron));
                     code.push_str(&format!("        \"timezone\": \"{}\",\n", schedule.timezone));
                     code.push_str("        \"timestamp\": chrono::Utc::now().to_rfc3339()\n");
@@ -336,7 +336,7 @@ fn generate_webhook_handler(node_id: &str, webhook: &WebhookConfig) -> String {
                 .and_then(|c| c.header_name.as_ref())
                 .map(|s| s.as_str())
                 .unwrap_or("X-API-Key");
-            code.push_str(&format!("    // Validate API key\n"));
+            code.push_str("    // Validate API key\n");
             code.push_str(&format!(
                 "    let api_key = headers.get(\"{}\").and_then(|v| v.to_str().ok());\n",
                 header_name
@@ -400,7 +400,7 @@ impl ActionNodeCodeGen for HttpNodeConfig {
                     value.replace('"', "\\\"")
                 ));
             }
-            code.push_str("\n");
+            code.push('\n');
         }
 
         // Add authentication
@@ -568,7 +568,7 @@ impl ActionNodeCodeGen for HttpNodeConfig {
         code.push_str("}\n\n");
 
         // Generate status validation helper
-        code.push_str(&generate_status_validation_helper());
+        code.push_str(generate_status_validation_helper());
 
         code
     }
@@ -746,7 +746,7 @@ impl ActionNodeCodeGen for SetNodeConfig {
         code.push_str("}\n\n");
 
         // Generate deep merge helper
-        code.push_str(&generate_deep_merge_helper());
+        code.push_str(generate_deep_merge_helper());
 
         code
     }
@@ -1535,7 +1535,7 @@ impl ActionNodeCodeGen for CodeNodeConfig {
         code.push_str("}\n\n");
 
         // Generate sandbox execution helper
-        code.push_str(&generate_sandbox_helper());
+        code.push_str(generate_sandbox_helper());
 
         code
     }
@@ -1755,7 +1755,7 @@ fn generate_sql_code(_node_id: &str, config: &DatabaseNodeConfig) -> String {
 
                 // Bind parameters
                 if let Some(params) = &sql.params {
-                    for (_key, value) in params {
+                    for value in params.values() {
                         code.push_str(&format!("        .bind(serde_json::json!({}))\n", value));
                     }
                 }
@@ -1778,7 +1778,7 @@ fn generate_sql_code(_node_id: &str, config: &DatabaseNodeConfig) -> String {
                 code.push_str("    let result = sqlx::query(query)\n");
 
                 if let Some(params) = &sql.params {
-                    for (_, value) in params {
+                    for value in params.values() {
                         code.push_str(&format!("        .bind(serde_json::json!({}))\n", value));
                     }
                 }
@@ -3154,9 +3154,8 @@ impl ActionNodeCodeGen for FileNodeConfig {
 
         // Add format-specific dependencies
         if let Some(parse) = &self.parse {
-            match parse.format {
-                FileFormat::Csv => deps.push(("csv", "1")),
-                _ => {}
+            if parse.format == FileFormat::Csv {
+                deps.push(("csv", "1"))
             }
         }
 
@@ -3210,7 +3209,7 @@ pub fn generate_action_nodes_code(action_nodes: &HashMap<String, ActionNodeConfi
 
     // Generate helper functions
     code.push_str(generate_interpolation_helper());
-    code.push_str("\n");
+    code.push('\n');
 
     // Generate code for each action node
     for (node_id, node) in action_nodes {

@@ -81,9 +81,7 @@ async fn test_summarize_produces_compaction_event() {
 
 #[tokio::test]
 async fn test_summarize_with_custom_prompt_template() {
-    let llm = Arc::new(MockSummarizerLlm {
-        summary_text: "Custom summary output".into(),
-    });
+    let llm = Arc::new(MockSummarizerLlm { summary_text: "Custom summary output".into() });
     let summarizer = LlmEventSummarizer::new(llm)
         .with_prompt_template("Summarize briefly: {conversation_history}");
 
@@ -102,9 +100,7 @@ async fn test_summarize_with_custom_prompt_template() {
 
 #[tokio::test]
 async fn test_summarize_skips_non_text_parts() {
-    let llm = Arc::new(MockSummarizerLlm {
-        summary_text: "Summary of tool interaction".into(),
-    });
+    let llm = Arc::new(MockSummarizerLlm { summary_text: "Summary of tool interaction".into() });
     let summarizer = LlmEventSummarizer::new(llm);
 
     // Event with function call (no text) — should be skipped in prompt formatting
@@ -119,11 +115,8 @@ async fn test_summarize_skips_non_text_parts() {
         }],
     });
 
-    let events = vec![
-        make_event("user", "Check weather"),
-        fc_event,
-        make_event("assistant", "It's sunny"),
-    ];
+    let events =
+        vec![make_event("user", "Check weather"), fc_event, make_event("assistant", "It's sunny")];
 
     let result = summarizer.summarize_events(&events).await.unwrap();
     assert!(result.is_some());

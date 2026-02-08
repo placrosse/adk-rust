@@ -993,8 +993,11 @@ impl WorkflowExecutor {
             .map_err(|e| ActionError::Execution(format!("MongoDB connection failed: {}", e)))?;
 
         // Extract database name from connection string or use default
-        let db_name =
-            connection_string.split('/').last().and_then(|s| s.split('?').next()).unwrap_or("test");
+        let db_name = connection_string
+            .split('/')
+            .next_back()
+            .and_then(|s| s.split('?').next())
+            .unwrap_or("test");
 
         let db = client.database(db_name);
 
@@ -1399,9 +1402,8 @@ impl WorkflowExecutor {
                                     .as_deref()
                                     .unwrap_or("application/octet-stream");
 
-                                let content_type: ContentType = mime_type_str
-                                    .parse()
-                                    .unwrap_or_else(|_| ContentType::TEXT_PLAIN);
+                                let content_type: ContentType =
+                                    mime_type_str.parse().unwrap_or(ContentType::TEXT_PLAIN);
 
                                 let att = Attachment::new(attachment.filename.clone())
                                     .body(data, content_type);
@@ -1824,7 +1826,7 @@ mod tests {
             Just(Value::Bool(true)),
             Just(Value::Bool(false)),
             any::<i64>().prop_map(|n| Value::Number(n.into())),
-            "[a-z]{1,10}".prop_map(|s| Value::String(s)),
+            "[a-z]{1,10}".prop_map(Value::String),
         ]
     }
 
@@ -1872,7 +1874,7 @@ mod tests {
 
             // Property 2: Retry count is within valid range (1-10) when specified
             if let Some(retry_count) = error_handling.retry_count {
-                prop_assert!(retry_count >= 1 && retry_count <= 10,
+                prop_assert!((1..=10).contains(&retry_count),
                     "Retry count {} should be between 1 and 10", retry_count);
             }
 

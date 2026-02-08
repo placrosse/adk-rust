@@ -27,7 +27,7 @@ async fn main() -> Result<()> {
 
     let mut builder = LlmAgentBuilder::new("ui_working_inventory")
         .description("Inventory restock agent with working UI flows")
-        .instruction(&format!(
+        .instruction(format!(
             "{}
 
 {}",

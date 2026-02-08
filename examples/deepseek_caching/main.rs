@@ -137,7 +137,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let agent = LlmAgentBuilder::new("hr_assistant")
         .model(Arc::new(model))
-        .instruction(&instruction)
+        .instruction(instruction)
         .build()?;
 
     // Create session service and runner

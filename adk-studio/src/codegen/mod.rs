@@ -135,7 +135,7 @@ fn generate_workflow_header_comment(project: &ProjectSchema) -> String {
         comment.push_str(agent_id);
         comment.push_str("** (");
         comment.push_str(&format!("{:?}", agent.agent_type).to_lowercase());
-        comment.push_str(")");
+        comment.push(')');
 
         // Add brief instruction summary if available
         if !agent.instruction.is_empty() {
@@ -143,20 +143,20 @@ fn generate_workflow_header_comment(project: &ProjectSchema) -> String {
             comment.push_str(": ");
             comment.push_str(&brief);
         }
-        comment.push_str("\n");
+        comment.push('\n');
 
         // List tools if any
         if !agent.tools.is_empty() {
             comment.push_str("//!   Tools: ");
             comment.push_str(&agent.tools.join(", "));
-            comment.push_str("\n");
+            comment.push('\n');
         }
 
         // List sub-agents if any
         if !agent.sub_agents.is_empty() {
             comment.push_str("//!   Sub-agents: ");
             comment.push_str(&agent.sub_agents.join(" → "));
-            comment.push_str("\n");
+            comment.push('\n');
         }
     }
 
@@ -190,9 +190,9 @@ fn generate_workflow_header_comment(project: &ProjectSchema) -> String {
             if !env_var.alternatives.is_empty() {
                 comment.push_str(" [alt: ");
                 comment.push_str(&env_var.alternatives.join(", "));
-                comment.push_str("]");
+                comment.push(']');
             }
-            comment.push_str("\n");
+            comment.push('\n');
         }
         comment.push_str("//!\n");
     }
@@ -299,12 +299,12 @@ fn generate_flow_diagram(project: &ProjectSchema) -> String {
                 .filter(|t| !project.action_nodes.contains_key(*t))
                 .collect();
             diagram.push_str(&targets.join(" | "));
-            diagram.push_str("]");
+            diagram.push(']');
             break; // Stop at branching point
         }
     }
 
-    diagram.push_str("\n");
+    diagram.push('\n');
     diagram
 }
 
@@ -662,11 +662,8 @@ fn generate_main_rs(project: &ProjectSchema) -> String {
     // Add unique output channels for parallel-branch agents
     let parallel_channels: Vec<String> =
         parallel_branch_agents.iter().map(|id| format!("{}_response", id)).collect();
-    let all_channels: Vec<String> = base_channels
-        .into_iter()
-        .chain(extra_channels.into_iter())
-        .chain(parallel_channels.into_iter())
-        .collect();
+    let all_channels: Vec<String> =
+        base_channels.into_iter().chain(extra_channels).chain(parallel_channels).collect();
     let channel_list =
         all_channels.iter().map(|c| format!("\"{}\"", c)).collect::<Vec<_>>().join(", ");
     code.push_str(&format!("    let graph = StateGraph::with_channels(&[{}])\n", channel_list));
@@ -1641,7 +1638,7 @@ fn to_pascal_case(s: &str) -> String {
 }
 
 /// Generate a graph node function for an action node (Set, Transform, etc.)
-
+///
 /// Helper: generate JSONPath-like extraction code for HTTP response.
 /// Supports simple dot-notation paths like "data.items" or "result.name".
 fn generate_json_path_extraction(code: &mut String, json_path: &str, output_key: &str) {
@@ -2107,9 +2104,7 @@ fn generate_action_node_function(
                     code.push_str(&format!("        let source_arr = ctx.state.get(\"{}\").and_then(|v| v.as_array()).cloned().unwrap_or_default();\n", source));
                     code.push_str(&format!("        let idx = ctx.state.get(\"{}\").and_then(|v| v.as_u64()).unwrap_or(0) as usize;\n", counter_key));
                     code.push_str("        if idx < source_arr.len() {\n");
-                    code.push_str(&format!(
-                        "            let current_item = source_arr[idx].clone();\n"
-                    ));
+                    code.push_str("            let current_item = source_arr[idx].clone();\n");
                     code.push_str(&format!(
                         "            output = output.with_update(\"{}\", current_item);\n",
                         item_var
@@ -2131,9 +2126,7 @@ fn generate_action_node_function(
                     if config.results.collect {
                         let agg_key =
                             config.results.aggregation_key.as_deref().unwrap_or("loop_results");
-                        code.push_str(&format!(
-                            "            // Collect previous iteration result if any\n"
-                        ));
+                        code.push_str("            // Collect previous iteration result if any\n");
                         code.push_str(&format!("            let mut results = ctx.state.get(\"{}\").and_then(|v| v.as_array()).cloned().unwrap_or_default();\n", agg_key));
                         code.push_str("            if idx > 0 {\n");
                         code.push_str(
@@ -2190,9 +2183,9 @@ fn generate_action_node_function(
                     code.push_str(&format!("        // times: repeat {} times\n", count));
                     code.push_str(&format!("        let idx = ctx.state.get(\"{}\").and_then(|v| v.as_u64()).unwrap_or(0) as usize;\n", counter_key));
                     code.push_str(&format!("        if idx < {} {{\n", count));
-                    code.push_str(&format!(
-                        "            output = output.with_update(\"index\", json!(idx));\n"
-                    ));
+                    code.push_str(
+                        "            output = output.with_update(\"index\", json!(idx));\n",
+                    );
                     code.push_str(&format!(
                         "            output = output.with_update(\"{}\", json!(idx + 1));\n",
                         counter_key
@@ -2271,9 +2264,9 @@ fn generate_action_node_function(
                     code.push_str("            None => false,\n");
                     code.push_str("        };\n");
                     code.push_str("        if should_continue {\n");
-                    code.push_str(&format!(
-                        "            output = output.with_update(\"index\", json!(idx));\n"
-                    ));
+                    code.push_str(
+                        "            output = output.with_update(\"index\", json!(idx));\n",
+                    );
                     code.push_str(&format!(
                         "            output = output.with_update(\"{}\", json!(idx + 1));\n",
                         counter_key
@@ -2783,7 +2776,7 @@ fn generate_action_node_function(
                 crate::codegen::action_nodes::WaitType::Webhook => {
                     // Webhook wait is complex — generate a simple timeout-based placeholder
                     if let Some(webhook) = &config.webhook {
-                        code.push_str(&format!("        // Webhook wait (simplified): sleep for timeout as placeholder\n"));
+                        code.push_str("        // Webhook wait (simplified): sleep for timeout as placeholder\n");
                         code.push_str(&format!("        tokio::time::sleep(std::time::Duration::from_millis({})).await;\n", webhook.timeout.min(30000)));
                         code.push_str(&format!("        Ok(NodeOutput::new().with_update(\"{}\", json!({{ \"waited\": true, \"webhook\": \"{}\" }})))\n", output_key, webhook.path.replace('"', "\\\"")));
                     } else {
@@ -3524,9 +3517,9 @@ fn generate_action_node_function(
 
                         // Connect to IMAP
                         if imap_cfg.secure {
-                            code.push_str(&format!(
-                                "        let tls = native_tls::TlsConnector::builder().build()\n"
-                            ));
+                            code.push_str(
+                                "        let tls = native_tls::TlsConnector::builder().build()\n",
+                            );
                             code.push_str("            .map_err(|e| adk_graph::GraphError::NodeExecutionFailed { node: \"email\".into(), message: format!(\"TLS error: {}\", e) })?;\n");
                             code.push_str(&format!(
                                 "        let client = imap::ClientBuilder::new(\"{}\", {}).native_tls(tls)\n",

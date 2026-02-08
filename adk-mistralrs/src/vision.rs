@@ -441,6 +441,7 @@ impl MistralRsVisionModel {
             interrupted: false,
             error_code: None,
             error_message: None,
+            citation_metadata: None,
         }
     }
 }
@@ -490,6 +491,7 @@ impl Llm for MistralRsVisionModel {
                                                 partial: true,
                                                 turn_complete: false,
                                                 interrupted: false,
+                                                citation_metadata: None,
                                                 error_code: None,
                                                 error_message: None,
                                             };
@@ -513,6 +515,7 @@ impl Llm for MistralRsVisionModel {
                                         interrupted: false,
                                         error_code: None,
                                         error_message: None,
+                                        citation_metadata: None,
                                     };
                                     yield Ok(response);
                                 }

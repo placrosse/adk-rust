@@ -1291,24 +1291,21 @@ impl ActionNodeConfig {
                     format!("{}_loop_done", id),
                     "index".to_string(),
                 ];
-                match cfg.loop_type {
-                    LoopType::ForEach => {
-                        let item_var = cfg
-                            .for_each
-                            .as_ref()
-                            .map(|f| f.item_var.clone())
-                            .unwrap_or_else(|| "item".to_string());
-                        let index_var = cfg
-                            .for_each
-                            .as_ref()
-                            .map(|f| f.index_var.clone())
-                            .unwrap_or_else(|| "index".to_string());
-                        keys.push(item_var);
-                        if index_var != "index" {
-                            keys.push(index_var);
-                        }
+                if cfg.loop_type == LoopType::ForEach {
+                    let item_var = cfg
+                        .for_each
+                        .as_ref()
+                        .map(|f| f.item_var.clone())
+                        .unwrap_or_else(|| "item".to_string());
+                    let index_var = cfg
+                        .for_each
+                        .as_ref()
+                        .map(|f| f.index_var.clone())
+                        .unwrap_or_else(|| "index".to_string());
+                    keys.push(item_var);
+                    if index_var != "index" {
+                        keys.push(index_var);
                     }
-                    _ => {}
                 }
                 if cfg.results.collect {
                     let agg_key = cfg.results.aggregation_key.as_deref().unwrap_or("loop_results");

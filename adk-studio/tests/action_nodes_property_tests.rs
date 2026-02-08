@@ -105,7 +105,11 @@ fn arb_trigger_node_config() -> impl Strategy<Value = TriggerNodeConfig> {
             None
         };
         let schedule = if trigger_type == TriggerType::Schedule {
-            Some(ScheduleConfig { cron: "0 * * * *".to_string(), timezone: "UTC".to_string(), default_prompt: None })
+            Some(ScheduleConfig {
+                cron: "0 * * * *".to_string(),
+                timezone: "UTC".to_string(),
+                default_prompt: None,
+            })
         } else {
             None
         };

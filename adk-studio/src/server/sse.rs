@@ -283,11 +283,9 @@ impl ExecutionContext {
             }
             "state" => {
                 // State snapshot - update current state
-                if let Some(state) = event.get("state") {
-                    if let serde_json::Value::Object(map) = state {
-                        for (k, v) in map {
-                            self.current_state.insert(k.clone(), v.clone());
-                        }
+                if let Some(serde_json::Value::Object(map)) = event.get("state") {
+                    for (k, v) in map {
+                        self.current_state.insert(k.clone(), v.clone());
                     }
                 }
                 (Vec::new(), false, false)
@@ -310,11 +308,9 @@ impl ExecutionContext {
             }
             "done" => {
                 // Done event contains final state - emit node_end for all pending agents
-                if let Some(state) = event.get("state") {
-                    if let serde_json::Value::Object(map) = state {
-                        for (k, v) in map {
-                            self.current_state.insert(k.clone(), v.clone());
-                        }
+                if let Some(serde_json::Value::Object(map)) = event.get("state") {
+                    for (k, v) in map {
+                        self.current_state.insert(k.clone(), v.clone());
                     }
                 }
                 (Vec::new(), true, false)
@@ -323,11 +319,9 @@ impl ExecutionContext {
                 // Interrupt event from ADK-Graph - workflow is paused
                 // This is handled separately via the interrupt SSE event
                 // Just update state if provided
-                if let Some(state) = event.get("state") {
-                    if let serde_json::Value::Object(map) = state {
-                        for (k, v) in map {
-                            self.current_state.insert(k.clone(), v.clone());
-                        }
+                if let Some(serde_json::Value::Object(map)) = event.get("state") {
+                    for (k, v) in map {
+                        self.current_state.insert(k.clone(), v.clone());
                     }
                 }
                 (Vec::new(), false, false)
