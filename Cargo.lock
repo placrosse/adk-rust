@@ -215,6 +215,7 @@ dependencies = [
 name = "adk-examples"
 version = "0.2.2"
 dependencies = [
+ "adk-3d-ui",
  "adk-agent",
  "adk-artifact",
  "adk-auth",
@@ -233,6 +234,7 @@ dependencies = [
  "adk-server",
  "adk-session",
  "adk-skill",
+ "adk-spatial-os",
  "adk-tool",
  "adk-ui",
  "anyhow",
@@ -521,6 +523,30 @@ dependencies = [
  "thiserror 2.0.18",
  "tokio",
  "walkdir",
+]
+
+[[package]]
+name = "adk-spatial-os"
+version = "0.2.2"
+dependencies = [
+ "adk-agent",
+ "adk-runner",
+ "adk-session",
+ "anyhow",
+ "async-stream",
+ "async-trait",
+ "axum 0.8.8",
+ "chrono",
+ "reqwest 0.12.28",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.18",
+ "tokio",
+ "tokio-stream",
+ "tower-http",
+ "tracing",
+ "tracing-subscriber",
+ "uuid 1.19.0",
 ]
 
 [[package]]

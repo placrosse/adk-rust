@@ -15,6 +15,7 @@ examples/
 ├── roadmap_retry_matrix/    # Standardized retry across providers
 ├── ui_protocol_profiles/    # Tri-protocol UI outputs (A2UI/AG-UI/MCP Apps)
 ├── 3d_ui_ops_center/        # Agentic Three.js UI runtime (SSE + ops)
+├── spatial_os_shell/        # AI-native shell scaffold (Master Prompt + agent apps)
 ├── skills_llm_minimal/      # Basic LlmAgent + local skills
 ├── skills_auto_discovery/   # Auto-discover .skills with default policy
 ├── skills_conventions_index/# Discover AGENTS/CLAUDE/GEMINI/COPILOT/SKILLS files
@@ -165,6 +166,13 @@ Runs the `adk-3d-ui` DevOps vertical-slice demo server with embedded Three.js cl
 cargo run --example 3d_ui_ops_center
 ```
 Then open `http://127.0.0.1:8099` and run prompts from the left panel.
+
+### spatial_os_shell
+Runs the `adk-spatial-os` shell scaffold with Master Prompt, dock, workspace, timeline, and trust panel.
+```bash
+cargo run --example spatial_os_shell
+```
+Then open `http://127.0.0.1:8199`.
 
 ## Skills Feature Examples
 
