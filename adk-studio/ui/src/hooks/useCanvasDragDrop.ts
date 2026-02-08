@@ -49,15 +49,37 @@ export interface UseCanvasDragDropReturn {
 }
 
 /**
- * Find the closest edge to a given position for edge-splitting (insert between nodes).
- * Returns the edge to split if the drop point is close enough to an edge midpoint.
+ * Compute the shortest distance from point (px, py) to the line segment (ax,ay)→(bx,by).
+ * Also returns `t` — the projection parameter (0 = at source, 1 = at target).
+ */
+function pointToSegmentDist(
+  px: number, py: number,
+  ax: number, ay: number,
+  bx: number, by: number,
+): { dist: number; t: number } {
+  const dx = bx - ax;
+  const dy = by - ay;
+  const lenSq = dx * dx + dy * dy;
+  // Degenerate segment (source == target)
+  if (lenSq === 0) return { dist: Math.sqrt((px - ax) ** 2 + (py - ay) ** 2), t: 0 };
+  // Project point onto line, clamped to [0,1]
+  const t = Math.max(0, Math.min(1, ((px - ax) * dx + (py - ay) * dy) / lenSq));
+  const projX = ax + t * dx;
+  const projY = ay + t * dy;
+  return { dist: Math.sqrt((px - projX) ** 2 + (py - projY) ** 2), t };
+}
+
+/**
+ * Find the closest edge to a drop position using point-to-segment distance.
+ * This means dropping *anywhere* between two connected nodes will find that edge,
+ * not just near the midpoint. Returns null only if no edge is within threshold.
  */
 function findClosestEdge(
   dropX: number,
   dropY: number,
   edges: Array<{ from: string; to: string }>,
   nodePositions: Map<string, { x: number; y: number }>,
-  threshold: number = 120,
+  threshold: number = 200,
 ): { from: string; to: string } | null {
   let closest: { from: string; to: string } | null = null;
   let closestDist = threshold;
@@ -67,12 +89,15 @@ function findClosestEdge(
     const targetPos = nodePositions.get(edge.to);
     if (!sourcePos || !targetPos) continue;
 
-    // Midpoint of the edge
-    const midX = (sourcePos.x + targetPos.x) / 2;
-    const midY = (sourcePos.y + targetPos.y) / 2;
-    const dist = Math.sqrt((dropX - midX) ** 2 + (dropY - midY) ** 2);
+    const { dist, t } = pointToSegmentDist(
+      dropX, dropY,
+      sourcePos.x, sourcePos.y,
+      targetPos.x, targetPos.y,
+    );
 
-    if (dist < closestDist) {
+    // Require t to be between 0.05 and 0.95 — don't split if dropping
+    // right on top of the source or target node itself
+    if (dist < closestDist && t > 0.05 && t < 0.95) {
       closestDist = dist;
       closest = edge;
     }
@@ -144,14 +169,19 @@ export function useCanvasDragDrop({
       return;
     }
 
-    // Try edge-splitting if we have a drop position
-    if (dropPosition) {
-      const nodes = getNodes();
-      const nodePositions = new Map<string, { x: number; y: number }>();
-      for (const n of nodes) {
-        nodePositions.set(n.id, { x: n.position.x + 90, y: n.position.y + 50 }); // center of node
-      }
+    // Build node center positions from ReactFlow nodes for edge proximity detection.
+    // We use measured dimensions when available, otherwise sensible defaults.
+    const nodes = getNodes();
+    const nodePositions = new Map<string, { x: number; y: number }>();
+    for (const n of nodes) {
+      const w = (n.measured?.width ?? n.width ?? 180) as number;
+      const h = (n.measured?.height ?? n.height ?? 80) as number;
+      nodePositions.set(n.id, { x: n.position.x + w / 2, y: n.position.y + h / 2 });
+    }
 
+    // Always try to find the closest edge to the drop position and split it.
+    // This is the core n8n-style behavior: drop between two nodes → insert there.
+    if (dropPosition) {
       const edgeToSplit = findClosestEdge(
         dropPosition.x,
         dropPosition.y,
@@ -168,7 +198,7 @@ export function useCanvasDragDrop({
       }
     }
 
-    // Default: append before END
+    // Fallback: no edge was close enough. Append before END.
     const edgeToEnd = currentProject.workflow.edges.find(e => e.to === 'END');
     if (edgeToEnd) {
       removeProjectEdge(edgeToEnd.from, 'END');
