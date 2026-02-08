@@ -9,11 +9,14 @@ use axum::{
     Json, Router,
     extract::{Path, State},
     http::StatusCode,
-    response::{Html, IntoResponse, sse::{Event, KeepAlive, Sse}},
+    response::{
+        Html, IntoResponse,
+        sse::{Event, KeepAlive, Sse},
+    },
     routing::{get, post},
 };
-use serde_json::json;
 use serde::Deserialize;
+use serde_json::json;
 use tokio::sync::broadcast;
 use tower_http::cors::{Any, CorsLayer};
 use tracing::info;
@@ -22,11 +25,13 @@ use crate::{
     app_runtime::{
         handoff::{PendingHandoff, evaluate_handoff, parse_handoff_command},
         host::{AgentAppHost, InMemoryAgentHost},
+        manifest::AppManifest,
     },
     protocol::{
-        AppCatalogResponse, ApprovalRequiredPayload, DonePayload, ErrorPayload, InboundEvent,
-        InboundEventAck, InboundEventRequest, MasterPromptRequest, MasterPromptResponse,
-        NotificationPayload, PingPayload, SessionCreateResponse, SsePayload,
+        AppCatalogResponse, AppRegisterRequest, AppRegisterResponse, AppSurfaceOpsPayload,
+        ApprovalRequiredPayload, DonePayload, ErrorPayload, InboundEvent, InboundEventAck,
+        InboundEventRequest, MasterPromptRequest, MasterPromptResponse, NotificationPayload,
+        PingPayload, SessionCreateResponse, SsePayload, SurfaceOp, SurfacePatchOp,
     },
     safety::{
         approvals::PendingApproval,
@@ -56,16 +61,14 @@ fn parse_workspace_layout(layout: &str) -> Option<HashMap<String, AppSurfaceLayo
         }
         mapped.insert(
             item.app_id,
-            AppSurfaceLayout {
-                x: item.x,
-                y: item.y,
-                w: item.w,
-                h: item.h,
-                z_index: item.z_index,
-            },
+            AppSurfaceLayout { x: item.x, y: item.y, w: item.w, h: item.h, z_index: item.z_index },
         );
     }
     Some(mapped)
+}
+
+fn app_catalog_map(apps: Vec<AppManifest>) -> HashMap<String, AppManifest> {
+    apps.into_iter().map(|app| (app.id.clone(), app)).collect()
 }
 
 #[derive(Clone)]
@@ -82,13 +85,8 @@ impl std::fmt::Debug for AppState {
 
 impl AppState {
     pub fn with_state_path(state_path: Option<PathBuf>) -> Self {
-        let sessions = state_path
-            .map(SessionManager::with_persistence_path)
-            .unwrap_or_default();
-        Self {
-            sessions,
-            host: Arc::new(InMemoryAgentHost::default()),
-        }
+        let sessions = state_path.map(SessionManager::with_persistence_path).unwrap_or_default();
+        Self { sessions, host: Arc::new(InMemoryAgentHost::default()) }
     }
 
     pub fn from_env() -> Self {
@@ -115,23 +113,18 @@ pub struct ServerConfig {
 
 impl Default for ServerConfig {
     fn default() -> Self {
-        Self {
-            host: "127.0.0.1".to_string(),
-            port: 8199,
-        }
+        Self { host: "127.0.0.1".to_string(), port: 8199 }
     }
 }
 
 pub fn app_router(state: AppState) -> Router {
-    let cors = CorsLayer::new()
-        .allow_origin(Any)
-        .allow_methods(Any)
-        .allow_headers(Any);
+    let cors = CorsLayer::new().allow_origin(Any).allow_methods(Any).allow_headers(Any);
 
     Router::new()
         .route("/", get(index))
         .route("/health", get(health))
         .route("/api/os/apps", get(list_apps))
+        .route("/api/os/apps/register", post(register_app))
         .route("/api/os/session", post(create_session))
         .route("/api/os/stream/{session_id}", get(stream_session))
         .route("/api/os/prompt/{session_id}", post(master_prompt))
@@ -166,6 +159,50 @@ async fn list_apps(State(state): State<AppState>) -> impl IntoResponse {
     Json(AppCatalogResponse { apps })
 }
 
+async fn register_app(
+    State(state): State<AppState>,
+    Json(request): Json<AppRegisterRequest>,
+) -> Result<Json<AppRegisterResponse>, (StatusCode, Json<AppRegisterResponse>)> {
+    let manifest = request.manifest;
+    if manifest.id.trim().is_empty() {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            Json(AppRegisterResponse {
+                ok: false,
+                created: false,
+                app_id: "".to_string(),
+                message: "manifest.id cannot be empty".to_string(),
+            }),
+        ));
+    }
+    if manifest.name.trim().is_empty() {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            Json(AppRegisterResponse {
+                ok: false,
+                created: false,
+                app_id: manifest.id,
+                message: "manifest.name cannot be empty".to_string(),
+            }),
+        ));
+    }
+
+    let registration = state.host.upsert_app(manifest).await;
+    let source = request.source.unwrap_or_else(|| "unknown".to_string());
+    let message = if registration.created {
+        format!("registered app from {source}")
+    } else {
+        format!("updated app from {source}")
+    };
+
+    Ok(Json(AppRegisterResponse {
+        ok: true,
+        created: registration.created,
+        app_id: registration.app_id,
+        message,
+    }))
+}
+
 async fn create_session(State(state): State<AppState>) -> impl IntoResponse {
     let session_id = state.sessions.create_session().await;
     Json(SessionCreateResponse { session_id })
@@ -176,18 +213,12 @@ async fn stream_session(
     State(state): State<AppState>,
 ) -> Result<Sse<impl tokio_stream::Stream<Item = Result<Event, Infallible>>>, StatusCode> {
     state.sessions.ensure_session(&session_id).await;
-    let mut rx = state
-        .sessions
-        .subscribe(&session_id)
-        .await
-        .ok_or(StatusCode::NOT_FOUND)?;
+    let mut rx = state.sessions.subscribe(&session_id).await.ok_or(StatusCode::NOT_FOUND)?;
 
-    let _ = state
-        .sessions
-        .publish(&session_id, SsePayload::Ping(PingPayload::now()))
-        .await;
+    let _ = state.sessions.publish(&session_id, SsePayload::Ping(PingPayload::now())).await;
 
     if let Some(context) = state.sessions.get_context(&session_id).await {
+        let app_catalog = app_catalog_map(state.host.list_apps().await);
         if !context.active_apps.is_empty() {
             let _ = state
                 .sessions
@@ -207,6 +238,7 @@ async fn stream_session(
                     SsePayload::AppSurfaceOps(compositor::build_app_surface_ops(
                         &context.active_apps,
                         &context.workspace_layout,
+                        &app_catalog,
                     )),
                 )
                 .await;
@@ -245,7 +277,8 @@ async fn stream_session(
         }
     };
 
-    Ok(Sse::new(stream).keep_alive(KeepAlive::new().interval(Duration::from_secs(15)).text("keepalive")))
+    Ok(Sse::new(stream)
+        .keep_alive(KeepAlive::new().interval(Duration::from_secs(15)).text("keepalive")))
 }
 
 async fn master_prompt(
@@ -273,6 +306,7 @@ async fn master_prompt(
         .map(|ctx| ctx.workspace_layout)
         .unwrap_or_default();
     let plan = orchestrator::build_master_plan(state.host.as_ref(), prompt).await;
+    let app_catalog = app_catalog_map(state.host.list_apps().await);
 
     let focused_app = plan.selected_apps.first().cloned();
     let _ = state
@@ -317,12 +351,16 @@ async fn master_prompt(
             SsePayload::AppSurfaceOps(compositor::build_app_surface_ops(
                 &plan.selected_apps,
                 &existing_layout,
+                &app_catalog,
             )),
         )
         .await;
 
     if matches!(plan.risk, RiskTier::Dangerous) {
-        let app_id = focused_app.unwrap_or_else(|| "ops-center".to_string());
+        let app_id = focused_app
+            .clone()
+            .or_else(|| plan.selected_apps.first().cloned())
+            .unwrap_or_else(|| "shell".to_string());
         let pending = PendingApproval {
             action_id: format!("approval-{}", uuid::Uuid::new_v4()),
             app_id: app_id.clone(),
@@ -360,12 +398,7 @@ async fn master_prompt(
     } else {
         let _ = state
             .sessions
-            .publish(
-                &session_id,
-                SsePayload::Done(DonePayload {
-                    status: "completed".to_string(),
-                }),
-            )
+            .publish(&session_id, SsePayload::Done(DonePayload { status: "completed".to_string() }))
             .await;
     }
 
@@ -426,10 +459,8 @@ async fn inbound_event(
         InboundEvent::AppCommand { app_id, command } => {
             if let Some(handoff) = parse_handoff_command(&app_id, &command) {
                 let handoff_id = format!("handoff-{}", uuid::Uuid::new_v4());
-                let policy = state
-                    .host
-                    .evaluate_handoff_policy(&handoff.from_app, &handoff.to_app)
-                    .await;
+                let policy =
+                    state.host.evaluate_handoff_policy(&handoff.from_app, &handoff.to_app).await;
 
                 let _ = state
                     .sessions
@@ -482,17 +513,11 @@ async fn inbound_event(
                         )
                         .await;
                     let server_seq = state.sessions.last_server_seq(&session_id).await;
-                    return Ok(Json(InboundEventAck {
-                        ok: true,
-                        server_seq,
-                        error: None,
-                    }));
+                    return Ok(Json(InboundEventAck { ok: true, server_seq, error: None }));
                 }
 
-                let pending_handoff = PendingHandoff {
-                    handoff_id: handoff_id.clone(),
-                    request: handoff.clone(),
-                };
+                let pending_handoff =
+                    PendingHandoff { handoff_id: handoff_id.clone(), request: handoff.clone() };
                 let _ = state
                     .sessions
                     .update_context(&session_id, |ctx| {
@@ -530,14 +555,11 @@ async fn inbound_event(
                     )
                     .await;
                 let server_seq = state.sessions.last_server_seq(&session_id).await;
-                return Ok(Json(InboundEventAck {
-                    ok: true,
-                    server_seq,
-                    error: None,
-                }));
+                return Ok(Json(InboundEventAck { ok: true, server_seq, error: None }));
             }
 
             let dispatched = state.host.execute_command(&app_id, &command).await;
+            let dispatch_summary = dispatched.summary.clone();
             let _ = state
                 .sessions
                 .publish(
@@ -546,7 +568,7 @@ async fn inbound_event(
                         &app_id,
                         &command,
                         dispatched.accepted,
-                        &dispatched.summary,
+                        &dispatch_summary,
                     )),
                 )
                 .await;
@@ -556,15 +578,31 @@ async fn inbound_event(
                     &session_id,
                     SsePayload::Notification(NotificationPayload {
                         level: if dispatched.accepted { "info" } else { "warn" }.to_string(),
-                        message: dispatched.summary,
+                        message: dispatch_summary.clone(),
+                    }),
+                )
+                .await;
+            let surface_id = format!("surface:{app_id}");
+            let _ = state
+                .sessions
+                .publish(
+                    &session_id,
+                    SsePayload::AppSurfaceOps(AppSurfaceOpsPayload {
+                        reply_to: None,
+                        ops: vec![SurfaceOp::Patch(SurfacePatchOp {
+                            id: surface_id,
+                            props: json!({
+                                "content": dispatch_summary,
+                            })
+                            .as_object()
+                            .cloned()
+                            .unwrap_or_default(),
+                        })],
                     }),
                 )
                 .await;
         }
-        InboundEvent::ApprovalDecision {
-            action_id,
-            approved,
-        } => {
+        InboundEvent::ApprovalDecision { action_id, approved } => {
             let context = state.sessions.get_context(&session_id).await.unwrap_or_default();
             if let Some(pending_handoff) = context.pending_handoff.clone() {
                 if pending_handoff.handoff_id == action_id {
@@ -610,7 +648,9 @@ async fn inbound_event(
                         )
                         .await;
                     if decision.allowed {
-                        let refreshed_context = state.sessions.get_context(&session_id).await.unwrap_or_default();
+                        let refreshed_context =
+                            state.sessions.get_context(&session_id).await.unwrap_or_default();
+                        let app_catalog = app_catalog_map(state.host.list_apps().await);
                         let _ = state
                             .sessions
                             .publish(
@@ -629,6 +669,7 @@ async fn inbound_event(
                                 SsePayload::AppSurfaceOps(compositor::build_app_surface_ops(
                                     &refreshed_context.active_apps,
                                     &refreshed_context.workspace_layout,
+                                    &app_catalog,
                                 )),
                             )
                             .await;
@@ -638,7 +679,8 @@ async fn inbound_event(
                         .publish(
                             &session_id,
                             SsePayload::Notification(NotificationPayload {
-                                level: if decision.allowed { "success" } else { "info" }.to_string(),
+                                level: if decision.allowed { "success" } else { "info" }
+                                    .to_string(),
                                 message: decision.reason,
                             }),
                         )
@@ -653,11 +695,7 @@ async fn inbound_event(
                         )
                         .await;
                     let server_seq = state.sessions.last_server_seq(&session_id).await;
-                    return Ok(Json(InboundEventAck {
-                        ok: true,
-                        server_seq,
-                        error: None,
-                    }));
+                    return Ok(Json(InboundEventAck { ok: true, server_seq, error: None }));
                 }
             }
             let Some(pending) = context.pending_approval else {
@@ -672,11 +710,7 @@ async fn inbound_event(
                     )
                     .await;
                 let server_seq = state.sessions.last_server_seq(&session_id).await;
-                return Ok(Json(InboundEventAck {
-                    ok: true,
-                    server_seq,
-                    error: None,
-                }));
+                return Ok(Json(InboundEventAck { ok: true, server_seq, error: None }));
             };
 
             if pending.action_id != action_id {
@@ -691,16 +725,17 @@ async fn inbound_event(
                     )
                     .await;
             } else {
-                let decision = if approved {
-                    AuditDecision::Approved
-                } else {
-                    AuditDecision::Rejected
-                };
+                let decision =
+                    if approved { AuditDecision::Approved } else { AuditDecision::Rejected };
                 let _ = state
                     .sessions
                     .update_context(&session_id, |ctx| {
-                        ctx.audit_log
-                            .push(AuditEntry::new(&action_id, &pending.app_id, pending.risk, decision));
+                        ctx.audit_log.push(AuditEntry::new(
+                            &action_id,
+                            &pending.app_id,
+                            pending.risk,
+                            decision,
+                        ));
                         ctx.pending_approval = None;
                         ctx.pending_handoff = None;
                     })
@@ -730,9 +765,7 @@ async fn inbound_event(
                     .sessions
                     .publish(
                         &session_id,
-                        SsePayload::Done(DonePayload {
-                            status: "approval_resolved".to_string(),
-                        }),
+                        SsePayload::Done(DonePayload { status: "approval_resolved".to_string() }),
                     )
                     .await;
             }
@@ -758,11 +791,7 @@ async fn inbound_event(
     }
 
     let server_seq = state.sessions.last_server_seq(&session_id).await;
-    Ok(Json(InboundEventAck {
-        ok: true,
-        server_seq,
-        error: None,
-    }))
+    Ok(Json(InboundEventAck { ok: true, server_seq, error: None }))
 }
 
 #[cfg(test)]
@@ -773,10 +802,8 @@ mod tests {
 
     #[tokio::test]
     async fn app_state_with_state_path_restores_session_context() {
-        let state_file = std::env::temp_dir().join(format!(
-            "adk-spatial-os-state-app-state-{}.json",
-            Uuid::new_v4()
-        ));
+        let state_file = std::env::temp_dir()
+            .join(format!("adk-spatial-os-state-app-state-{}.json", Uuid::new_v4()));
 
         let initial = AppState::with_state_path(Some(state_file.clone()));
         let session_id = initial.sessions.create_session().await;
@@ -788,13 +815,7 @@ mod tests {
                 ctx.last_prompt = Some("triage production incident".to_string());
                 ctx.workspace_layout.insert(
                     "ops-center".to_string(),
-                    AppSurfaceLayout {
-                        x: 188,
-                        y: 132,
-                        w: 560,
-                        h: 340,
-                        z_index: 18,
-                    },
+                    AppSurfaceLayout { x: 188, y: 132, w: 560, h: 340, z_index: 18 },
                 );
             })
             .await;
@@ -802,18 +823,13 @@ mod tests {
 
         let restored_state = AppState::with_state_path(Some(state_file.clone()));
         restored_state.sessions.ensure_session(&session_id).await;
-        let restored = restored_state
-            .sessions
-            .get_context(&session_id)
-            .await
-            .expect("restored context");
+        let restored =
+            restored_state.sessions.get_context(&session_id).await.expect("restored context");
         assert_eq!(restored.focused_app.as_deref(), Some("ops-center"));
         assert_eq!(restored.active_apps.len(), 2);
         assert_eq!(restored.last_prompt.as_deref(), Some("triage production incident"));
-        let layout = restored
-            .workspace_layout
-            .get("ops-center")
-            .expect("workspace layout restored");
+        let layout =
+            restored.workspace_layout.get("ops-center").expect("workspace layout restored");
         assert_eq!(layout.x, 188);
         assert_eq!(layout.y, 132);
         assert_eq!(layout.z_index, 18);

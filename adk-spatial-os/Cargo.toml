@@ -27,8 +27,11 @@ uuid.workspace = true
 tracing.workspace = true
 tracing-subscriber.workspace = true
 adk-agent.workspace = true
+adk-core.workspace = true
+adk-model.workspace = true
 adk-runner.workspace = true
 adk-session.workspace = true
+futures.workspace = true
 
 [dev-dependencies]
 reqwest.workspace = true

@@ -95,15 +95,43 @@
       .master-prompt button {
         border: none;
         border-radius: 12px;
-        padding: 0 20px;
-        background: var(--brand);
+        min-height: 44px;
+        min-width: 84px;
+        padding: 0 18px;
+        background: linear-gradient(180deg, #2d6bfa 0%, #1554f6 100%);
         color: #fff;
-        font-weight: 600;
+        font-size: 13px;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
         cursor: pointer;
+        box-shadow:
+          0 10px 20px rgba(21, 84, 246, 0.28),
+          0 1px 0 rgba(255, 255, 255, 0.24) inset;
+        transition: transform 150ms ease, box-shadow 150ms ease, filter 150ms ease;
+      }
+      .master-prompt button:hover {
+        transform: translateY(-1px);
+        box-shadow:
+          0 12px 24px rgba(21, 84, 246, 0.34),
+          0 1px 0 rgba(255, 255, 255, 0.3) inset;
+      }
+      .master-prompt button:active {
+        transform: translateY(0);
+        box-shadow:
+          0 8px 16px rgba(21, 84, 246, 0.24),
+          0 1px 0 rgba(255, 255, 255, 0.2) inset;
       }
       .master-prompt button:disabled {
-        opacity: 0.72;
+        opacity: 0.78;
+        filter: saturate(0.72);
         cursor: wait;
+        transform: none;
+        box-shadow:
+          0 7px 14px rgba(21, 84, 246, 0.18),
+          0 1px 0 rgba(255, 255, 255, 0.2) inset;
       }
       .prompt-hints {
         display: flex;
@@ -122,44 +150,74 @@
         font-size: 11px;
         letter-spacing: 0.01em;
       }
+      .shortcuts-bar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        align-items: center;
+        justify-content: flex-start;
+        margin: 8px var(--shell-pad) 16px;
+        padding: 8px 10px;
+        border-radius: 12px;
+        border: 1px solid rgba(186, 199, 227, 0.82);
+        background: rgba(255, 255, 255, 0.82);
+        backdrop-filter: blur(8px);
+        box-shadow: 0 10px 18px rgba(27, 45, 88, 0.12);
+      }
+      .shortcuts-prefix {
+        color: #5e7092;
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+        white-space: nowrap;
+      }
+      .shortcuts-bar .hint-pill {
+        white-space: nowrap;
+      }
       .suggestion-block {
         display: grid;
         gap: 6px;
       }
-      .suggestion-head {
+      .suggestion-line {
         display: flex;
-        justify-content: space-between;
         align-items: center;
+        gap: 8px;
+        min-height: 28px;
+        max-width: 100%;
+      }
+      .suggestion-label {
         color: #5e7092;
         font-size: 12px;
         font-weight: 600;
         letter-spacing: 0.02em;
+        white-space: nowrap;
       }
-      .suggestion-row {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 8px;
-      }
-      .prompt-chip {
-        border: 1px solid #d2defa;
-        border-radius: 999px;
-        background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(244, 248, 255, 0.95));
+      .prompt-inline {
+        border: none;
+        background: transparent;
         color: #2e4f8e;
-        padding: 6px 11px;
+        padding: 0;
         font-size: 12px;
         font-weight: 600;
         cursor: pointer;
-        transition: border-color 150ms ease, transform 150ms ease, box-shadow 150ms ease;
+        text-align: left;
+        line-height: 1.3;
+        max-width: 100%;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        text-decoration: underline;
+        text-decoration-thickness: 1px;
+        text-underline-offset: 2px;
+        transition: color 140ms ease, opacity 180ms ease;
       }
-      .prompt-chip:hover {
-        border-color: rgba(21, 84, 246, 0.56);
-        transform: translateY(-1px);
-        box-shadow: 0 8px 16px rgba(21, 84, 246, 0.16);
+      .prompt-inline:hover {
+        color: #1554f6;
       }
-      .prompt-chip:focus-visible {
+      .prompt-inline:focus-visible {
         outline: none;
-        border-color: rgba(21, 84, 246, 0.75);
-        box-shadow: 0 0 0 3px rgba(21, 84, 246, 0.22);
+        color: #1554f6;
+        text-decoration-thickness: 2px;
       }
       .master-prompt input:focus-visible,
       .master-prompt button:focus-visible,
@@ -174,7 +232,7 @@
       }
       .status-grid {
         display: grid;
-        grid-template-columns: 1fr 1fr;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
         gap: 8px;
         justify-self: stretch;
       }
@@ -377,9 +435,63 @@
         align-items: center;
         gap: 8px;
       }
+      .surface-title {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        min-width: 0;
+      }
       .surface h3 {
         margin: 0;
         font-size: 16px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .surface-controls {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .surface-btn {
+        border: 1px solid #d2def7;
+        background: linear-gradient(180deg, #ffffff 0%, #f2f6ff 100%);
+        color: #3d5688;
+        border-radius: 8px;
+        width: 28px;
+        height: 24px;
+        padding: 0;
+        line-height: 1;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: border-color 140ms ease, transform 140ms ease, box-shadow 140ms ease;
+      }
+      .surface-btn svg {
+        width: 14px;
+        height: 14px;
+        stroke: currentColor;
+        fill: none;
+        stroke-width: 1.8;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        pointer-events: none;
+      }
+      .surface-btn:hover:not(:disabled) {
+        border-color: rgba(21, 84, 246, 0.48);
+        transform: translateY(-1px);
+        box-shadow: 0 6px 12px rgba(21, 84, 246, 0.14);
+      }
+      .surface-btn:disabled {
+        opacity: 0.45;
+        cursor: default;
+      }
+      .surface.minimized {
+        padding-bottom: 10px;
+      }
+      .surface.minimized p {
+        display: none;
       }
       .surface p {
         margin: 6px 0 0;
@@ -601,6 +713,10 @@
           grid-template-columns: 1fr;
           gap: 10px;
         }
+        .shortcuts-bar {
+          margin: 8px 12px 12px;
+          justify-content: flex-start;
+        }
         .body { grid-template-columns: 1fr; }
         .dock {
           flex-direction: row;
@@ -640,27 +756,23 @@
           <div class="topbar-main">
             <div class="brand">
               <h1>ADK Spatial OS</h1>
-              <p>Agent-native desktop shell</p>
+              <p>Agent-native desktop operating system</p>
             </div>
             <div class="prompt-stack">
               <div class="master-prompt">
                 <input id="prompt" value="Summarize platform health and propose safe mitigation options." />
                 <button id="run">Run</button>
               </div>
-              <div class="prompt-hints">
-                <span class="hint-pill">⌘/Ctrl + K focus prompt</span>
-                <span class="hint-pill">Enter run prompt</span>
-                <span class="hint-pill">⌘/Ctrl + [ ] cycle app</span>
-              </div>
               <div class="suggestion-block">
-                <div class="suggestion-head">
-                  <span id="suggestionTitle">Starter prompts</span>
+                <div class="suggestion-line">
+                  <span id="suggestionTitle" class="suggestion-label">Suggested prompt:</span>
+                  <button id="promptSuggestionCurrent" class="prompt-inline" type="button"></button>
                 </div>
-                <div id="promptSuggestions" class="suggestion-row"></div>
               </div>
             </div>
           </div>
           <div class="status-grid">
+            <div class="stat"><div class="k">Server</div><div class="v" id="server">n/a</div></div>
             <div class="stat"><div class="k">Session</div><div class="v" id="session">n/a</div></div>
             <div class="stat"><div class="k">Status</div><div class="v" id="status">idle</div></div>
           </div>
@@ -710,13 +822,21 @@
       </main>
     </div>
 
+    <footer class="shortcuts-bar" aria-label="Keyboard shortcuts">
+      <span class="shortcuts-prefix">Keyboard shortcuts:</span>
+      <span class="hint-pill">⌘/Ctrl + K focus prompt</span>
+      <span class="hint-pill">Enter to run prompt</span>
+      <span class="hint-pill">⌘/Ctrl + [ ] cycle app</span>
+    </footer>
+
     <script>
       const statusEl = document.getElementById('status');
+      const serverEl = document.getElementById('server');
       const sessionEl = document.getElementById('session');
       const promptEl = document.getElementById('prompt');
       const runBtn = document.getElementById('run');
       const suggestionTitleEl = document.getElementById('suggestionTitle');
-      const promptSuggestionsEl = document.getElementById('promptSuggestions');
+      const promptSuggestionCurrentEl = document.getElementById('promptSuggestionCurrent');
       const dockEl = document.getElementById('dock');
       const surfacesEl = document.getElementById('surfaces');
       const stageEl = document.querySelector('.spatial-stage');
@@ -733,12 +853,24 @@
 
       let sessionId = null;
       let stream = null;
+      let reconnectTimer = null;
+      let reconnectAttempts = 0;
+      let lastParseErrorAt = 0;
+      let lastDisconnectNoticeAt = 0;
+      let suggestionCycleTimer = null;
+      let suggestionCycleItems = [];
+      let suggestionCycleIndex = 0;
+      let suggestionSignature = '';
       let pendingApproval = null;
       const appCatalog = new Map();
       const surfaces = new Map();
       const surfaceElements = new Map();
+      const surfaceWindowState = new Map();
       const SURFACE_GRID_SIZE = 24;
       const STAGE_EDGE_PADDING = 18;
+      const MAXIMIZED_SURFACE_MARGIN = 26;
+      const MIN_SURFACE_HEIGHT = 76;
+      const MIN_SURFACE_WIDTH = 280;
       const sidebarPanels = Array.from(document.querySelectorAll('.sidebar .panel'));
       const sidebarDepths = sidebarPanels.map((_, index) => Math.max(0, 20 - (index * 6)));
       const sidebarOffsets = sidebarPanels.map((_, index) => {
@@ -756,27 +888,21 @@
         'Draft an incident update email for leadership with current risks.',
         'Prepare a 30-minute cross-team mitigation meeting agenda for today.',
       ];
-      const APP_PROMPT_SUGGESTIONS = {
-        'ops-center': [
-          'Identify the top two degraded services and suggest lowest-risk remediation.',
-          'Create an incident timeline with owners, impact, and next checkpoints.',
-          'List rollback options with blast-radius estimates and approval requirements.',
-        ],
-        'mail-agent': [
-          'Draft a concise incident update email for customers and legal review.',
-          'Summarize unread operational mail and extract urgent action items.',
-          'Write follow-up responses for open incident threads with clear owners.',
-        ],
-        'calendar-agent': [
-          'Find a 30-minute overlap today for SRE, backend, and support leads.',
-          'Create a mitigation war-room schedule with prep notes and dependencies.',
-          'Re-plan conflicting incident meetings and keep critical attendees intact.',
-        ],
-      };
       let currentActiveApps = [];
       let hasRunPrompt = false;
 
       function setStatus(value) { statusEl.textContent = value; }
+      function readServerPort() {
+        if (window.location.port) return window.location.port;
+        return window.location.protocol === 'https:' ? '443' : '80';
+      }
+      function readServerEndpoint() {
+        return `${window.location.hostname}:${readServerPort()}`;
+      }
+      function setServerInfo() {
+        if (!serverEl) return;
+        serverEl.textContent = readServerEndpoint();
+      }
       const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
       const shortLabel = (name) => {
         if (!name) return 'App';
@@ -830,6 +956,188 @@
         h: readNum(surface?.props?.h, 280),
         z: readNum(surface?.props?.z_index, 10),
       });
+      const getSurfaceWindowMode = (surfaceId) => {
+        const state = surfaceWindowState.get(surfaceId);
+        return state?.mode || 'normal';
+      };
+      const inferSurfaceWindowMode = (surface) => {
+        const current = getSurfaceBounds(surface);
+        if (current.h <= (MIN_SURFACE_HEIGHT + 2)) {
+          return 'minimized';
+        }
+        const full = getMaximizedSurfaceRect();
+        const isMaximized =
+          Math.abs(current.x - full.x) <= 8
+          && Math.abs(current.y - full.y) <= 8
+          && Math.abs(current.w - full.w) <= 14
+          && Math.abs(current.h - full.h) <= 14;
+        return isMaximized ? 'maximized' : 'normal';
+      };
+      const isRectClose = (left, right, positionTolerance = 6, sizeTolerance = 10) => (
+        Math.abs(left.x - right.x) <= positionTolerance
+        && Math.abs(left.y - right.y) <= positionTolerance
+        && Math.abs(left.w - right.w) <= sizeTolerance
+        && Math.abs(left.h - right.h) <= sizeTolerance
+      );
+      function getOrCreateSurfaceWindowState(surfaceId) {
+        let state = surfaceWindowState.get(surfaceId);
+        if (!state) {
+          state = {
+            mode: 'normal',
+            restoreRect: null,
+            initialized: false,
+          };
+          surfaceWindowState.set(surfaceId, state);
+        }
+        return state;
+      }
+      function syncSurfaceWindowState(surfaceId, surface) {
+        const state = getOrCreateSurfaceWindowState(surfaceId);
+        const current = getSurfaceBounds(surface);
+        const inferredMode = inferSurfaceWindowMode(surface);
+        const maximizedRect = getMaximizedSurfaceRect();
+
+        if (!state.initialized) {
+          state.mode = inferredMode;
+          state.initialized = true;
+        } else if (state.mode === 'normal') {
+          if (inferredMode === 'minimized' || inferredMode === 'maximized') {
+            state.mode = inferredMode;
+          }
+        } else if (state.mode === 'minimized') {
+          if (inferredMode !== 'minimized') {
+            if (state.restoreRect && isRectClose(current, state.restoreRect)) {
+              state.mode = 'normal';
+            } else {
+              state.mode = inferredMode;
+            }
+          }
+        } else if (state.mode === 'maximized') {
+          if (inferredMode === 'minimized') {
+            state.mode = 'minimized';
+          } else if (inferredMode === 'normal' && state.restoreRect && isRectClose(current, state.restoreRect)) {
+            state.mode = 'normal';
+          } else if (inferredMode === 'normal' && !isRectClose(current, maximizedRect, 14, 18)) {
+            // External layout/focus updates can move a maximized card back to normal geometry.
+            // Treat that as normal so window controls and dragging don't get stuck.
+            state.mode = 'normal';
+          }
+        }
+        if (state.mode === 'normal') {
+          state.restoreRect = { x: current.x, y: current.y, w: current.w, h: current.h };
+        } else if (!state.restoreRect) {
+          state.restoreRect = {
+            x: current.x,
+            y: current.y,
+            w: Math.max(current.w, MIN_SURFACE_WIDTH),
+            h: Math.max(current.h, 240),
+          };
+        }
+        return state;
+      }
+      function getMaximizedSurfaceRect() {
+        const stageWidth = Math.max(stageEl ? stageEl.clientWidth : 0, 320);
+        const stageHeight = Math.max(stageEl ? stageEl.clientHeight : 0, 220);
+        const safeMargin = Math.max(STAGE_EDGE_PADDING, MAXIMIZED_SURFACE_MARGIN);
+        const availableWidth = Math.max(120, stageWidth - (safeMargin * 2) - 2);
+        const availableHeight = Math.max(120, stageHeight - (safeMargin * 2) - 2);
+        return {
+          x: safeMargin,
+          y: safeMargin,
+          w: availableWidth,
+          h: availableHeight,
+        };
+      }
+      function restoreSurfaceToNormal(surfaceId) {
+        const surface = surfaces.get(surfaceId);
+        const state = surfaceWindowState.get(surfaceId);
+        if (!surface || !state || !state.restoreRect) return false;
+        surface.props = {
+          ...(surface.props || {}),
+          x: state.restoreRect.x,
+          y: state.restoreRect.y,
+          w: state.restoreRect.w,
+          h: state.restoreRect.h,
+        };
+        state.mode = 'normal';
+        return true;
+      }
+      function normalizeOtherMaximizedSurfaces(activeSurfaceId) {
+        let changed = false;
+        for (const [surfaceId, state] of surfaceWindowState.entries()) {
+          if (surfaceId === activeSurfaceId || state.mode !== 'maximized') continue;
+          changed = restoreSurfaceToNormal(surfaceId) || changed;
+        }
+        return changed;
+      }
+      function applySurfaceWindowAction(surfaceId, action) {
+        const surface = surfaces.get(surfaceId);
+        if (!surface) return;
+        const state = syncSurfaceWindowState(surfaceId, surface);
+        const current = getSurfaceBounds(surface);
+        let layoutChanged = false;
+        if (action === 'maximize') {
+          layoutChanged = normalizeOtherMaximizedSurfaces(surfaceId);
+        }
+
+        if (action === 'minimize') {
+          if (state.mode === 'normal') {
+            state.restoreRect = { x: current.x, y: current.y, w: current.w, h: current.h };
+          }
+          if (state.mode === 'maximized' && !state.restoreRect) {
+            state.restoreRect = { x: current.x, y: current.y, w: current.w, h: current.h };
+          }
+          const restoreX = state.restoreRect ? state.restoreRect.x : current.x;
+          const restoreY = state.restoreRect ? state.restoreRect.y : current.y;
+          const baseW = state.restoreRect ? state.restoreRect.w : current.w;
+          const snapped = constrainSurfacePosition(
+            surface,
+            restoreX,
+            restoreY,
+            true,
+          );
+          surface.props = {
+            ...(surface.props || {}),
+            x: snapped.x,
+            y: snapped.y,
+            w: Math.max(MIN_SURFACE_WIDTH, Math.min(baseW, 460)),
+            h: MIN_SURFACE_HEIGHT,
+          };
+          state.mode = 'minimized';
+          layoutChanged = true;
+        } else if (action === 'maximize') {
+          if (state.mode === 'normal') {
+            state.restoreRect = { x: current.x, y: current.y, w: current.w, h: current.h };
+          }
+          if (state.mode === 'minimized' && !state.restoreRect) {
+            state.restoreRect = { x: current.x, y: current.y, w: current.w, h: current.h };
+          }
+          const maxRect = getMaximizedSurfaceRect();
+          surface.props = {
+            ...(surface.props || {}),
+            ...maxRect,
+          };
+          state.mode = 'maximized';
+          layoutChanged = true;
+        } else if (action === 'restore') {
+          if (restoreSurfaceToNormal(surfaceId)) {
+            layoutChanged = true;
+          } else {
+            state.mode = 'normal';
+          }
+        } else {
+          return;
+        }
+
+        bringSurfaceToFront(surfaceId);
+        if (surface.app_id) {
+          focusApp(surface.app_id, true);
+        }
+        renderSurfaces();
+        if (layoutChanged) {
+          emitWorkspaceLayoutChange();
+        }
+      }
       const surfaceTransform = (surface, lift = 0) => {
         const { z } = getSurfaceBounds(surface);
         const depth = Math.max(0, z - 8) * 14;
@@ -865,6 +1173,12 @@
         const line = `[${new Date().toISOString()}] ${label}${data ? `\n${JSON.stringify(data, null, 2)}` : ''}`;
         logEl.textContent = `${line}\n\n${logEl.textContent}`;
       }
+      function trace(event, data = {}) {
+        log(`trace.${event}`, {
+          endpoint: readServerEndpoint(),
+          ...data,
+        });
+      }
       function pushTimeline(level, message) {
         const item = document.createElement('div');
         item.className = 'entry';
@@ -872,17 +1186,65 @@
         timelineEl.prepend(item);
       }
 
+      function parseSseEnvelope(raw, eventName) {
+        if (raw === undefined || raw === null) return null;
+        const text = String(raw).trim();
+        if (!text || text === 'undefined' || text === 'null') return null;
+        try {
+          return JSON.parse(text);
+        } catch (error) {
+          const now = Date.now();
+          if ((now - lastParseErrorAt) > 3000) {
+            lastParseErrorAt = now;
+            log('sse.parse.error', {
+              event: eventName,
+              message: String(error),
+              sample: text.slice(0, 220),
+            });
+          }
+          return null;
+        }
+      }
+
+      function scheduleStreamReconnect() {
+        if (reconnectTimer) return;
+        reconnectAttempts += 1;
+        const delayMs = Math.min(1000 * (2 ** Math.max(0, reconnectAttempts - 1)), 10000);
+        trace('stream.reconnect.scheduled', {
+          session_id: sessionId,
+          attempt: reconnectAttempts,
+          delay_ms: delayMs,
+        });
+        const now = Date.now();
+        if ((now - lastDisconnectNoticeAt) > 5000) {
+          lastDisconnectNoticeAt = now;
+          pushTimeline('warn', `Stream disconnected. Reconnecting in ${Math.round(delayMs / 1000)}s.`);
+        }
+        reconnectTimer = setTimeout(() => {
+          reconnectTimer = null;
+          connectStream();
+        }, delayMs);
+      }
+
       function resolvePromptSuggestions() {
-        const focused = currentFocusedApp && APP_PROMPT_SUGGESTIONS[currentFocusedApp]
-          ? APP_PROMPT_SUGGESTIONS[currentFocusedApp]
-          : [];
+        const promptsForApp = (appId) => {
+          const manifest = appCatalog.get(appId);
+          if (!manifest || !Array.isArray(manifest.starter_prompts)) {
+            return [];
+          }
+          return manifest.starter_prompts
+            .map((prompt) => String(prompt || '').trim())
+            .filter((prompt) => prompt.length > 0);
+        };
+
+        const focused = currentFocusedApp ? promptsForApp(currentFocusedApp) : [];
         if (focused.length) {
-          return focused.slice(0, 3);
+          return focused.slice(0, 4);
         }
 
         const merged = [];
         for (const appId of currentActiveApps) {
-          const candidates = APP_PROMPT_SUGGESTIONS[appId] || [];
+          const candidates = promptsForApp(appId);
           for (const suggestion of candidates) {
             if (!merged.includes(suggestion)) {
               merged.push(suggestion);
@@ -892,25 +1254,110 @@
             }
           }
         }
-        return merged.length ? merged : DEFAULT_PROMPT_SUGGESTIONS;
+
+        if (merged.length) return merged;
+
+        const catalogPrompts = [];
+        for (const manifest of appCatalog.values()) {
+          for (const suggestion of promptsForApp(manifest.id)) {
+            if (!catalogPrompts.includes(suggestion)) {
+              catalogPrompts.push(suggestion);
+            }
+            if (catalogPrompts.length >= 3) {
+              return catalogPrompts;
+            }
+          }
+        }
+
+        return catalogPrompts.length ? catalogPrompts : DEFAULT_PROMPT_SUGGESTIONS;
+      }
+
+      function stopSuggestionCycle() {
+        if (!suggestionCycleTimer) return;
+        clearInterval(suggestionCycleTimer);
+        suggestionCycleTimer = null;
+      }
+
+      function renderCurrentSuggestion(animate = false) {
+        if (!promptSuggestionCurrentEl) return;
+        if (!suggestionCycleItems.length) {
+          promptSuggestionCurrentEl.textContent = '';
+          promptSuggestionCurrentEl.disabled = true;
+          return;
+        }
+
+        const suggestion = suggestionCycleItems[suggestionCycleIndex % suggestionCycleItems.length];
+        promptSuggestionCurrentEl.disabled = false;
+        promptSuggestionCurrentEl.textContent = suggestion;
+        promptSuggestionCurrentEl.title = suggestion;
+        promptSuggestionCurrentEl.onclick = () => {
+          promptEl.value = suggestion;
+          focusPromptInput();
+        };
+
+        if (animate && promptSuggestionCurrentEl.animate) {
+          promptSuggestionCurrentEl.animate(
+            [
+              { opacity: 0.34, transform: 'translateY(1px)' },
+              { opacity: 1, transform: 'translateY(0)' },
+            ],
+            { duration: 300, easing: 'ease-out' },
+          );
+        }
+      }
+
+      function startSuggestionCycle() {
+        stopSuggestionCycle();
+        if (suggestionCycleItems.length <= 1) return;
+        suggestionCycleTimer = setInterval(() => {
+          suggestionCycleIndex = (suggestionCycleIndex + 1) % suggestionCycleItems.length;
+          renderCurrentSuggestion(true);
+        }, 4300);
       }
 
       function renderPromptSuggestions() {
-        if (!promptSuggestionsEl || !suggestionTitleEl) return;
-        suggestionTitleEl.textContent = hasRunPrompt ? 'Suggested next prompts' : 'Starter prompts';
-        const suggestions = resolvePromptSuggestions();
-        promptSuggestionsEl.innerHTML = '';
-        for (const suggestion of suggestions) {
-          const chip = document.createElement('button');
-          chip.type = 'button';
-          chip.className = 'prompt-chip';
-          chip.textContent = suggestion;
-          chip.onclick = () => {
-            promptEl.value = suggestion;
-            focusPromptInput();
-          };
-          promptSuggestionsEl.appendChild(chip);
+        if (!promptSuggestionCurrentEl || !suggestionTitleEl) return;
+        suggestionTitleEl.textContent = hasRunPrompt ? 'Suggested prompt:' : 'Starter prompt:';
+        const suggestions = resolvePromptSuggestions().slice(0, 4);
+        const signature = suggestions.join('::');
+        if (signature === suggestionSignature && suggestionCycleItems.length) return;
+        suggestionSignature = signature;
+        suggestionCycleItems = suggestions;
+        suggestionCycleIndex = 0;
+        renderCurrentSuggestion(false);
+        startSuggestionCycle();
+      }
+
+      function iconForSurfaceAction(action) {
+        if (action === 'minimize') {
+          return '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 12.5h10"/></svg>';
         }
+        if (action === 'restore') {
+          return '<svg viewBox="0 0 16 16" aria-hidden="true"><rect x="2.5" y="5.5" width="8" height="8" rx="1"/><path d="M6 2.5h7.5V10"/><path d="M13.5 2.5L9 2.5"/></svg>';
+        }
+        return '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 6V2.5H6"/><path d="M10 2.5h3.5V6"/><path d="M13.5 10v3.5H10"/><path d="M6 13.5H2.5V10"/></svg>';
+      }
+
+      function getSurfaceControlDefinitions(windowMode) {
+        const controls = [];
+        if (windowMode !== 'minimized') {
+          controls.push({ action: 'minimize', title: 'Minimize' });
+        }
+        if (windowMode !== 'normal') {
+          controls.push({ action: 'restore', title: 'Restore' });
+        }
+        if (windowMode !== 'maximized') {
+          controls.push({ action: 'maximize', title: 'Maximize' });
+        }
+        return controls;
+      }
+
+      function buildSurfaceControlsMarkup(windowMode) {
+        return getSurfaceControlDefinitions(windowMode)
+          .map(({ action, title }) => (
+            `<button class="surface-btn" data-action="${action}" title="${title}" aria-label="${title}">${iconForSurfaceAction(action)}</button>`
+          ))
+          .join('');
       }
 
       function renderDock(activeApps, focusedApp) {
@@ -934,6 +1381,12 @@
       function renderSurfaces() {
         surfacesEl.innerHTML = '';
         surfaceElements.clear();
+        const activeSurfaceIds = new Set(surfaces.keys());
+        for (const surfaceId of Array.from(surfaceWindowState.keys())) {
+          if (!activeSurfaceIds.has(surfaceId)) {
+            surfaceWindowState.delete(surfaceId);
+          }
+        }
         const sortedSurfaces = Array.from(surfaces.values()).sort((a, b) => {
           const az = getSurfaceBounds(a).z;
           const bz = getSurfaceBounds(b).z;
@@ -949,11 +1402,14 @@
         let maxRight = stageEl ? stageEl.clientWidth : 900;
 
         for (const surface of sortedSurfaces) {
+          const windowState = syncSurfaceWindowState(surface.id, surface);
+          const windowMode = windowState.mode;
           const card = document.createElement('article');
           const isFocused = surface.app_id && surface.app_id === currentFocusedApp;
-          card.className = `surface${isFocused ? ' active' : ''}`;
+          card.className = `surface${isFocused ? ' active' : ''}${windowMode === 'minimized' ? ' minimized' : ''}`;
           card.dataset.appId = surface.app_id || '';
           card.dataset.surfaceId = surface.id;
+          card.dataset.windowMode = windowMode;
           card.tabIndex = 0;
 
           applySurfaceStyles(card, surface);
@@ -963,11 +1419,37 @@
           const appLabel = surface.app_id || 'agent';
           card.innerHTML = `
             <div class="surface-head">
-              <h3>${title}</h3>
-              <span class="surface-app">${appLabel}</span>
+              <div class="surface-title">
+                <h3>${title}</h3>
+                <span class="surface-app">${appLabel}</span>
+              </div>
+              <div class="surface-controls">
+                ${buildSurfaceControlsMarkup(windowMode)}
+              </div>
             </div>
             <p>${content}</p>
           `;
+          card.querySelectorAll('.surface-btn').forEach((button) => {
+            const runSurfaceAction = (event) => {
+              event.preventDefault();
+              event.stopPropagation();
+              const now = performance.now();
+              const lastFired = Number(button.dataset.lastFiredAt || 0);
+              if (now - lastFired < 120) return;
+              button.dataset.lastFiredAt = String(now);
+              const action = button.dataset.action;
+              if (action) {
+                applySurfaceWindowAction(surface.id, action);
+              }
+            };
+            button.onpointerdown = (event) => {
+              event.stopPropagation();
+            };
+            button.onpointerup = (event) => {
+              event.stopPropagation();
+            };
+            button.onclick = runSurfaceAction;
+          });
           card.onpointerdown = (event) => startSurfaceDrag(event, surface.id);
           card.onkeydown = (event) => {
             if (event.key !== 'Enter' && event.key !== ' ') return;
@@ -1041,8 +1523,13 @@
 
       function connectStream() {
         if (stream) stream.close();
+        if (reconnectTimer) {
+          clearTimeout(reconnectTimer);
+          reconnectTimer = null;
+        }
         stream = new EventSource(`/api/os/stream/${sessionId}`);
-        setStatus('streaming');
+        setStatus('connecting');
+        trace('stream.connecting', { session_id: sessionId });
 
         const allEvents = [
           'shell_state', 'app_surface_ops', 'timeline_entry', 'approval_required',
@@ -1051,8 +1538,12 @@
 
         for (const name of allEvents) {
           stream.addEventListener(name, (evt) => {
-            const envelope = JSON.parse(evt.data);
+            const envelope = parseSseEnvelope(evt?.data, name);
+            if (!envelope || typeof envelope !== 'object') return;
             const payload = envelope.payload;
+            if (!payload || typeof payload !== 'object' || typeof payload.kind !== 'string') {
+              return;
+            }
             log(`sse.${name}`, payload);
 
             if (payload.kind === 'shell_state') {
@@ -1067,7 +1558,12 @@
 
             if (payload.kind === 'app_surface_ops') {
               for (const op of payload.data.ops || []) {
-                if (op.op === 'create') surfaces.set(op.id, op);
+                if (op.op === 'create') {
+                  surfaces.set(op.id, op);
+                  // Create ops are authoritative from server; clear stale local window mode
+                  // so controls/drag behavior stays consistent across app switches.
+                  surfaceWindowState.delete(op.id);
+                }
                 if (op.op === 'patch' && surfaces.has(op.id)) {
                   const existing = surfaces.get(op.id);
                   existing.props = { ...(existing.props || {}), ...(op.props || {}) };
@@ -1109,8 +1605,23 @@
           });
         }
 
+        stream.onopen = () => {
+          reconnectAttempts = 0;
+          setStatus('streaming');
+          trace('stream.open', { session_id: sessionId });
+        };
+
         stream.onerror = () => {
           setStatus('disconnected');
+          trace('stream.error', {
+            session_id: sessionId,
+            reconnect_attempt_next: reconnectAttempts + 1,
+          });
+          if (stream) {
+            stream.close();
+            stream = null;
+          }
+          scheduleStreamReconnect();
         };
       }
 
@@ -1124,6 +1635,10 @@
         renderPromptSuggestions();
         setStatus('running');
         runBtn.disabled = true;
+        trace('prompt.start', {
+          session_id: sessionId,
+          prompt_preview: nextPrompt.slice(0, 140),
+        });
         try {
           const res = await fetch(`/api/os/prompt/${sessionId}`, {
             method: 'POST',
@@ -1132,8 +1647,17 @@
           });
           const body = await res.json();
           log('prompt.response', body);
+          trace('prompt.end', {
+            session_id: sessionId,
+            ok: res.ok,
+            status: res.status,
+          });
         } catch (error) {
           setStatus('error');
+          trace('prompt.error', {
+            session_id: sessionId,
+            message: String(error),
+          });
           log('prompt.error', { message: String(error) });
         } finally {
           runBtn.disabled = false;
@@ -1142,6 +1666,10 @@
 
       async function sendEvent(event) {
         log('event.outbound', event);
+        trace('event.send', {
+          session_id: sessionId,
+          type: event.type,
+        });
         const res = await fetch(`/api/os/event/${sessionId}`, {
           method: 'POST',
           headers: { 'content-type': 'application/json' },
@@ -1149,6 +1677,12 @@
         });
         const body = await res.json();
         log('event.ack', body);
+        trace('event.ack', {
+          session_id: sessionId,
+          type: event.type,
+          ok: res.ok,
+          status: res.status,
+        });
       }
 
       runBtn.onclick = () => runPrompt(promptEl.value);
@@ -1210,25 +1744,67 @@
         return tag === 'input' || tag === 'textarea' || target.isContentEditable;
       }
 
+      function normalizeSurfaceZOrder(activeSurfaceId = null) {
+        const ordered = Array.from(surfaces.values())
+          .sort((a, b) => {
+            const az = getSurfaceBounds(a).z;
+            const bz = getSurfaceBounds(b).z;
+            return az - bz || a.id.localeCompare(b.id);
+          });
+
+        let rank = 1;
+        for (const surface of ordered) {
+          if (activeSurfaceId && surface.id === activeSurfaceId) {
+            continue;
+          }
+          surface.props = {
+            ...(surface.props || {}),
+            z_index: rank,
+          };
+          const element = surfaceElements.get(surface.id);
+          if (element) {
+            applySurfaceStyles(element, surface);
+          }
+          rank += 1;
+        }
+
+        if (!activeSurfaceId) return rank - 1;
+
+        const active = surfaces.get(activeSurfaceId);
+        if (!active) return rank - 1;
+        active.props = {
+          ...(active.props || {}),
+          z_index: rank,
+        };
+        const activeElement = surfaceElements.get(activeSurfaceId);
+        if (activeElement) {
+          applySurfaceStyles(activeElement, active);
+        }
+        return rank;
+      }
+
       function bringSurfaceToFront(surfaceId) {
         const surface = surfaces.get(surfaceId);
         if (!surface) return false;
-        let maxZ = 0;
-        surfaces.forEach((candidate) => {
-          maxZ = Math.max(maxZ, getSurfaceBounds(candidate).z);
-        });
-        const { z } = getSurfaceBounds(surface);
-        const nextZ = maxZ + 1;
-        if (nextZ === z) return false;
-
-        surface.props = {
-          ...(surface.props || {}),
-          z_index: nextZ,
-        };
-        const element = surfaceElements.get(surfaceId);
-        if (element) {
-          applySurfaceStyles(element, surface);
+        if (surfaces.size <= 1) {
+          return false;
         }
+
+        let topSurfaceId = null;
+        let topZ = Number.NEGATIVE_INFINITY;
+        surfaces.forEach((candidate) => {
+          const candidateZ = getSurfaceBounds(candidate).z;
+          if (candidateZ >= topZ) {
+            topZ = candidateZ;
+            topSurfaceId = candidate.id;
+          }
+        });
+
+        if (topSurfaceId === surfaceId) {
+          return false;
+        }
+
+        normalizeSurfaceZOrder(surfaceId);
         return true;
       }
 
@@ -1242,6 +1818,31 @@
         const surface = surfaces.get(surfaceId);
         const card = surfaceElements.get(surfaceId);
         if (!surface || !card) return;
+        if (event.target && event.target.closest && event.target.closest('.surface-controls')) return;
+
+        const windowState = syncSurfaceWindowState(surfaceId, surface);
+        if (windowState.mode === 'maximized') {
+          if (windowState.restoreRect) {
+            const restore = { ...windowState.restoreRect };
+            const constrained = constrainSurfacePosition(
+              surface,
+              restore.x,
+              restore.y,
+              true,
+            );
+            surface.props = {
+              ...(surface.props || {}),
+              x: constrained.x,
+              y: constrained.y,
+              w: restore.w,
+              h: restore.h,
+            };
+            windowState.mode = 'normal';
+            renderSurfaces();
+          } else {
+            return;
+          }
+        }
 
         event.preventDefault();
 
@@ -1313,6 +1914,23 @@
           };
           if (snapped.x !== current.x || snapped.y !== current.y) {
             state.layoutDirty = true;
+          }
+          const windowState = surfaceWindowState.get(state.surfaceId);
+          if (windowState) {
+            if (windowState.mode === 'normal') {
+              windowState.restoreRect = {
+                x: snapped.x,
+                y: snapped.y,
+                w: current.w,
+                h: current.h,
+              };
+            } else if (windowState.mode === 'minimized' && windowState.restoreRect) {
+              windowState.restoreRect = {
+                ...windowState.restoreRect,
+                x: snapped.x,
+                y: snapped.y,
+              };
+            }
           }
           applySurfaceStyles(card, surface);
           if (card.releasePointerCapture && card.hasPointerCapture(state.pointerId)) {
@@ -1451,14 +2069,18 @@
 
       (async () => {
         try {
+          setServerInfo();
+          trace('boot.start');
           await loadApps();
           await createSession();
           setPolicyDecision('No policy decision yet', null);
           renderPromptSuggestions();
           connectStream();
           pushTimeline('info', 'Shell ready. Submit a Master Prompt.');
+          trace('boot.ready', { session_id: sessionId });
         } catch (error) {
           setStatus('error');
+          trace('boot.error', { message: String(error) });
           log('boot.error', { message: String(error) });
         }
       })();

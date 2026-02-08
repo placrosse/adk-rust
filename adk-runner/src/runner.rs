@@ -19,6 +19,10 @@ pub struct RunnerConfig {
     /// If not provided, uses default (SSE streaming)
     #[allow(dead_code)]
     pub run_config: Option<RunConfig>,
+    /// Optional context compaction configuration.
+    /// When set, the runner will periodically summarize older events
+    /// to reduce context size sent to the LLM.
+    pub compaction_config: Option<adk_core::EventsCompactionConfig>,
 }
 
 pub struct Runner {
@@ -30,6 +34,7 @@ pub struct Runner {
     plugin_manager: Option<Arc<PluginManager>>,
     skill_injector: Option<Arc<SkillInjector>>,
     run_config: RunConfig,
+    compaction_config: Option<adk_core::EventsCompactionConfig>,
 }
 
 impl Runner {
@@ -43,6 +48,7 @@ impl Runner {
             plugin_manager: config.plugin_manager,
             skill_injector: None,
             run_config: config.run_config.unwrap_or_default(),
+            compaction_config: config.compaction_config,
         })
     }
 
@@ -79,6 +85,7 @@ impl Runner {
         let plugin_manager = self.plugin_manager.clone();
         let skill_injector = self.skill_injector.clone();
         let run_config = self.run_config.clone();
+        let compaction_config = self.compaction_config.clone();
 
         let s = stream! {
             // Get or create session
@@ -424,6 +431,65 @@ impl Runner {
                                 }
                                 yield Err(e);
                                 return;
+                            }
+                        }
+                    }
+                }
+            }
+
+            // ===== CONTEXT COMPACTION =====
+            // After all events have been processed, check if compaction should trigger.
+            // This runs in the background after the invocation completes.
+            if let Some(ref compaction_cfg) = compaction_config {
+                // Count invocations by counting user events in the session
+                let all_events = ctx.mutable_session().as_ref().events_snapshot();
+                let invocation_count = all_events.iter()
+                    .filter(|e| e.author == "user")
+                    .count() as u32;
+
+                if invocation_count > 0 && invocation_count % compaction_cfg.compaction_interval == 0 {
+                    // Determine the window of events to compact
+                    // We compact all events except the most recent overlap_size invocations
+                    let overlap = compaction_cfg.overlap_size as usize;
+
+                    // Find the boundary: keep the last `overlap` user messages and everything after
+                    let user_msg_indices: Vec<usize> = all_events.iter()
+                        .enumerate()
+                        .filter(|(_, e)| e.author == "user")
+                        .map(|(i, _)| i)
+                        .collect();
+
+                    // Keep the last `overlap` user messages intact
+                    let compact_up_to = if user_msg_indices.len() > overlap {
+                        user_msg_indices[user_msg_indices.len() - overlap]
+                    } else {
+                        0
+                    };
+
+                    if compact_up_to > 0 {
+                        let events_to_compact = &all_events[..compact_up_to];
+
+                        match compaction_cfg.summarizer.summarize_events(events_to_compact).await {
+                            Ok(Some(compaction_event)) => {
+                                // Persist the compaction event
+                                if let Err(e) = session_service.append_event(
+                                    &session_id,
+                                    compaction_event.clone(),
+                                ).await {
+                                    tracing::warn!(error = %e, "Failed to persist compaction event");
+                                } else {
+                                    tracing::info!(
+                                        compacted_events = compact_up_to,
+                                        "Context compaction completed"
+                                    );
+                                }
+                            }
+                            Ok(None) => {
+                                tracing::debug!("Compaction summarizer returned no result");
+                            }
+                            Err(e) => {
+                                // Compaction failure is non-fatal — log and continue
+                                tracing::warn!(error = %e, "Context compaction failed");
                             }
                         }
                     }
