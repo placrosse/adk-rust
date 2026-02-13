@@ -39,8 +39,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // -------------------------------------------------------------------------
     println!("1. Creating Gemini judge model...\n");
 
-    let judge_model: Arc<dyn Llm> = Arc::new(GeminiModel::new(&api_key, "gemini-2.0-flash")?);
-    println!("   Model: gemini-2.0-flash");
+    let judge_model: Arc<dyn Llm> = Arc::new(GeminiModel::new(&api_key, "gemini-2.5-flash")?);
+    println!("   Model: gemini-2.5-flash");
     println!("   Purpose: Semantic evaluation and rubric scoring\n");
 
     // -------------------------------------------------------------------------

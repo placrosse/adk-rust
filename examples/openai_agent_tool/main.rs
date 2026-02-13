@@ -65,7 +65,7 @@ async fn calculator(_ctx: Arc<dyn ToolContext>, args: Value) -> Result<Value, ad
 async fn main() -> Result<()> {
     let api_key = std::env::var("OPENAI_API_KEY").expect("OPENAI_API_KEY must be set");
 
-    let model = Arc::new(OpenAIClient::new(OpenAIConfig::new(api_key.clone(), "gpt-4o-mini"))?);
+    let model = Arc::new(OpenAIClient::new(OpenAIConfig::new(api_key.clone(), "gpt-5-mini"))?);
 
     // Create the calculator tool with schema
     let calc_tool = FunctionTool::new(
@@ -93,7 +93,7 @@ async fn main() -> Result<()> {
             "You are a trivia expert. Answer questions accurately and concisely. \
              If you're unsure, say so.",
         )
-        .model(Arc::new(OpenAIClient::new(OpenAIConfig::new(api_key.clone(), "gpt-4o-mini"))?))
+        .model(Arc::new(OpenAIClient::new(OpenAIConfig::new(api_key.clone(), "gpt-5-mini"))?))
         .build()?;
 
     // Wrap agents as tools
@@ -109,7 +109,7 @@ async fn main() -> Result<()> {
              - For trivia/facts -> use trivia_expert\n\n\
              Summarize the specialist's response for the user.",
         )
-        .model(Arc::new(OpenAIClient::new(OpenAIConfig::new(api_key, "gpt-4o-mini"))?))
+        .model(Arc::new(OpenAIClient::new(OpenAIConfig::new(api_key, "gpt-5-mini"))?))
         .tool(Arc::new(math_tool))
         .tool(Arc::new(trivia_tool))
         .build()?;

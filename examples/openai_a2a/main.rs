@@ -31,7 +31,7 @@ async fn main() -> Result<()> {
     let api_key = std::env::var("OPENAI_API_KEY").expect("OPENAI_API_KEY must be set");
 
     // Create a weather agent that will be exposed via A2A
-    let model = OpenAIClient::new(OpenAIConfig::new(api_key, "gpt-4o-mini"))?;
+    let model = OpenAIClient::new(OpenAIConfig::new(api_key, "gpt-5-mini"))?;
 
     let weather_agent = LlmAgentBuilder::new("weather_agent")
         .description("Agent to answer questions about weather")

@@ -84,7 +84,7 @@ async fn main() -> anyhow::Result<()> {
 
     // Use environment variable for model name with sensible default
     let model_name =
-        std::env::var("TRANSLATOR_MODEL").unwrap_or_else(|_| "gemini-2.0-flash".to_string());
+        std::env::var("TRANSLATOR_MODEL").unwrap_or_else(|_| "gemini-2.5-flash".to_string());
 
     let model = Arc::new(GeminiModel::new(&api_key, &model_name)?);
 

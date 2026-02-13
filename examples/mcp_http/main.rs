@@ -164,7 +164,7 @@ async fn main() -> Result<()> {
     println!("\n✅ Total tools available: {}\n", all_tools.len());
 
     // Create model
-    let model = Arc::new(GeminiModel::new(&api_key, "gemini-2.0-flash")?);
+    let model = Arc::new(GeminiModel::new(&api_key, "gemini-2.5-flash")?);
 
     // Build agent with MCP tools
     let mut agent_builder = LlmAgentBuilder::new("mcp-http-agent")

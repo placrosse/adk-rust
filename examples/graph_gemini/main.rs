@@ -64,7 +64,7 @@ async fn main() -> anyhow::Result<()> {
     };
 
     // Initialize Gemini model
-    let model = Arc::new(GeminiModel::new(&api_key, "gemini-2.0-flash")?);
+    let model = Arc::new(GeminiModel::new(&api_key, "gemini-2.5-flash")?);
 
     // Clone for each node that needs the model
     let model_analyze = model.clone();

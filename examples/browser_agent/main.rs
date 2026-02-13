@@ -217,7 +217,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Browser tools loaded: {}\n", tools.len());
 
     // Create model
-    let model = Arc::new(GeminiModel::new(&api_key, "gemini-2.0-flash")?);
+    let model = Arc::new(GeminiModel::new(&api_key, "gemini-2.5-flash")?);
 
     // Create agent
     let mut builder = LlmAgentBuilder::new("web_researcher")

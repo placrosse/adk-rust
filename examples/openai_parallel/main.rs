@@ -21,14 +21,14 @@ async fn main() -> Result<()> {
     let technical = LlmAgentBuilder::new("technical_analyst")
         .description("Provides technical analysis")
         .instruction("Analyze the topic from a technical perspective. Be concise (2-3 sentences).")
-        .model(Arc::new(OpenAIClient::new(OpenAIConfig::new(api_key.clone(), "gpt-4o-mini"))?))
+        .model(Arc::new(OpenAIClient::new(OpenAIConfig::new(api_key.clone(), "gpt-5-mini"))?))
         .build()?;
 
     // Agent 2: Business perspective
     let business = LlmAgentBuilder::new("business_analyst")
         .description("Provides business analysis")
         .instruction("Analyze the topic from a business perspective. Be concise (2-3 sentences).")
-        .model(Arc::new(OpenAIClient::new(OpenAIConfig::new(api_key.clone(), "gpt-4o-mini"))?))
+        .model(Arc::new(OpenAIClient::new(OpenAIConfig::new(api_key.clone(), "gpt-5-mini"))?))
         .build()?;
 
     // Agent 3: User perspective
@@ -37,7 +37,7 @@ async fn main() -> Result<()> {
         .instruction(
             "Analyze the topic from a user experience perspective. Be concise (2-3 sentences).",
         )
-        .model(Arc::new(OpenAIClient::new(OpenAIConfig::new(api_key, "gpt-4o-mini"))?))
+        .model(Arc::new(OpenAIClient::new(OpenAIConfig::new(api_key, "gpt-5-mini"))?))
         .build()?;
 
     let parallel = ParallelAgent::new(

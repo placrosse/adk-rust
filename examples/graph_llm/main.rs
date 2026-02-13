@@ -55,7 +55,7 @@ async fn main() -> anyhow::Result<()> {
         .or_else(|_| std::env::var("GEMINI_API_KEY"))
         .expect("GOOGLE_API_KEY or GEMINI_API_KEY must be set");
 
-    let model_name = "gemini-2.0-flash";
+    let model_name = "gemini-2.5-flash";
     let model = Arc::new(GeminiModel::new(&api_key, model_name)?);
     let model1 = model.clone();
     let model2 = model.clone();

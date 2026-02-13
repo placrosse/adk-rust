@@ -123,7 +123,7 @@ async fn format_citation(_ctx: Arc<dyn ToolContext>, args: Value) -> Result<Valu
 async fn main() -> Result<()> {
     let api_key = std::env::var("OPENAI_API_KEY").expect("OPENAI_API_KEY must be set");
 
-    let model = Arc::new(OpenAIClient::new(OpenAIConfig::new(api_key, "gpt-4o-mini"))?);
+    let model = Arc::new(OpenAIClient::new(OpenAIConfig::new(api_key, "gpt-5-mini"))?);
 
     // Create research tool
     let research_tool = FunctionTool::new(

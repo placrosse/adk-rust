@@ -34,7 +34,7 @@ REASONING: Both responses correctly state that Python is a programming language,
 
     println!("Created LlmJudge with mock model");
     println!("  In production, use:");
-    println!("    - GeminiModel::new(&api_key, \"gemini-2.0-flash\")");
+    println!("    - GeminiModel::new(&api_key, \"gemini-2.5-flash\")");
     println!("    - OpenAIClient::new(config)");
     println!("    - AnthropicClient::new(config)\n");
 
@@ -173,7 +173,7 @@ use adk_model::GeminiModel;
 
 let api_key = std::env::var("GOOGLE_API_KEY")?;
 let judge_model = Arc::new(
-    GeminiModel::new(&api_key, "gemini-2.0-flash")?
+    GeminiModel::new(&api_key, "gemini-2.5-flash")?
 );
 
 let criteria = EvaluationCriteria::semantic_match(0.85)

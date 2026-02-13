@@ -82,7 +82,7 @@ async fn get_weather(_ctx: Arc<dyn ToolContext>, args: Value) -> Result<Value, a
 async fn main() -> Result<()> {
     let api_key = std::env::var("OPENAI_API_KEY").expect("OPENAI_API_KEY must be set");
 
-    let model = OpenAIClient::new(OpenAIConfig::new(api_key, "gpt-4o-mini"))?;
+    let model = OpenAIClient::new(OpenAIConfig::new(api_key, "gpt-5-mini"))?;
 
     // Create calculator tool with schema
     let calc_tool = FunctionTool::new(

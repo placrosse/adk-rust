@@ -247,7 +247,7 @@ let criteria = EvaluationCriteria::default()
     ]);
 
 // Create evaluator with LLM judge (required for rubric evaluation)
-let judge_model = Arc::new(GeminiModel::new(&api_key, "gemini-2.0-flash")?);
+let judge_model = Arc::new(GeminiModel::new(&api_key, "gemini-2.5-flash")?);
 let evaluator = Evaluator::with_llm_judge(
     EvaluationConfig::with_criteria(criteria),
     judge_model,

@@ -24,19 +24,19 @@ async fn main() -> Result<()> {
             "Provide weather information for cities. Since you don't have real-time data, \
              give general climate information and typical weather patterns for locations.",
         )
-        .model(Arc::new(OpenAIClient::new(OpenAIConfig::new(api_key.clone(), "gpt-4o-mini"))?))
+        .model(Arc::new(OpenAIClient::new(OpenAIConfig::new(api_key.clone(), "gpt-5-mini"))?))
         .build()?;
 
     let research_agent = LlmAgentBuilder::new("research_agent")
         .description("Research and analysis agent")
         .instruction("Research topics and provide detailed analysis based on your knowledge.")
-        .model(Arc::new(OpenAIClient::new(OpenAIConfig::new(api_key.clone(), "gpt-4o-mini"))?))
+        .model(Arc::new(OpenAIClient::new(OpenAIConfig::new(api_key.clone(), "gpt-5-mini"))?))
         .build()?;
 
     let summary_agent = LlmAgentBuilder::new("summary_agent")
         .description("Summarization agent")
         .instruction("Create concise summaries of information provided to you.")
-        .model(Arc::new(OpenAIClient::new(OpenAIConfig::new(api_key, "gpt-4o-mini"))?))
+        .model(Arc::new(OpenAIClient::new(OpenAIConfig::new(api_key, "gpt-5-mini"))?))
         .build()?;
 
     let agent_loader = Arc::new(MultiAgentLoader::new(vec![

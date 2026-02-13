@@ -30,7 +30,7 @@ async fn main() -> anyhow::Result<()> {
         }
     };
 
-    let model = Arc::new(GeminiModel::new(&api_key, "gemini-2.0-flash")?);
+    let model = Arc::new(GeminiModel::new(&api_key, "gemini-2.5-flash")?);
 
     // Input guardrails: block harmful content, redact PII
     let input_guardrails =

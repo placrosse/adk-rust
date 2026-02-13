@@ -285,7 +285,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let _ = dotenvy::dotenv();
     if let Ok(api_key) = std::env::var("GOOGLE_API_KEY") {
-        let judge_model: Arc<dyn Llm> = Arc::new(GeminiModel::new(&api_key, "gemini-2.0-flash")?);
+        let judge_model: Arc<dyn Llm> = Arc::new(GeminiModel::new(&api_key, "gemini-2.5-flash")?);
         let judge = LlmJudge::with_config(
             judge_model.clone(),
             LlmJudgeConfig { max_tokens: 512, temperature: 0.0 },
