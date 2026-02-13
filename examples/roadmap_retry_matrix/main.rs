@@ -92,7 +92,7 @@ async fn main() -> Result<()> {
     #[cfg(feature = "openai")]
     {
         if let Ok(api_key) = env::var("OPENAI_API_KEY") {
-            let openai = OpenAIClient::new(OpenAIConfig::new(api_key, "gpt-4o-mini"))?
+            let openai = OpenAIClient::new(OpenAIConfig::new(api_key, "gpt-5-mini"))?
                 .with_retry_config(retry.clone());
             print_retry("OpenAI", openai.retry_config());
             if run_provider.as_deref() == Some("openai") {
@@ -107,7 +107,7 @@ async fn main() -> Result<()> {
     {
         if let Ok(api_key) = env::var("ANTHROPIC_API_KEY") {
             let anthropic =
-                AnthropicClient::new(AnthropicConfig::new(api_key, "claude-sonnet-4-20250514"))?
+                AnthropicClient::new(AnthropicConfig::new(api_key, "claude-sonnet-4.5"))?
                     .with_retry_config(retry.clone());
             print_retry("Anthropic", anthropic.retry_config());
             if run_provider.as_deref() == Some("anthropic") {

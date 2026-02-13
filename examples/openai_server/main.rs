@@ -18,7 +18,7 @@ use std::sync::Arc;
 async fn main() -> Result<()> {
     let api_key = std::env::var("OPENAI_API_KEY").expect("OPENAI_API_KEY must be set");
 
-    let model = OpenAIClient::new(OpenAIConfig::new(api_key, "gpt-4o-mini"))?;
+    let model = OpenAIClient::new(OpenAIConfig::new(api_key, "gpt-5-mini"))?;
 
     let agent = LlmAgentBuilder::new("assistant")
         .description("A helpful AI assistant powered by OpenAI.")

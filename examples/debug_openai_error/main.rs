@@ -8,7 +8,7 @@ use std::collections::HashMap;
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let api_key = std::env::var("OPENAI_API_KEY").expect("OPENAI_API_KEY must be set");
-    let model = OpenAIClient::new(OpenAIConfig::new(api_key, "gpt-4o-mini"))?;
+    let model = OpenAIClient::new(OpenAIConfig::new(api_key, "gpt-5-mini"))?;
 
     println!("=== Test A: Empty assistant message (no text, no tool calls) ===");
     test_request(
@@ -139,7 +139,7 @@ async fn test_request(
     contents: Vec<Content>,
     tools: HashMap<String, serde_json::Value>,
 ) {
-    let request = LlmRequest { model: "gpt-4o-mini".to_string(), contents, tools, config: None };
+    let request = LlmRequest { model: "gpt-5-mini".to_string(), contents, tools, config: None };
 
     println!("Sending request...");
     match model.generate_content(request, true).await {

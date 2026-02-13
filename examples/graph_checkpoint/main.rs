@@ -40,7 +40,7 @@ async fn main() -> anyhow::Result<()> {
         }
     };
 
-    let model = Arc::new(GeminiModel::new(&api_key, "gemini-2.0-flash")?);
+    let model = Arc::new(GeminiModel::new(&api_key, "gemini-2.5-flash")?);
 
     // Create a checkpointer to persist state
     let checkpointer = Arc::new(MemoryCheckpointer::new());

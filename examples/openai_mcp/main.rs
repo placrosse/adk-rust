@@ -155,7 +155,7 @@ async fn main() -> anyhow::Result<()> {
     print_usage_pattern();
 
     // Show we can still create an agent without MCP tools
-    let model = Arc::new(OpenAIClient::new(OpenAIConfig::new(api_key, "gpt-4o-mini"))?);
+    let model = Arc::new(OpenAIClient::new(OpenAIConfig::new(api_key, "gpt-5-mini"))?);
 
     let agent = LlmAgentBuilder::new("mcp-demo-agent")
         .description("Agent demonstrating MCP integration pattern with OpenAI")
@@ -203,7 +203,7 @@ use std::sync::Arc;
 async fn main() -> anyhow::Result<()> {{
     // 1. Create OpenAI model
     let api_key = std::env::var("OPENAI_API_KEY")?;
-    let model = Arc::new(OpenAIClient::new(OpenAIConfig::new(api_key, "gpt-4o-mini"))?);
+    let model = Arc::new(OpenAIClient::new(OpenAIConfig::new(api_key, "gpt-5-mini"))?);
 
     // 2. Create MCP client connection to a local server
     let client = ().serve(TokioChildProcess::new(

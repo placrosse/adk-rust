@@ -40,9 +40,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // -------------------------------------------------------------------------
     println!("1. Creating OpenAI judge model...\n");
 
-    let config = OpenAIConfig::new(api_key, "gpt-4o-mini"); // Cost-effective for evaluation
+    let config = OpenAIConfig::new(api_key, "gpt-5-mini"); // Cost-effective for evaluation
     let judge_model: Arc<dyn Llm> = Arc::new(OpenAIClient::new(config)?);
-    println!("   Model: gpt-4o-mini");
+    println!("   Model: gpt-5-mini");
     println!("   Purpose: Semantic evaluation and rubric scoring\n");
 
     // -------------------------------------------------------------------------
@@ -218,7 +218,7 @@ fn is_prime(n: u64) -> bool {
     // -------------------------------------------------------------------------
     println!("=== Example Complete ===\n");
     println!("Key takeaways:");
-    println!("  - OpenAI models (gpt-4o-mini) are cost-effective judges");
+    println!("  - OpenAI models (gpt-5-mini) are cost-effective judges");
     println!("  - Semantic matching handles paraphrasing well");
     println!("  - Rubrics enable multi-dimensional quality assessment");
     println!("  - Use temperature=0.0 for reproducible evaluations");

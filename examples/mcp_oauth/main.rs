@@ -154,7 +154,7 @@ where
 
             // Create agent if we have an API key
             if let Some(api_key) = google_api_key {
-                let model = Arc::new(GeminiModel::new(&api_key, "gemini-2.0-flash")?);
+                let model = Arc::new(GeminiModel::new(&api_key, "gemini-2.5-flash")?);
 
                 let mut agent_builder = LlmAgentBuilder::new("mcp-oauth-agent")
                     .description("Agent with authenticated MCP tools")

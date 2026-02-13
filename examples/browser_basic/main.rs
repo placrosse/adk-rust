@@ -250,7 +250,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // -------------------------------------------------------------------------
     println!("\n4. Creating browser automation agent...\n");
 
-    let model = Arc::new(GeminiModel::new(&api_key, "gemini-2.0-flash")?);
+    let model = Arc::new(GeminiModel::new(&api_key, "gemini-2.5-flash")?);
 
     let mut builder = LlmAgentBuilder::new("browser_agent")
         .model(model)

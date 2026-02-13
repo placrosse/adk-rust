@@ -21,21 +21,21 @@ async fn main() -> Result<()> {
     let analyzer = LlmAgentBuilder::new("analyzer")
         .description("Analyzes topics")
         .instruction("Analyze the given topic and identify 3-5 key points. Be concise.")
-        .model(Arc::new(OpenAIClient::new(OpenAIConfig::new(api_key.clone(), "gpt-4o-mini"))?))
+        .model(Arc::new(OpenAIClient::new(OpenAIConfig::new(api_key.clone(), "gpt-5-mini"))?))
         .build()?;
 
     // Step 2: Expand on the analysis
     let expander = LlmAgentBuilder::new("expander")
         .description("Expands on analysis")
         .instruction("Take the analysis and expand on each key point with 1-2 sentences of detail.")
-        .model(Arc::new(OpenAIClient::new(OpenAIConfig::new(api_key.clone(), "gpt-4o-mini"))?))
+        .model(Arc::new(OpenAIClient::new(OpenAIConfig::new(api_key.clone(), "gpt-5-mini"))?))
         .build()?;
 
     // Step 3: Summarize
     let summarizer = LlmAgentBuilder::new("summarizer")
         .description("Summarizes content")
         .instruction("Create a concise 2-3 sentence summary of the expanded analysis.")
-        .model(Arc::new(OpenAIClient::new(OpenAIConfig::new(api_key, "gpt-4o-mini"))?))
+        .model(Arc::new(OpenAIClient::new(OpenAIConfig::new(api_key, "gpt-5-mini"))?))
         .build()?;
 
     let sequential = SequentialAgent::new(

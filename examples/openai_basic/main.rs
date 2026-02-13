@@ -22,7 +22,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let api_key = std::env::var("OPENAI_API_KEY").expect("OPENAI_API_KEY must be set");
 
     // Create OpenAI client
-    let model = OpenAIClient::new(OpenAIConfig::new(api_key, "gpt-4o-mini"))?;
+    let model = OpenAIClient::new(OpenAIConfig::new(api_key, "gpt-5-mini"))?;
 
     // Build agent
     let agent = LlmAgentBuilder::new("assistant")

@@ -50,7 +50,7 @@ async fn main() -> anyhow::Result<()> {
 
     let client = Arc::new(OpenAIClient::new(OpenAIConfig {
         api_key,
-        model: "gpt-4o-mini".to_string(),
+        model: "gpt-5-mini".to_string(),
         ..Default::default()
     })?);
     let client_classify = client.clone();

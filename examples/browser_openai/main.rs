@@ -163,7 +163,7 @@ async fn run_agent(
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    println!("=== Browser Agent Example (OpenAI GPT-4o) ===\n");
+    println!("=== Browser Agent Example (OpenAI GPT-5) ===\n");
 
     // Load API key
     let _ = dotenvy::dotenv();
@@ -214,12 +214,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Browser tools loaded: {}\n", tools.len());
 
     // Create OpenAI model
-    let model = Arc::new(OpenAIClient::new(OpenAIConfig::new(&api_key, "gpt-4o"))?);
+    let model = Arc::new(OpenAIClient::new(OpenAIConfig::new(&api_key, "gpt-5-mini"))?);
 
     // Create agent
     let mut builder = LlmAgentBuilder::new("web_agent_openai")
         .model(model)
-        .description("A web automation assistant powered by GPT-4o")
+        .description("A web automation assistant powered by GPT-5")
         .instruction(
             r#"You are a web automation assistant. Use the browser tools to:
 - Navigate to websites (browser_navigate)
@@ -236,7 +236,7 @@ Be concise and accurate. Always verify information by actually browsing."#,
     }
 
     let agent = Arc::new(builder.build()?);
-    println!("Agent created: {} (OpenAI GPT-4o)\n", agent.name());
+    println!("Agent created: {} (OpenAI GPT-5)\n", agent.name());
 
     // =========================================================================
     // Task 1: Basic navigation and extraction

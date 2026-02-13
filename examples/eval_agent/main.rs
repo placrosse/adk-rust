@@ -169,7 +169,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // -------------------------------------------------------------------------
     println!("1. Creating weather agent...\n");
 
-    let model = Arc::new(GeminiModel::new(&api_key, "gemini-2.0-flash")?);
+    let model = Arc::new(GeminiModel::new(&api_key, "gemini-2.5-flash")?);
 
     let agent = LlmAgentBuilder::new("weather_agent")
         .model(model.clone())
@@ -180,7 +180,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     println!("   Agent: {}", agent.name());
     println!("   Tools: get_weather, get_forecast");
-    println!("   Model: gemini-2.0-flash\n");
+    println!("   Model: gemini-2.5-flash\n");
 
     // -------------------------------------------------------------------------
     // 2. Define Test Cases

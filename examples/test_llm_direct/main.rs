@@ -8,7 +8,7 @@ use std::collections::HashMap;
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let api_key = std::env::var("OPENAI_API_KEY").expect("OPENAI_API_KEY must be set");
-    let model = OpenAIClient::new(OpenAIConfig::new(api_key, "gpt-4o-mini"))?;
+    let model = OpenAIClient::new(OpenAIConfig::new(api_key, "gpt-5-mini"))?;
 
     // Define a simple tool
     let mut tools = HashMap::new();
@@ -33,7 +33,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Create request
     let request = LlmRequest {
-        model: "gpt-4o-mini".to_string(),
+        model: "gpt-5-mini".to_string(),
         contents: vec![Content {
             role: "user".to_string(),
             parts: vec![Part::Text { text: "What is 25 * 17?".to_string() }],
