@@ -668,6 +668,85 @@ pub mod doc_audit {
 #[cfg_attr(docsrs, doc(cfg(feature = "cli")))]
 pub use adk_cli::{Launcher, SingleAgentLoader};
 
+/// Real-time bidirectional streaming (voice, video).
+///
+/// Provides real-time audio/video streaming for voice-enabled agents:
+/// - [`RealtimeAgent`](realtime::RealtimeAgent) - Agent with voice capabilities
+/// - [`RealtimeRunner`](realtime::RealtimeRunner) - Session management and tool execution
+/// - Multiple providers: OpenAI Realtime, Gemini Live
+///
+/// Available with feature: `realtime`
+#[cfg(feature = "realtime")]
+#[cfg_attr(docsrs, doc(cfg(feature = "realtime")))]
+pub mod realtime {
+    pub use adk_realtime::*;
+}
+
+/// Browser automation (WebDriver).
+///
+/// Provides browser automation tools for agents:
+/// - [`BrowserSession`](browser::BrowserSession) - WebDriver session management
+/// - [`BrowserToolset`](browser::BrowserToolset) - Browser tools for agents
+///
+/// Available with feature: `browser`
+#[cfg(feature = "browser")]
+#[cfg_attr(docsrs, doc(cfg(feature = "browser")))]
+pub mod browser {
+    pub use adk_browser::*;
+}
+
+/// Agent evaluation framework.
+///
+/// Test and validate agent behavior:
+/// - [`Evaluator`](eval::Evaluator) - Run evaluation suites
+/// - [`EvaluationConfig`](eval::EvaluationConfig) - Configure evaluation parameters
+///
+/// Available with feature: `eval`
+#[cfg(feature = "eval")]
+#[cfg_attr(docsrs, doc(cfg(feature = "eval")))]
+pub mod eval {
+    pub use adk_eval::*;
+}
+
+/// Guardrails for safety and policy enforcement.
+///
+/// Validate agent inputs and outputs:
+/// - [`GuardrailSet`](guardrail::GuardrailSet) - Collection of guardrails
+/// - [`ContentFilter`](guardrail::ContentFilter) - Content safety filtering
+///
+/// Available with feature: `guardrail`
+#[cfg(feature = "guardrail")]
+#[cfg_attr(docsrs, doc(cfg(feature = "guardrail")))]
+pub mod guardrail {
+    pub use adk_guardrail::*;
+}
+
+/// Authentication and access control.
+///
+/// Manage agent permissions and identity:
+/// - [`Permission`](auth::Permission) - Permission definitions
+/// - [`AccessControl`](auth::AccessControl) - Access control enforcement
+///
+/// Available with feature: `auth`
+#[cfg(feature = "auth")]
+#[cfg_attr(docsrs, doc(cfg(feature = "auth")))]
+pub mod auth {
+    pub use adk_auth::*;
+}
+
+/// Plugin system for extending agent behavior.
+///
+/// Extensible callback architecture for agent lifecycle hooks:
+/// - Plugin registration and discovery
+/// - Before/after hooks for agent operations
+///
+/// Available with feature: `plugin`
+#[cfg(feature = "plugin")]
+#[cfg_attr(docsrs, doc(cfg(feature = "plugin")))]
+pub mod plugin {
+    pub use adk_plugin::*;
+}
+
 // ============================================================================
 // Prelude
 // ============================================================================
