@@ -152,6 +152,35 @@ impl AudioChunk {
         let data = base64::engine::general_purpose::STANDARD.decode(encoded)?;
         Ok(Self::new(data, format))
     }
+
+    /// Create an AudioChunk from i16 samples (converts to PCM16 little-endian bytes).
+    ///
+    /// This is useful when working with audio APIs (like LiveKit) that provide
+    /// samples as `i16` slices rather than raw byte buffers.
+    pub fn from_i16_samples(samples: &[i16], format: AudioFormat) -> Self {
+        let mut data = Vec::with_capacity(samples.len() * 2);
+        for sample in samples {
+            data.extend_from_slice(&sample.to_le_bytes());
+        }
+        Self::new(data, format)
+    }
+
+    /// Convert the audio data to a vector of i16 samples (assuming PCM16 little-endian).
+    ///
+    /// Returns an error string if the data length is not even (not valid PCM16).
+    pub fn to_i16_samples(&self) -> Result<Vec<i16>, String> {
+        if self.data.len() % 2 != 0 {
+            return Err(format!(
+                "Invalid data length for PCM16: {} (must be even)",
+                self.data.len()
+            ));
+        }
+        let mut samples = Vec::with_capacity(self.data.len() / 2);
+        for chunk in self.data.chunks_exact(2) {
+            samples.push(i16::from_le_bytes([chunk[0], chunk[1]]));
+        }
+        Ok(samples)
+    }
 }
 
 #[cfg(test)]
@@ -181,5 +210,26 @@ mod tests {
         let encoded = original.to_base64();
         let decoded = AudioChunk::from_base64(&encoded, AudioFormat::pcm16_24khz()).unwrap();
         assert_eq!(original.data, decoded.data);
+    }
+
+    #[test]
+    fn test_i16_samples_roundtrip() {
+        let samples: Vec<i16> = vec![0, 1, -1, 32767, -32768, 1000, -1000];
+        let chunk = AudioChunk::from_i16_samples(&samples, AudioFormat::pcm16_24khz());
+        let recovered = chunk.to_i16_samples().unwrap();
+        assert_eq!(samples, recovered);
+    }
+
+    #[test]
+    fn test_i16_samples_empty() {
+        let chunk = AudioChunk::from_i16_samples(&[], AudioFormat::pcm16_24khz());
+        assert!(chunk.data.is_empty());
+        assert_eq!(chunk.to_i16_samples().unwrap(), Vec::<i16>::new());
+    }
+
+    #[test]
+    fn test_i16_samples_odd_bytes_error() {
+        let chunk = AudioChunk::pcm16_24khz(vec![0, 1, 2]); // 3 bytes = invalid PCM16
+        assert!(chunk.to_i16_samples().is_err());
     }
 }
