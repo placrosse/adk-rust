@@ -1,17 +1,70 @@
 # Contributing to ADK-Rust
 
-Thank you for your interest in contributing to ADK-Rust! This document provides guidelines and instructions for contributing to the Rust Agent Development Kit.
+Thank you for your interest in contributing to ADK-Rust! This document provides guidelines for contributing to the Rust Agent Development Kit.
 
 ## Table of Contents
 
+- [Contribution Workflow](#contribution-workflow)
 - [Getting Started](#getting-started)
 - [Project Structure](#project-structure)
-- [Development Workflow](#development-workflow)
+- [Quality Gates](#quality-gates)
 - [Build Commands](#build-commands)
 - [Testing](#testing)
 - [Code Style](#code-style)
-- [Pull Request Process](#pull-request-process)
+- [Pull Request Checklist](#pull-request-checklist)
 - [Architecture Notes](#architecture-notes)
+
+## Contribution Workflow
+
+We follow an issue-first workflow. Every code change should trace back to an issue for visibility and coordination.
+
+### 1. Open or Claim an Issue
+
+Before writing code, make sure there's a GitHub issue for the work:
+
+- **Bug?** Open a [bug report](https://github.com/zavora-ai/adk-rust/issues/new?template=bug_report.md) with reproduction steps.
+- **Feature?** Open a [feature request](https://github.com/zavora-ai/adk-rust/issues/new?template=feature_request.md) describing the motivation and proposed approach.
+- **Already exists?** Comment on the issue to signal you're working on it.
+
+This gives everyone visibility into work in progress and avoids duplicate effort.
+
+### 2. Create a Feature Branch
+
+```bash
+git checkout main
+git pull origin main
+git checkout -b feat/my-feature    # or fix/my-bug, docs/my-update
+```
+
+Branch naming conventions:
+- `feat/<description>` — new features
+- `fix/<description>` — bug fixes
+- `docs/<description>` — documentation changes
+- `refactor/<description>` — code improvements without behavior change
+- `test/<description>` — test additions or improvements
+
+### 3. Develop with Quality Gates
+
+Run these before every commit. CI enforces them — save yourself the round-trip:
+
+```bash
+cargo fmt --all                                          # Format
+cargo clippy --workspace --all-targets -- -D warnings    # Lint (zero warnings)
+cargo test --workspace                                   # Test
+```
+
+### 4. Submit a PR
+
+- Reference the issue: `Fixes #123` in the PR description
+- Fill out the [PR template checklist](#pull-request-checklist)
+- Keep PRs focused — one logical change per PR
+- Don't mix unrelated changes (formatting fixes, refactoring, other features)
+
+### 5. Review and Merge
+
+- PRs require review and passing CI before merge
+- Address review feedback with additional commits (don't force-push during review)
+- Squash or merge commit at maintainer discretion
 
 ## Getting Started
 
@@ -21,14 +74,10 @@ git clone https://github.com/zavora-ai/adk-rust.git
 cd adk-rust
 cargo build --workspace
 
-# Run all tests
-cargo test --workspace
-
-# Check lints (strict — warnings are errors in CI)
-cargo clippy --workspace --all-targets -- -D warnings
-
-# Format
+# Run the full quality gate
 cargo fmt --all
+cargo clippy --workspace --all-targets -- -D warnings
+cargo test --workspace
 ```
 
 ### Prerequisites
@@ -45,6 +94,8 @@ Copy `.env.example` to `.env` and fill in API keys for the providers you want to
 cp .env.example .env
 # Edit .env with your keys (GOOGLE_API_KEY, OPENAI_API_KEY, etc.)
 ```
+
+**Important:** Never commit `.env` files, API keys, local paths, or IDE configuration.
 
 ## Project Structure
 
@@ -93,7 +144,6 @@ adk-doc-audit/     Documentation quality auditor (rustdoc coverage, link checkin
 ```
 adk-mistralrs/     Local LLM inference via mistral.rs (GPU deps — build explicitly)
                    Excluded so `--all-features` works without CUDA toolkit.
-                   Build: cargo build --manifest-path adk-mistralrs/Cargo.toml
                    Has its own CI workflow.
 ```
 
@@ -113,19 +163,39 @@ docs/official_docs/           Comprehensive documentation site content
 docs/official_docs_examples/  Compilable code snippets validating every doc page
 ```
 
-## Development Workflow
+## Quality Gates
 
-### Branch Strategy
+Every PR must pass these checks. CI enforces them automatically.
 
-- `main` — stable, protected (PRs required, CI must pass)
-- Feature branches: `feat/<description>`, `fix/<description>`, `docs/<description>`
+### The Three Gates
 
-### Typical Flow
+| Gate | Command | What It Catches |
+|------|---------|-----------------|
+| Format | `cargo fmt --all -- --check` | Inconsistent formatting |
+| Lint | `cargo clippy --workspace --all-targets -- -D warnings` | Warnings, dead code, anti-patterns |
+| Test | `cargo test --workspace` | Regressions, broken logic |
 
-1. Create a feature branch from `main`
-2. Make changes, ensure `cargo clippy --workspace --all-targets -- -D warnings` is clean
-3. Run `cargo test --workspace` and `cargo fmt --all`
-4. Push and open a PR against `main`
+### Quick Validation
+
+Run all three in sequence:
+
+```bash
+cargo fmt --all && \
+cargo clippy --workspace --all-targets -- -D warnings && \
+cargo test --workspace
+```
+
+If all three pass, your PR will pass CI.
+
+### What "Zero Warnings" Means
+
+Clippy runs with `-D warnings` — every warning is a compile error. This includes:
+- Unused imports, variables, and dead code
+- Missing documentation on public items (in some crates)
+- `println!`/`eprintln!` in library code (use `tracing` instead)
+- Unnecessary clones, redundant closures, etc.
+
+Fix warnings before pushing. Don't suppress them with `#[allow(...)]` unless there's a documented reason.
 
 ## Build Commands
 
@@ -187,15 +257,19 @@ cargo test -p ralph
 - Property tests: `tests/*_property_tests.rs` using `proptest` (100+ iterations)
 - Doc examples: validated via `docs/official_docs_examples/` workspace members
 
-### CI Gate
+### Writing Tests for New Code
 
-CI runs:
+New code should include tests. The type depends on what you're adding:
 
-1. `cargo fmt --all -- --check`
-2. `cargo clippy --workspace --all-targets -- -D warnings`
-3. `cargo test --workspace`
+| Change Type | Expected Tests |
+|-------------|---------------|
+| New public function | Unit test with happy path + error cases |
+| New trait implementation | Integration test exercising the trait contract |
+| Bug fix | Regression test that fails without the fix |
+| New crate/module | Unit tests + at least one integration test |
+| Serialization/config | Property test with `proptest` (100+ iterations) |
 
-All three must pass for PR merge.
+If your change is purely internal refactoring with no behavior change, existing tests passing is sufficient.
 
 ## Code Style
 
@@ -241,17 +315,6 @@ Every public item needs rustdoc. Include `# Example` sections where practical:
 pub fn my_function(input: &str) -> Result<Output> { ... }
 ```
 
-## Pull Request Process
-
-### Before Submitting
-
-- [ ] `cargo fmt --all` — code is formatted
-- [ ] `cargo clippy --workspace --all-targets -- -D warnings` — zero warnings
-- [ ] `cargo test --workspace` — all tests pass
-- [ ] Documentation updated for any API changes
-- [ ] New public APIs have rustdoc with examples
-- [ ] CHANGELOG.md updated if user-facing
-
 ### Commit Messages
 
 Use conventional commits:
@@ -264,12 +327,37 @@ refactor(ui): extract validation into per-type trait impls
 test(eval): add trajectory property tests
 ```
 
-### PR Guidelines
+## Pull Request Checklist
 
-- Keep PRs focused — one logical change per PR
-- Don't mix unrelated changes (formatting, refactoring, features)
-- Reference issue numbers where applicable (`Fixes #77`)
-- Include a clear description of what changed and why
+Every PR has a template with this checklist. Fill it out when you open your PR.
+
+### Quality Gates (all required)
+
+- [ ] `cargo fmt --all` — code is formatted
+- [ ] `cargo clippy --workspace --all-targets -- -D warnings` — zero warnings
+- [ ] `cargo test --workspace` — all tests pass
+- [ ] Builds clean: `cargo build --workspace`
+
+### Code Quality
+
+- [ ] New code has tests (unit, integration, or property tests as appropriate)
+- [ ] Public APIs have rustdoc comments with `# Example` sections
+- [ ] No `println!`/`eprintln!` in library code (use `tracing` instead)
+- [ ] No hardcoded secrets, API keys, or local paths
+
+### Hygiene
+
+- [ ] No local development artifacts (`.env`, `.DS_Store`, IDE configs, build dirs)
+- [ ] No unrelated changes mixed in (formatting, refactoring, other features)
+- [ ] Commit messages follow conventional format (`feat:`, `fix:`, `docs:`, etc.)
+- [ ] PR targets `main` branch
+- [ ] PR references an issue (`Fixes #___`)
+
+### Documentation (if applicable)
+
+- [ ] CHANGELOG.md updated for user-facing changes
+- [ ] README updated if crate capabilities changed
+- [ ] Examples added or updated for new features
 
 ## Architecture Notes
 
