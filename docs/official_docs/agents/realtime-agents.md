@@ -103,13 +103,25 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 ## Supported Providers
 
-| Provider | Model | Feature Flag | Audio Format |
-|----------|-------|--------------|--------------|
-| OpenAI | `gpt-4o-realtime-preview-2024-12-17` | `openai` | PCM16 24kHz |
-| OpenAI | `gpt-realtime` | `openai` | PCM16 24kHz |
-| Google | `gemini-live-2.5-flash-native-audio` | `gemini` | PCM16 16kHz/24kHz |
+| Provider | Model | Transport | Feature Flag | Audio Format |
+|----------|-------|-----------|--------------|--------------|
+| OpenAI | `gpt-4o-realtime-preview-2024-12-17` | WebSocket | `openai` | PCM16 24kHz |
+| OpenAI | `gpt-realtime` | WebSocket | `openai` | PCM16 24kHz |
+| OpenAI | `gpt-4o-realtime-*` | WebRTC | `openai-webrtc` | Opus |
+| Google | `gemini-live-2.5-flash-native-audio` | WebSocket | `gemini` | PCM16 16kHz/24kHz |
+| Google | Gemini via Vertex AI | WebSocket + OAuth2 | `vertex-live` | PCM16 16kHz/24kHz |
+| LiveKit | Any (bridge to Gemini/OpenAI) | WebRTC | `livekit` | PCM16 |
 
 > **Note**: `gpt-realtime` is OpenAI's latest realtime model with improved speech quality, emotion, and function calling capabilities.
+
+### Transport Options
+
+ADK-Realtime supports multiple transport layers:
+
+- **WebSocket** (default): Direct connection to OpenAI or Gemini. Simple, low-latency, works everywhere.
+- **Vertex AI Live**: Connects to Gemini via Google Cloud with OAuth2 authentication (Application Default Credentials). Use when you need enterprise auth and GCP integration.
+- **LiveKit WebRTC**: Production-grade WebRTC bridge. Routes audio through a LiveKit server for scalable, multi-participant scenarios.
+- **OpenAI WebRTC**: Direct WebRTC connection to OpenAI with Opus codec and data channels. Requires cmake for building the Opus C library.
 
 ## RealtimeAgent Builder
 

@@ -52,13 +52,14 @@ Real-time bidirectional audio streaming for Rust Agent Development Kit (ADK-Rust
 
 ## Supported Providers & Transports
 
-| Provider | Transport | Feature Flag | Description |
-|----------|-----------|--------------|-------------|
-| OpenAI | WebSocket | `openai` | Stable realtime model via WebSocket |
-| OpenAI | WebRTC | `openai-webrtc` | Lower-latency audio via Sans-IO WebRTC + Opus |
-| Google AI Studio | WebSocket | `gemini` | Gemini Live API with API key auth |
-| Google Vertex AI | WebSocket | `vertex-live` | Vertex AI Live API with OAuth2/ADC auth |
-| LiveKit | WebRTC bridge | `livekit` | Provider-agnostic bridge for LiveKit rooms |
+| Provider | Model | Transport | Feature Flag | Description |
+|----------|-------|-----------|--------------|-------------|
+| OpenAI | `gpt-4o-realtime-preview-2024-12-17` | WebSocket | `openai` | Stable realtime model |
+| OpenAI | `gpt-realtime` | WebSocket | `openai` | Latest model with improved speech & function calling |
+| OpenAI | `gpt-4o-realtime-*` | WebRTC | `openai-webrtc` | Browser-grade transport with Opus codec |
+| Google | `gemini-live-2.5-flash-native-audio` | WebSocket | `gemini` | Gemini Live API |
+| Google | Gemini via Vertex AI | WebSocket + OAuth2 | `vertex-live` | Vertex AI Live with ADC authentication |
+| LiveKit | Any (bridge) | WebRTC | `livekit` | Production WebRTC bridge to Gemini/OpenAI |
 
 ## Quick Start
 
@@ -345,6 +346,44 @@ CMAKE_POLICY_VERSION_MINIMUM=3.5 \
   cargo check -p adk-realtime --features openai-webrtc  # OpenAI WebRTC
 CMAKE_POLICY_VERSION_MINIMUM=3.5 \
   cargo check -p adk-realtime --features full            # everything
+```
+
+## Feature Flags
+
+| Flag | Description | Requires |
+|------|-------------|----------|
+| `openai` | OpenAI Realtime API (WebSocket) | |
+| `gemini` | Gemini Live API (WebSocket) | |
+| `vertex-live` | Vertex AI Live API (OAuth2 via ADC) | GCP credentials |
+| `livekit` | LiveKit WebRTC bridge | LiveKit server |
+| `openai-webrtc` | OpenAI WebRTC transport with Opus codec | cmake |
+| `full` | All providers except WebRTC (no cmake needed) | |
+| `full-webrtc` | Everything including WebRTC | cmake |
+
+### Vertex AI Live
+
+Connect to Gemini via Vertex AI with Application Default Credentials:
+
+```rust
+use adk_realtime::gemini::{GeminiLiveBackend, GeminiLiveModel, build_vertex_live_url};
+
+// Uses ADC — no API key needed, just `gcloud auth application-default login`
+let model = GeminiLiveModel::new(GeminiLiveBackend::Vertex {
+    project_id: "my-project".into(),
+    region: "us-central1".into(),
+    model: "gemini-live-2.5-flash-native-audio".into(),
+});
+```
+
+### Feature Flag Graph
+
+```
+vertex-live  → gemini + google-cloud-auth
+livekit      → livekit + livekit-api
+openai-webrtc → openai + str0m + audiopus (requires cmake)
+full         → openai + gemini + vertex-live + livekit
+full-webrtc  → full + openai-webrtc
+```
 ```
 
 ## License

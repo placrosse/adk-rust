@@ -72,9 +72,17 @@ cargo test --workspace                                   # Test
 # Clone and build
 git clone https://github.com/zavora-ai/adk-rust.git
 cd adk-rust
-cargo build --workspace
 
-# Run the full quality gate
+# Option A: Nix/devenv (reproducible, recommended for contributors)
+devenv shell
+
+# Option B: Install tools manually
+make setup          # Installs sccache, cmake, etc. for your platform
+# Or just check what you have:
+make check-env
+
+# Build and validate
+cargo build --workspace
 cargo fmt --all
 cargo clippy --workspace --all-targets -- -D warnings
 cargo test --workspace
@@ -84,9 +92,45 @@ cargo test --workspace
 
 - Rust 1.85.0+ (edition 2024)
 - For browser examples: Chrome/Chromium
+- For `openai-webrtc` feature: cmake (audiopus builds Opus from source)
 - For mistral.rs: see [adk-mistralrs section](#adk-mistralrs)
 
-### Environment Setup
+### Dev Environment Setup
+
+We provide three ways to set up your development environment:
+
+**Option A: devenv.nix (Recommended for reproducibility)**
+
+If you use [devenv](https://devenv.sh), just run `devenv shell`. This gives you identical toolchains on Linux, macOS, and CI — Rust, sccache, mold, cmake, Node.js, and everything else pinned to known-good versions.
+
+**Option B: Setup script (brew/apt)**
+
+```bash
+./scripts/setup-dev.sh          # Install recommended tools
+./scripts/setup-dev.sh --check  # Just check what's installed
+```
+
+**Option C: Manual**
+
+Install [sccache](https://github.com/mozilla/sccache) for compilation caching (cuts rebuild times by ~70%):
+
+```bash
+brew install sccache    # macOS
+# or: apt install sccache  # Linux
+# or: cargo install sccache --locked
+
+# Add to your shell profile (~/.zshrc, ~/.bashrc):
+export RUSTC_WRAPPER=sccache
+export CMAKE_POLICY_VERSION_MINIMUM=3.5  # needed for cmake 4.x
+```
+
+On Linux, install [mold](https://github.com/rui314/mold) for faster linking (`.cargo/config.toml` uses it automatically):
+
+```bash
+sudo apt install mold
+```
+
+### Environment Variables
 
 Copy `.env.example` to `.env` and fill in API keys for the providers you want to test:
 
@@ -203,6 +247,8 @@ The `Makefile` provides common shortcuts:
 
 | Command | Description |
 |---------|-------------|
+| `make setup` | Install/check dev tools (sccache, mold, cmake) |
+| `make check-env` | Check what's installed without changing anything |
 | `make build` | Build all workspace crates |
 | `make build-all` | Build with all features |
 | `make test` | Run all workspace tests |
@@ -210,6 +256,8 @@ The `Makefile` provides common shortcuts:
 | `make fmt` | Format all code |
 | `make examples` | Build all examples (CPU-only) |
 | `make docs` | Generate and open rustdoc |
+| `make cache-stats` | Show sccache hit/miss statistics |
+| `make cache-clear` | Clear sccache and cargo caches |
 | `make build-mistralrs` | Build adk-mistralrs (CPU) |
 | `make build-mistralrs-metal` | Build adk-mistralrs with Metal (macOS) |
 | `make build-mistralrs-cuda` | Build adk-mistralrs with CUDA |
@@ -231,7 +279,11 @@ Key feature flags on `adk-model` and `examples`:
 
 - `openai` — OpenAI Realtime API (WebSocket)
 - `gemini` — Gemini Live API (WebSocket)
-- `full` — All realtime providers
+- `vertex-live` — Vertex AI Live API (OAuth2 via ADC)
+- `livekit` — LiveKit WebRTC bridge
+- `openai-webrtc` — OpenAI WebRTC transport (requires cmake)
+- `full` — All providers except WebRTC (no cmake needed)
+- `full-webrtc` — Everything including WebRTC (requires cmake)
 
 ## Testing
 

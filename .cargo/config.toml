@@ -1,0 +1,49 @@
+# =============================================================================
+# ADK-Rust Cargo Configuration
+# =============================================================================
+# Platform-specific build optimizations for faster dev builds.
+# These settings are automatically applied by Cargo.
+
+# ---------------------------------------------------------------------------
+# Faster linker per platform
+# ---------------------------------------------------------------------------
+# Linux: use mold (fastest) or lld as fallback
+# macOS: use Apple's default linker (already fast on arm64)
+# Windows: use lld via rust-lld
+
+[target.x86_64-unknown-linux-gnu]
+linker = "clang"
+rustflags = ["-C", "link-arg=-fuse-ld=mold"]
+
+[target.aarch64-unknown-linux-gnu]
+linker = "clang"
+rustflags = ["-C", "link-arg=-fuse-ld=mold"]
+
+# macOS arm64 — the default ld is already fast; no override needed.
+# Uncomment if you install a custom linker:
+# [target.aarch64-apple-darwin]
+# rustflags = ["-C", "link-arg=-fuse-ld=lld"]
+
+# Windows MSVC — use rust-lld (ships with rustup)
+[target.x86_64-pc-windows-msvc]
+linker = "rust-lld"
+
+# ---------------------------------------------------------------------------
+# sccache — shared compilation cache (opt-in)
+# ---------------------------------------------------------------------------
+# If sccache is installed, Cargo will use it automatically.
+# Install: cargo install sccache --locked
+# Or:      brew install sccache  /  apt install sccache  /  scoop install sccache
+#
+# Uncomment to force-enable (errors if sccache is not installed):
+# [build]
+# rustc-wrapper = "sccache"
+
+# ---------------------------------------------------------------------------
+# Network & registry
+# ---------------------------------------------------------------------------
+[net]
+git-fetch-with-cli = true
+
+[registries.crates-io]
+protocol = "sparse"

@@ -374,15 +374,21 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 ```
 
 **Supported Realtime Models**:
-| Provider | Model | Description |
-|----------|-------|-------------|
-| OpenAI | `gpt-4o-realtime-preview-2024-12-17` | Stable realtime model |
-| OpenAI | `gpt-realtime` | Latest model with improved speech quality and function calling |
-| Google | `gemini-live-2.5-flash-native-audio` | Gemini Live API |
+| Provider | Model | Transport | Feature Flag |
+|----------|-------|-----------|--------------|
+| OpenAI | `gpt-4o-realtime-preview-2024-12-17` | WebSocket | `openai` |
+| OpenAI | `gpt-realtime` | WebSocket | `openai` |
+| OpenAI | `gpt-4o-realtime-*` | WebRTC | `openai-webrtc` |
+| Google | `gemini-live-2.5-flash-native-audio` | WebSocket | `gemini` |
+| Google | Gemini via Vertex AI | WebSocket + OAuth2 | `vertex-live` |
+| LiveKit | Any (bridge to Gemini/OpenAI) | WebRTC | `livekit` |
 
 **Features**:
 - OpenAI Realtime API and Gemini Live API support
-- Bidirectional audio streaming (PCM16, G711)
+- Vertex AI Live with Application Default Credentials (ADC)
+- LiveKit WebRTC bridge for production-grade audio routing
+- OpenAI WebRTC transport with Opus codec and data channels
+- Bidirectional audio streaming (PCM16, G711, Opus)
 - Server-side Voice Activity Detection (VAD)
 - Real-time tool calling during voice conversations
 - Multi-agent handoffs for complex workflows
@@ -606,6 +612,19 @@ let agent = builder.build()?;
 
 
 ## Building from Source
+
+### Dev Environment Setup
+
+```bash
+# Option A: Nix/devenv (reproducible — identical on Linux, macOS, CI)
+devenv shell
+
+# Option B: Setup script (installs sccache, cmake, etc.)
+./scripts/setup-dev.sh
+
+# Option C: Manual — just install sccache for faster builds
+brew install sccache && echo 'export RUSTC_WRAPPER=sccache' >> ~/.zshrc
+```
 
 ### Using Make (Recommended)
 

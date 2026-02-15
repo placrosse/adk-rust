@@ -1,12 +1,16 @@
 # ADK-Rust Makefile
 # Common build commands for development
 
-.PHONY: help build build-all test test-all clippy fmt clean examples docs
+.PHONY: help setup check-env build build-all test test-all clippy fmt clean examples docs
 
 # Default target
 help:
 	@echo "ADK-Rust Build Commands"
 	@echo "======================="
+	@echo ""
+	@echo "Setup:"
+	@echo "  make setup        - Install/check dev tools (sccache, mold, cmake)"
+	@echo "  make check-env    - Check what's installed without changing anything"
 	@echo ""
 	@echo "Basic Commands:"
 	@echo "  make build        - Build all workspace crates (default features)"
@@ -30,12 +34,42 @@ help:
 	@echo "  make build-anthropic  - Build with Anthropic support"
 	@echo "  make build-ollama     - Build with Ollama support"
 	@echo ""
+	@echo "Cache:"
+	@echo "  make cache-stats  - Show sccache hit/miss statistics"
+	@echo "  make cache-clear  - Clear sccache and cargo caches"
+	@echo ""
 	@echo "Documentation:"
 	@echo "  make docs         - Generate documentation"
 	@echo ""
 	@echo "Note: adk-mistralrs is excluded from workspace to allow --all-features"
 	@echo "      to work without CUDA toolkit. Build it explicitly with:"
 	@echo "      make build-mistralrs"
+
+# ---------------------------------------------------------------------------
+# Setup & environment
+# ---------------------------------------------------------------------------
+
+# Install dev tools (sccache, mold, cmake, etc.)
+setup:
+	@./scripts/setup-dev.sh
+
+# Check what's installed without changing anything
+check-env:
+	@./scripts/setup-dev.sh --check
+
+# Show sccache statistics
+cache-stats:
+	@sccache --show-stats 2>/dev/null || echo "sccache not installed. Run: make setup"
+
+# Clear all caches
+cache-clear:
+	@sccache --stop-server 2>/dev/null || true
+	cargo clean
+	@echo "Caches cleared."
+
+# ---------------------------------------------------------------------------
+# Build commands
+# ---------------------------------------------------------------------------
 
 # Build all workspace crates (CPU-only, safe for all systems)
 build:
