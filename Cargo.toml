@@ -26,12 +26,14 @@ members = [
     "adk-rust",
     "adk-gemini",
     "adk-doc-audit",
+    "adk-rag",
 
     # Development packages (not published)
     "examples",
     "examples/ralph",
     "docs/official_docs_examples/quickstart_test", "docs/official_docs_examples/agents/llm_agent_test",
     "docs/official_docs_examples/tools/mcp_test",
+    "docs/official_docs_examples/tools/rag_test",
     "docs/official_docs_examples/sessions/sessions_test",
     "docs/official_docs_examples/callbacks/callbacks_test",
     "docs/official_docs_examples/artifacts/artifacts_test",
@@ -140,3 +142,4 @@ adk-skill = { path = "adk-skill", version = "0.3.1" }
 adk-studio = { path = "adk-studio", version = "0.3.1" }
 adk-gemini = { path = "adk-gemini", version = "0.3.1" }
 adk-doc-audit = { path = "adk-doc-audit", version = "0.3.1" }
+adk-rag = { path = "adk-rag", version = "0.3.1" }
