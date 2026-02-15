@@ -23,6 +23,11 @@ adk-mistralrs/Cargo.lock
 .kiro/
 .vite/
 
+# devenv
+.devenv/
+.devenv.flake.nix
+devenv.lock
+
 # Environment
 .env
 .env.local

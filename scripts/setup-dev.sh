@@ -1,0 +1,165 @@
+#!/usr/bin/env bash
+# =============================================================================
+# ADK-Rust Development Environment Setup
+# =============================================================================
+# Installs optional build acceleration tools for your platform.
+# Safe to re-run — skips already-installed tools.
+#
+# Usage:
+#   ./scripts/setup-dev.sh          # Install everything recommended
+#   ./scripts/setup-dev.sh --check  # Just check what's installed
+# =============================================================================
+
+set -euo pipefail
+
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+RED='\033[0;31m'
+NC='\033[0m'
+
+ok()   { echo -e "  ${GREEN}✓${NC} $1"; }
+warn() { echo -e "  ${YELLOW}⚠${NC} $1"; }
+miss() { echo -e "  ${RED}✗${NC} $1"; }
+
+CHECK_ONLY=false
+if [[ "${1:-}" == "--check" ]]; then
+  CHECK_ONLY=true
+fi
+
+OS="$(uname -s)"
+ARCH="$(uname -m)"
+
+echo "==================================="
+echo " ADK-Rust Dev Environment Setup"
+echo " OS: $OS  Arch: $ARCH"
+echo "==================================="
+echo ""
+
+# ---------------------------------------------------------------------------
+# Detect package manager
+# ---------------------------------------------------------------------------
+install_pkg() {
+  local name="$1"
+  local brew_name="${2:-$name}"
+  local apt_name="${3:-$name}"
+
+  if $CHECK_ONLY; then return; fi
+
+  if [[ "$OS" == "Darwin" ]]; then
+    if command -v brew &>/dev/null; then
+      echo "  Installing $name via brew..."
+      brew install "$brew_name" 2>/dev/null || true
+    else
+      warn "brew not found — install Homebrew first: https://brew.sh"
+    fi
+  elif [[ "$OS" == "Linux" ]]; then
+    if command -v apt-get &>/dev/null; then
+      echo "  Installing $name via apt..."
+      sudo apt-get install -y "$apt_name" 2>/dev/null || true
+    elif command -v dnf &>/dev/null; then
+      echo "  Installing $name via dnf..."
+      sudo dnf install -y "$apt_name" 2>/dev/null || true
+    else
+      warn "No supported package manager found for $name"
+    fi
+  fi
+}
+
+# ---------------------------------------------------------------------------
+# Check / install tools
+# ---------------------------------------------------------------------------
+
+echo "Core toolchain:"
+
+if command -v rustc &>/dev/null; then
+  ok "rustc $(rustc --version | awk '{print $2}')"
+else
+  miss "rustc — install from https://rustup.rs"
+fi
+
+if command -v cargo &>/dev/null; then
+  ok "cargo $(cargo --version | awk '{print $2}')"
+else
+  miss "cargo — install from https://rustup.rs"
+fi
+
+echo ""
+echo "Build acceleration (optional):"
+
+# sccache
+if command -v sccache &>/dev/null; then
+  ok "sccache $(sccache --version | awk '{print $2}')"
+else
+  miss "sccache — shared compilation cache (speeds up rebuilds significantly)"
+  install_pkg sccache
+fi
+
+# mold (Linux only)
+if [[ "$OS" == "Linux" ]]; then
+  if command -v mold &>/dev/null; then
+    ok "mold $(mold --version | head -1)"
+  else
+    miss "mold — fast linker for Linux"
+    install_pkg mold
+  fi
+else
+  ok "mold — not needed on macOS (default linker is fast)"
+fi
+
+# cmake (needed for openai-webrtc feature / audiopus)
+if command -v cmake &>/dev/null; then
+  ok "cmake $(cmake --version | head -1 | awk '{print $3}')"
+else
+  warn "cmake — needed only for openai-webrtc feature (audiopus)"
+  install_pkg cmake
+fi
+
+echo ""
+echo "Frontend tooling (ADK Studio UI):"
+
+if command -v node &>/dev/null; then
+  ok "node $(node --version)"
+else
+  miss "node — install Node.js 20+ for ADK Studio UI"
+fi
+
+if command -v pnpm &>/dev/null; then
+  ok "pnpm $(pnpm --version)"
+elif command -v npm &>/dev/null; then
+  ok "npm $(npm --version) (pnpm recommended: npm i -g pnpm)"
+else
+  miss "npm/pnpm — needed for ADK Studio UI"
+fi
+
+echo ""
+echo "Environment variables:"
+
+# sccache wrapper
+if [[ -n "${RUSTC_WRAPPER:-}" ]]; then
+  ok "RUSTC_WRAPPER=$RUSTC_WRAPPER"
+else
+  if command -v sccache &>/dev/null; then
+    warn "RUSTC_WRAPPER not set — add to your shell profile:"
+    echo "       export RUSTC_WRAPPER=sccache"
+  fi
+fi
+
+# cmake policy (for cmake 4.x + audiopus)
+if [[ -n "${CMAKE_POLICY_VERSION_MINIMUM:-}" ]]; then
+  ok "CMAKE_POLICY_VERSION_MINIMUM=$CMAKE_POLICY_VERSION_MINIMUM"
+else
+  if command -v cmake &>/dev/null; then
+    CMAKE_MAJOR=$(cmake --version | head -1 | awk '{print $3}' | cut -d. -f1)
+    if [[ "$CMAKE_MAJOR" -ge 4 ]]; then
+      warn "CMAKE_POLICY_VERSION_MINIMUM not set — needed for cmake 4.x:"
+      echo "       export CMAKE_POLICY_VERSION_MINIMUM=3.5"
+    fi
+  fi
+fi
+
+echo ""
+if $CHECK_ONLY; then
+  echo "Run without --check to install missing tools."
+else
+  echo "Done. Run 'make help' for build commands."
+fi
