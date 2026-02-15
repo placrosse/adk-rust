@@ -547,6 +547,36 @@ name = "auth_google"
 path = "auth_google/main.rs"
 required-features = ["sso"]
 
+[[example]]
+name = "rag_basic"
+path = "rag_basic/main.rs"
+required-features = ["rag"]
+
+[[example]]
+name = "rag_markdown"
+path = "rag_markdown/main.rs"
+required-features = ["rag"]
+
+[[example]]
+name = "rag_recursive"
+path = "rag_recursive/main.rs"
+required-features = ["rag-gemini"]
+
+[[example]]
+name = "rag_reranker"
+path = "rag_reranker/main.rs"
+required-features = ["rag-gemini"]
+
+[[example]]
+name = "rag_multi_collection"
+path = "rag_multi_collection/main.rs"
+required-features = ["rag-gemini"]
+
+[[example]]
+name = "rag_agent"
+path = "rag_agent/main.rs"
+required-features = ["rag-gemini"]
+
 # Note: mistralrs examples are part of the adk-mistralrs crate (excluded from workspace)
 # Build them explicitly: cargo build -p adk-mistralrs --examples
 
@@ -568,6 +598,8 @@ realtime-gemini = ["adk-realtime/gemini"]
 browser = ["dep:adk-browser", "dep:reqwest"]
 guardrails = ["adk-agent/guardrails", "dep:adk-guardrail"]
 sso = ["adk-auth/sso"]
+rag = ["dep:adk-rag"]
+rag-gemini = ["rag", "adk-rag/gemini"]
 
 [dependencies]
 adk-core.workspace = true
@@ -589,6 +621,7 @@ adk-ui.workspace = true
 adk-auth.workspace = true
 adk-browser = { workspace = true, optional = true }
 adk-guardrail = { workspace = true, optional = true }
+adk-rag = { workspace = true, optional = true }
 # adk-mistralrs is excluded from workspace — build explicitly: cargo build -p adk-mistralrs
 # adk-mistralrs = { path = "../adk-mistralrs", optional = true }
 tokio.workspace = true

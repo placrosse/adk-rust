@@ -37,6 +37,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added `bytes`, `bytemuck` dependencies; optional `adk-gemini` dep behind `gemini` feature flag
 - Feature flags: `openai`, `gemini`, `full`
 
+#### adk-rag (NEW CRATE)
+- New `adk-rag` crate: modular Retrieval-Augmented Generation for ADK-Rust agents
+- Core traits: `EmbeddingProvider`, `VectorStore`, `Chunker`, `Reranker`
+- `InMemoryVectorStore` with cosine similarity search (no external deps)
+- Three chunking strategies: `FixedSizeChunker`, `RecursiveChunker`, `MarkdownChunker`
+- `RagPipeline` orchestrator for ingest (chunk → embed → store) and query (embed → search → rerank → filter) workflows
+- `RagTool` implementing `adk_core::Tool` for agentic retrieval — agents call `rag_search` on demand
+- Feature-gated embedding providers: `GeminiEmbeddingProvider` (`gemini`), `OpenAIEmbeddingProvider` (`openai`)
+- Feature-gated vector stores: `QdrantVectorStore` (`qdrant`), `LanceDBVectorStore` (`lancedb`), `PgVectorStore` (`pgvector`)
+- `rag` feature flag added to `adk-rust` umbrella crate (included in `full`)
+- 6 examples: `rag_basic`, `rag_markdown`, `rag_agent`, `rag_recursive`, `rag_reranker`, `rag_multi_collection`
+- Official documentation page at `docs/official_docs/tools/rag.md` with validated code samples
+- Published to crates.io as `adk-rag v0.3.1`
+
 #### adk-studio
 - Multi-provider LLM support in code generation (Gemini, OpenAI, Anthropic, DeepSeek, Groq, Ollama)
 - Provider-specific environment variable detection and validation

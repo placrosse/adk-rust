@@ -34,6 +34,7 @@ Welcome to the official documentation for ADK-Rust (Agent Development Kit for Ru
 - [MCP Tools](tools/mcp-tools.md) - Model Context Protocol integration
 - [Browser Tools](tools/browser-tools.md) - 46 WebDriver tools for web automation
 - [UI Tools](tools/ui-tools.md) - Dynamic UI generation with forms, cards, charts
+- [RAG](tools/rag.md) - Retrieval-Augmented Generation for knowledge base search
 
 ## Sessions & State
 

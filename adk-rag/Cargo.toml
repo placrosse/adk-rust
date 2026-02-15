@@ -1,0 +1,45 @@
+[package]
+name = "adk-rag"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+description = "Retrieval-Augmented Generation for Rust Agent Development Kit (ADK-Rust) agents"
+repository = "https://github.com/zavora-ai/adk-rust"
+documentation = "https://docs.rs/adk-rag"
+keywords = ["ai", "agent", "adk", "rag", "retrieval"]
+categories = ["api-bindings", "asynchronous"]
+readme = "README.md"
+
+[dependencies]
+adk-core.workspace = true
+async-trait.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+tracing.workspace = true
+tokio = { workspace = true, features = ["sync"] }
+
+# Feature-gated dependencies
+adk-gemini = { workspace = true, optional = true }
+reqwest = { workspace = true, optional = true }
+qdrant-client = { version = "1.13", optional = true }
+lancedb = { version = "0.17", optional = true }
+arrow-array = { version = "53", optional = true }
+arrow-schema = { version = "53", optional = true }
+futures = { version = "0.3", optional = true }
+sqlx = { version = "0.8", features = ["runtime-tokio-rustls", "postgres"], optional = true }
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["test-util", "macros", "rt-multi-thread"] }
+proptest = "1.6"
+
+[features]
+default = []
+gemini = ["dep:adk-gemini"]
+openai = ["dep:reqwest"]
+qdrant = ["dep:qdrant-client"]
+lancedb = ["dep:lancedb", "dep:arrow-array", "dep:arrow-schema", "dep:futures"]
+pgvector = ["dep:sqlx"]
+full = ["gemini", "openai", "qdrant", "lancedb", "pgvector"]

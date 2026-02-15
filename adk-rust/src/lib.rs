@@ -747,6 +747,22 @@ pub mod plugin {
     pub use adk_plugin::*;
 }
 
+/// Retrieval-Augmented Generation (RAG) pipeline.
+///
+/// Modular RAG system with trait-based components:
+/// - [`RagPipeline`](rag::RagPipeline) - Orchestrates ingest and query workflows
+/// - [`RagTool`](rag::RagTool) - Agentic retrieval via `Tool` trait
+/// - [`InMemoryVectorStore`](rag::InMemoryVectorStore) - Zero-dependency vector store
+/// - Chunking strategies: fixed-size, recursive, markdown-aware
+/// - Feature-gated backends: Gemini, OpenAI, Qdrant, LanceDB, pgvector
+///
+/// Available with feature: `rag`
+#[cfg(feature = "rag")]
+#[cfg_attr(docsrs, doc(cfg(feature = "rag")))]
+pub mod rag {
+    pub use adk_rag::*;
+}
+
 // ============================================================================
 // Prelude
 // ============================================================================

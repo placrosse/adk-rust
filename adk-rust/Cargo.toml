@@ -37,7 +37,8 @@ full = [
     "eval",
     "guardrail",
     "auth",
-    "plugin"
+    "plugin",
+    "rag"
 ]
 
 # CLI launcher support
@@ -63,6 +64,7 @@ eval = ["dep:adk-eval"]
 guardrail = ["dep:adk-guardrail"]
 auth = ["dep:adk-auth"]
 plugin = ["dep:adk-plugin"]
+rag = ["dep:adk-rag"]
 
 # Minimal preset (just agents + models + runner)
 minimal = ["agents", "models", "runner"]
@@ -104,6 +106,7 @@ adk-eval = { workspace = true, optional = true }
 adk-guardrail = { workspace = true, optional = true }
 adk-auth = { workspace = true, optional = true }
 adk-plugin = { workspace = true, optional = true }
+adk-rag = { workspace = true, optional = true }
 
 # Re-export common dependencies
 tokio = { workspace = true }
