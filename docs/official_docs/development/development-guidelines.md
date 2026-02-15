@@ -18,9 +18,10 @@ This document provides comprehensive guidelines for developers contributing to A
 
 ### Prerequisites
 
-- **Rust**: 1.75 or higher (check with `rustc --version`)
+- **Rust**: 1.85.0 or higher (edition 2024, check with `rustc --version`)
 - **Cargo**: Latest stable
 - **Git**: For version control
+- **sccache** (recommended): Compilation cache that cuts rebuild times by ~70%
 
 ### Setting Up Your Environment
 
@@ -29,7 +30,13 @@ This document provides comprehensive guidelines for developers contributing to A
 git clone https://github.com/zavora-ai/adk-rust.git
 cd adk-rust
 
-# Build the project
+# Option A: Nix/devenv (reproducible — identical on Linux, macOS, CI)
+devenv shell
+
+# Option B: Setup script (installs sccache, cmake, etc.)
+./scripts/setup-dev.sh
+
+# Option C: Manual
 cargo build
 
 # Run all tests
